@@ -52,6 +52,7 @@ async function initDishes() {
    if (state.page === 'dishes' || state.page === 'manage') render();
   }
  } catch (_) { /* 读不到已存数据时保留内置菜单。 */ }
+ await syncFromCloud();
  // 申请持久存储：避免浏览器在空间紧张时清理本地数据。
  try { if (navigator.storage && navigator.storage.persist) await navigator.storage.persist(); } catch (_) {}
 }
@@ -72,6 +73,32 @@ async function cloudDeleteDish(id) {
  if (!sb) return;
  const { error } = await sb.from('dishes').delete().eq('id', id);
  if (error) cloudFail();
+}
+// 启动同步：云端为准合并本机。空表时把本机菜全部上云（种子）；
+// 同 id 云端优先（LWW）；只在本机存在的菜自动补传（保住离线期间的增改）。
+async function syncFromCloud() {
+ if (!sb) return;
+ let rows;
+ try {
+  const { data, error } = await sb.from('dishes').select('*').order('created_at', { ascending: true });
+  if (error) throw error;
+  rows = data;
+ } catch (_) { notify('云端暂不可达，当前显示本机菜谱'); return; }
+ const toDish = (r) => ({ id: r.id, name: r.name, category: r.category, note: r.note, image: r.image });
+ const cloudDishes = rows.map(toDish).filter(isValidDish);
+ const cloudIds = new Set(cloudDishes.map(d => d.id));
+ const localOnly = dishes.filter(d => !cloudIds.has(d.id));
+ if (!cloudDishes.length && localOnly.length) {
+  const { error } = await sb.from('dishes').upsert(localOnly);
+  if (error) cloudFail();
+  return; // 本机数据已是权威，无需合并
+ }
+ if (localOnly.length) {
+  const { error } = await sb.from('dishes').upsert(localOnly);
+  if (error) cloudFail();
+ }
+ saveLocalDishes([...cloudDishes, ...localOnly]);
+ if (state.page === 'dishes' || state.page === 'manage') render();
 }
 const categories = ['全部', '家常菜', '清爽凉菜', '暖心汤羹'];
 function dishImage(d) { return d.image.startsWith('data:image/') ? d.image : './public/assets/' + d.image; }
