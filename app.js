@@ -102,7 +102,7 @@ async function syncFromCloud() {
 }
 const categories = ['全部', '家常菜', '清爽凉菜', '暖心汤羹'];
 function dishImage(d) { return d.image.startsWith('data:image/') ? d.image : './public/assets/' + d.image; }
-const state = { page: 'dishes', category: '全部', query: '', selected: [], title: '今天的家宴', editingId: null, draftImage: null };
+const state = { page: 'dishes', category: '全部', query: '', selected: [], title: '今天的菜单', editingId: null, draftImage: null };
 const app = document.querySelector('#app');
 const icon = (name) => {
  const paths = {
@@ -124,29 +124,29 @@ const icon = (name) => {
  };
  return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${paths[name] || ''}</svg>`;
 };
-const logo = `<span class="brand-mark" aria-label="家宴标志"><svg viewBox="0 0 40 40" aria-hidden="true"><path d="M8 22h24c-.7 7-5.5 11-12 11S8.7 29 8 22Z"/><path d="M13 18c-2-3 3-4 1-7M20 18c-2-3 3-4 1-7M27 18c-2-3 3-4 1-7"/></svg></span>`;
+const logo = `<span class="brand-mark" aria-label="白家私厨标志"><svg viewBox="0 0 40 40" aria-hidden="true"><path d="M8 22h24c-.7 7-5.5 11-12 11S8.7 29 8 22Z"/><path d="M13 18c-2-3 3-4 1-7M20 18c-2-3 3-4 1-7M27 18c-2-3 3-4 1-7"/></svg></span>`;
 const categoryIcon = {'全部':'all','家常菜':'hot','清爽凉菜':'cold','暖心汤羹':'soup'};
 const escapeText = (str) => String(str).replace(/[&<>"']/g, s => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[s]));
-function nav(){return `<div class="nav"><button data-page="dishes" class="${state.page==='dishes'?'active':''}">${icon('basket')} 点菜</button><button data-page="menu" class="${state.page==='menu'?'active':''}">${icon('menu')} 我的菜单</button></div>`}
+function nav(){return `<nav class="nav" aria-label="页面导航"><button data-page="dishes" class="${state.page==='dishes'?'active':''}" ${state.page==='dishes'?'aria-current="page"':''}>${icon('basket')}<span>点菜</span></button><button data-page="menu" class="${state.page==='menu'?'active':''}" ${state.page==='menu'?'aria-current="page"':''}>${icon('menu')}<span>菜单</span></button></nav>`}
 function selectedDishes(){return state.selected.map(id=>dishes.find(d=>d.id===id)).filter(Boolean)}
 function renderDishes(){
  const filtered = dishes.filter(d => (state.category==='全部'||d.category===state.category) && `${d.name}${d.category}${d.note}`.includes(state.query.trim()));
  app.className='phone-screen';
- app.innerHTML=`<div class="screen-scroll">${''}<header class="topbar"><div class="top-brand">${logo}<div><strong>家宴</strong><small>把喜欢的菜端上桌</small></div></div></header>
- <section class="hero"><div class="hero-image"></div><div class="hero-text"><span class="tag">一桌好菜 &nbsp; / &nbsp; 家的味道</span><h2>今天，<br>一起好好吃饭。</h2><p>把喜欢的菜，点给爱的人</p></div><span class="hero-seal">家味</span></section>
+ app.innerHTML=`<div class="screen-scroll">${''}<header class="topbar"><div class="top-brand">${logo}<div><strong>白家私厨</strong><small>把喜欢的菜端上桌</small></div></div></header>
+ <section class="hero"><div class="hero-image"></div><div class="hero-text"><span class="tag">白家私厨 &nbsp; / &nbsp; 家的味道</span><h2>今天，<br>一起好好吃饭。</h2><p>把喜欢的菜，点给爱的人</p></div><span class="hero-seal">家味</span></section>
  <div class="section-title"><div><h2>今天吃什么？</h2><p>挑几道喜欢的菜，凑成一桌好饭</p></div><button class="manage-entry" data-page="manage">${icon('edit')} 编辑菜单</button></div>
  <label class="search">${icon('search')}<input type="search" placeholder="搜索想吃的菜" value="${escapeText(state.query)}" aria-label="搜索想吃的菜"></label>
  <div class="catalog"><nav class="filters" aria-label="菜品分类">${categories.map(c=>{const selectedCount=selectedDishes().filter(d=>c==='全部'||d.category===c).length;return `<button class="filter ${state.category===c?'active':''}" data-category="${c}" aria-pressed="${state.category===c}"><span class="filter-name">${c}</span>${selectedCount ? `<span class="filter-count">${selectedCount}</span>` : ''}</button>`}).join('')}</nav>
  <section class="catalog-content" aria-label="${state.category}菜品"><div class="catalog-heading"><h3>${state.category==='全部'?'全部菜品':state.category}</h3><span>${filtered.length} 道菜</span></div><div class="dish-list">${filtered.length ? filtered.map(d=>`<article class="dish"><img class="dish-img" src="${escapeText(dishImage(d))}" alt="${escapeText(d.name)}" onerror="this.style.visibility='hidden'"><div class="dish-info"><h3>${escapeText(d.name)}</h3><p>${escapeText(d.note)}</p><span class="dish-tag">${escapeText(d.category)}</span></div><button class="add ${state.selected.includes(d.id)?'selected':''}" data-dish="${d.id}" aria-label="${state.selected.includes(d.id)?'移除':'选择'}${escapeText(d.name)}" aria-pressed="${state.selected.includes(d.id)}">${icon(state.selected.includes(d.id)?'check':'plus')}</button></article>`).join('') : '<div class="empty">没有找到这道菜<br>换个关键词试试吧</div>'}</div></section></div></div>
- <div class="bottom"><div class="cart"><span class="cart-icon">${icon('basket')}</span><div class="cart-copy"><strong>${state.selected.length ? `已选 ${state.selected.length} 道菜` : '还没有点菜'}</strong><small>${state.selected.length ? '好饭即将上桌' : '选几道喜欢的菜吧'}</small></div><button data-action="make-menu" ${state.selected.length?'':'disabled'}><span>下单</span></button></div>${nav()}</div>`;
+ <div class="bottom"><div class="order-dock">${nav()}<button class="dock-action" data-action="make-menu" aria-label="${state.selected.length ? `已选${state.selected.length}道菜，下单` : '请先选择菜品'}" ${state.selected.length?'':'disabled'}><strong>下单</strong>${state.selected.length ? `<span class="order-count">${state.selected.length}</span>` : ''}</button></div></div>`;
  bind();
 }
 function renderMenu(){
  app.className='phone-screen menu-screen';
  const selected=selectedDishes();
  app.innerHTML=`<div class="screen-scroll">${''}<div class="page-heading"><button data-page="dishes" aria-label="返回点菜">${icon('back')}</button><span>家的味道</span></div><div class="menu-heading"><div><span class="menu-kicker">这一餐，留给家人</span><h2>今天的菜单</h2></div><span class="menu-heading-count">${selected.length}<small>道菜</small></span></div>
- <section class="menu-card"><div class="menu-card-top"><span class="menu-card-mark">${icon('hot')}</span><small>今天吃什么</small><input class="menu-title-input" aria-label="菜单标题，可编辑" maxlength="16" value="${escapeText(state.title)}"><div class="menu-meta"><span>${new Date().toLocaleDateString('zh-CN',{year:'numeric',month:'long',day:'numeric'})}</span><span>点击标题可修改</span></div></div>${selected.length ? `<div class="menu-rows">${selected.map((d,i)=>`<div class="menu-row"><span class="number">${String(i+1).padStart(2,'0')}</span><img class="menu-dish-img" src="${escapeText(dishImage(d))}" alt=""><span class="name">${escapeText(d.name)}</span><button data-remove="${d.id}" aria-label="从菜单移除${escapeText(d.name)}">${icon('close')}</button></div>`).join('')}</div>` : `<div class="menu-empty">菜单还是空的<br>去挑几道喜欢的菜吧<button data-page="dishes">去点菜</button></div>`}<div class="menu-card-foot"><span></span>好好吃饭，慢慢生活<span></span></div></section></div>
- <div class="bottom"><div class="menu-actions"><button data-action="copy" ${selected.length?'':'disabled'}>复制菜单</button><button class="primary" data-action="save" ${selected.length?'':'disabled'}>保存菜单图片</button></div>${nav()}</div>`;
+ <section class="menu-card"><div class="menu-card-top"><span class="menu-card-mark">${icon('hot')}</span><small>今天吃什么</small><input class="menu-title-input" aria-label="菜单标题，可编辑" maxlength="16" value="${escapeText(state.title)}"><div class="menu-meta"><span>${new Date().toLocaleDateString('zh-CN',{year:'numeric',month:'long',day:'numeric'})}</span><span>点击标题可修改</span></div></div>${selected.length ? `<div class="menu-rows">${selected.map((d,i)=>`<div class="menu-row"><span class="number">${String(i+1).padStart(2,'0')}</span><img class="menu-dish-img" src="${escapeText(dishImage(d))}" alt=""><span class="name">${escapeText(d.name)}</span><button data-remove="${d.id}" aria-label="从菜单移除${escapeText(d.name)}">${icon('close')}</button></div>`).join('')}</div>` : `<div class="menu-empty"><div class="menu-empty-art" aria-hidden="true"><svg viewBox="0 0 180 126" fill="none" xmlns="http://www.w3.org/2000/svg"><ellipse cx="90" cy="113" rx="65" ry="7" fill="#EAD5C1" opacity=".55"/><path d="M37 74h106c-3 24-20 37-53 37S40 98 37 74Z" fill="#C47157"/><path d="M37 74c0-7 24-12 53-12s53 5 53 12-24 12-53 12-53-5-53-12Z" fill="#E8AB8F"/><path d="M47 73c0-5 19-9 43-9s43 4 43 9-19 9-43 9-43-4-43-9Z" fill="#F8E4C7"/><path d="M65 69c-5-10-2-21 4-27 5 7 7 17 4 27M102 67c-2-13 4-23 12-27 3 10 1 21-6 29" fill="#99A77D" stroke="#75885F" stroke-width="2" stroke-linejoin="round"/><path d="M69 48l1 18m42-19-7 18" stroke="#75885F" stroke-width="1.5" stroke-linecap="round"/><circle cx="86" cy="69" r="10" fill="#D8795E"/><path d="M82 61c2-4 6-5 8-1m-5 0 2 5" stroke="#75885F" stroke-width="2" stroke-linecap="round"/><path d="M83 40c-6-7 5-10 0-17M98 37c-6-7 5-10 0-17" stroke="#D8A98E" stroke-width="2.5" stroke-linecap="round"/><path d="M34 48l-3-4m-4 12h-5m129-4 4-5m2 14h5" stroke="#D8A98E" stroke-width="2" stroke-linecap="round"/><path d="M58 96c9 5 20 7 32 7" stroke="#E8A78C" stroke-width="2" stroke-linecap="round"/></svg></div><div class="menu-empty-copy"><strong>一桌好菜，从这里开始</strong><p>挑几道喜欢的菜，<br>为今天添一点期待。</p></div><button data-page="dishes">去挑选菜品</button></div>`}<div class="menu-card-foot"><span></span>好好吃饭，慢慢生活<span></span></div></section><div class="menu-secondary"><button data-action="copy" ${selected.length?'':'disabled'}>复制菜单</button></div></div>
+ <div class="bottom"><div class="order-dock">${nav()}<button class="dock-action dock-save" data-action="save" ${selected.length?'':'disabled'}>保存菜单图片</button></div></div>`;
  bind();
 }
 function renderManage(){
@@ -197,10 +197,10 @@ async function saveMenuImage(){
  light.addColorStop(0,'rgba(255,255,255,.16)');light.addColorStop(.6,'rgba(255,255,255,.02)');light.addColorStop(1,'rgba(124,75,43,.035)');
  ctx.fillStyle=light;ctx.fillRect(70,48,width-140,height-96);ctx.restore();
  // Draw the brand mark directly at export resolution so it stays crisp.
- ctx.save();ctx.translate(470,126);ctx.scale(1.2,1.2);ctx.strokeStyle='#b9523e';ctx.lineWidth=4;ctx.lineCap='round';ctx.lineJoin='round';
+ ctx.save();ctx.translate(430,126);ctx.scale(1.2,1.2);ctx.strokeStyle='#b9523e';ctx.lineWidth=4;ctx.lineCap='round';ctx.lineJoin='round';
  ctx.beginPath();ctx.moveTo(-30,0);ctx.lineTo(30,0);ctx.bezierCurveTo(27,23,15,32,0,32);ctx.bezierCurveTo(-15,32,-27,23,-30,0);ctx.stroke();
  [-16,0,16].forEach(x=>{ctx.beginPath();ctx.moveTo(x,-10);ctx.bezierCurveTo(x-6,-19,x+5,-22,x,-31);ctx.stroke()});ctx.restore();
- ctx.textAlign='left';ctx.fillStyle='#b9523e';ctx.font='bold 42px "Songti SC", "STSong", serif';ctx.fillText('家宴',522,140);
+ ctx.textAlign='left';ctx.fillStyle='#b9523e';ctx.font='bold 42px "Songti SC", "STSong", serif';ctx.fillText('白家私厨',482,140);
  ctx.strokeStyle='#d9b7a4';ctx.lineWidth=2;ctx.setLineDash([7,10]);ctx.beginPath();ctx.moveTo(130,225);ctx.lineTo(width-130,225);ctx.stroke();ctx.setLineDash([]);
  let y=302;
  selected.forEach((dish,i)=>{
@@ -214,17 +214,17 @@ async function saveMenuImage(){
  ctx.textAlign='center';ctx.fillStyle='#b49784';ctx.font='26px "Songti SC", "STSong", serif';ctx.fillText('好好吃饭  ·  好好生活',width/2,height-94);
  const blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/jpeg',.92));
  if(!blob){notify('生成菜单图片失败，请重试');return}
- const file=new File([blob],'家宴菜单.jpg',{type:'image/jpeg'});
+ const file=new File([blob],'白家私厨菜单.jpg',{type:'image/jpeg'});
  // 网页没有直写相册的 API；支持 Web Share 的浏览器可调起系统面板，面板里有「存储图像」。
  const canShare=typeof navigator.canShare==='function'&&navigator.canShare({files:[file]});
  const imageUrl=URL.createObjectURL(blob);
  const overlay=document.createElement('div');overlay.className='image-overlay';
- overlay.innerHTML=`<div class="image-dialog" role="dialog" aria-modal="true" aria-label="菜单图片预览"><div class="image-dialog-head"><div><strong>菜单图片</strong><span>${canShare?'保存到相册，或长按图片':'长按图片保存，也可以点击下载'}</span></div><button class="image-close" aria-label="关闭预览">${icon('close')}</button></div><div class="image-preview"><img src="${imageUrl}" alt="生成的家庭菜单图片"></div><div class="image-actions">${canShare?'<button class="image-save" type="button">保存到相册</button>':''}<a class="image-download" href="${imageUrl}" download="家宴菜单.jpg">下载图片</a></div></div>`;
+ overlay.innerHTML=`<div class="image-dialog" role="dialog" aria-modal="true" aria-label="菜单图片预览"><div class="image-dialog-head"><div><strong>菜单图片</strong><span>${canShare?'保存到相册，或长按图片':'长按图片保存，也可以点击下载'}</span></div><button class="image-close" aria-label="关闭预览">${icon('close')}</button></div><div class="image-preview"><img src="${imageUrl}" alt="生成的家庭菜单图片"></div><div class="image-actions">${canShare?'<button class="image-save" type="button">保存到相册</button>':''}<a class="image-download" href="${imageUrl}" download="白家私厨菜单.jpg">下载图片</a></div></div>`;
  document.body.appendChild(overlay);
  const close=()=>{overlay.remove();URL.revokeObjectURL(imageUrl);document.removeEventListener('keydown',onKey)};
  const onKey=e=>{if(e.key==='Escape')close()};
  const saveToAlbum=overlay.querySelector('.image-save');
- if(saveToAlbum)saveToAlbum.onclick=async()=>{try{await navigator.share({files:[file],title:'家宴菜单',text:'好好吃饭，慢慢生活'});close()}catch(err){if(err&&err.name!=='AbortError')notify('未能调起系统保存，试试长按图片')}};
+ if(saveToAlbum)saveToAlbum.onclick=async()=>{try{await navigator.share({files:[file],title:'白家私厨菜单',text:'好好吃饭，慢慢生活'});close()}catch(err){if(err&&err.name!=='AbortError')notify('未能调起系统保存，试试长按图片')}};
  overlay.querySelector('.image-close').onclick=close;
  overlay.onclick=e=>{if(e.target===overlay)close()};
  document.addEventListener('keydown',onKey);
@@ -248,7 +248,7 @@ function bind(){
  const search=app.querySelector('input[type=search]');if(search)search.oninput=e=>{state.query=e.target.value;const position=e.target.selectionStart;render();const input=app.querySelector('input[type=search]');input.focus();input.setSelectionRange(position,position)};
  const title=app.querySelector('.menu-title-input');if(title)title.oninput=e=>{state.title=e.target.value};
  const make=app.querySelector('[data-action=make-menu]');if(make)make.onclick=()=>{state.page='menu';render()};
- const copy=app.querySelector('[data-action=copy]');if(copy)copy.onclick=async()=>{const text=`${state.title || '今天的家宴'}\n${categories.filter(c=>c!=='全部' && selectedDishes().some(d=>d.category===c)).map(c=>`${c}\n${selectedDishes().filter(d=>d.category===c).map((d,i)=>`${i+1}. ${d.name}`).join('\n')}`).join('\n\n')}\n好好吃饭 · 好好生活`;try{await navigator.clipboard.writeText(text);notify('菜单已复制，分享给家人吧')}catch{const area=document.createElement('textarea');area.value=text;document.body.appendChild(area);area.select();try{document.execCommand('copy');notify('菜单已复制，分享给家人吧')}catch{notify('复制失败，请手动选择菜单内容')}area.remove()}};
+ const copy=app.querySelector('[data-action=copy]');if(copy)copy.onclick=async()=>{const text=`${state.title || '今天的菜单'}\n${categories.filter(c=>c!=='全部' && selectedDishes().some(d=>d.category===c)).map(c=>`${c}\n${selectedDishes().filter(d=>d.category===c).map((d,i)=>`${i+1}. ${d.name}`).join('\n')}`).join('\n\n')}\n好好吃饭 · 好好生活`;try{await navigator.clipboard.writeText(text);notify('菜单已复制，分享给家人吧')}catch{const area=document.createElement('textarea');area.value=text;document.body.appendChild(area);area.select();try{document.execCommand('copy');notify('菜单已复制，分享给家人吧')}catch{notify('复制失败，请手动选择菜单内容')}area.remove()}};
  const save=app.querySelector('[data-action=save]');if(save)save.onclick=saveMenuImage;
 }
 render();
