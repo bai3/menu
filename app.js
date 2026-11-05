@@ -56,10 +56,22 @@ async function initDishes() {
  try { if (navigator.storage && navigator.storage.persist) await navigator.storage.persist(); } catch (_) {}
 }
 function dishImage(d) { return d.image.startsWith('data:image/') ? d.image : './public/assets/' + d.image; }
-function persistDishes(next) {
+function saveLocalDishes(next) {
  dishes = next;
  idbSet('dishes', next).catch(() => notify('保存失败，浏览器存储不可用'));
- return true;
+}
+// —— 云同步（Supabase）：本地先行，云端失败只提示，不回滚 UI ——
+const sb = (window.JIAYAN_SUPABASE && window.supabase) ? window.supabase.createClient(window.JIAYAN_SUPABASE.url, window.JIAYAN_SUPABASE.publishableKey) : null;
+const cloudFail = () => notify('已存本机，联网后同步到云端');
+async function cloudUpsertDish(d) {
+ if (!sb) return;
+ const { error } = await sb.from('dishes').upsert({ id: d.id, name: d.name, category: d.category, note: d.note, image: d.image });
+ if (error) cloudFail();
+}
+async function cloudDeleteDish(id) {
+ if (!sb) return;
+ const { error } = await sb.from('dishes').delete().eq('id', id);
+ if (error) cloudFail();
 }
 const categories = ['全部', '家常菜', '清爽凉菜', '暖心汤羹'];
 function dishImage(d) { return d.image.startsWith('data:image/') ? d.image : './public/assets/' + d.image; }
@@ -201,10 +213,10 @@ function bind(){
  app.querySelectorAll('[data-dish]').forEach(b=>b.onclick=()=>{const id=b.dataset.dish;state.selected=state.selected.includes(id)?state.selected.filter(x=>x!==id):[...state.selected,id];const scroll=app.querySelector('.screen-scroll').scrollTop;render();app.querySelector('.screen-scroll').scrollTop=scroll});
  app.querySelectorAll('[data-remove]').forEach(b=>b.onclick=()=>{state.selected=state.selected.filter(x=>x!==b.dataset.remove);render()});
  app.querySelectorAll('[data-edit]').forEach(b=>b.onclick=()=>{state.editingId=b.dataset.edit;state.draftImage=null;state.page='dish-form';render()});
- app.querySelectorAll('[data-delete]').forEach(b=>b.onclick=()=>{const dish=dishes.find(d=>d.id===b.dataset.delete);if(!dish || !window.confirm(`确定删除“${dish.name}”吗？`))return;if(persistDishes(dishes.filter(d=>d.id!==dish.id))){state.selected=state.selected.filter(id=>id!==dish.id);render();notify('菜品已删除')}});
+ app.querySelectorAll('[data-delete]').forEach(b=>b.onclick=()=>{const dish=dishes.find(d=>d.id===b.dataset.delete);if(!dish || !window.confirm(`确定删除“${dish.name}”吗？`))return;saveLocalDishes(dishes.filter(d=>d.id!==dish.id));cloudDeleteDish(dish.id);state.selected=state.selected.filter(id=>id!==dish.id);render();notify('菜品已删除');});
  const addDish=app.querySelector('[data-action=new-dish]');if(addDish)addDish.onclick=()=>{state.editingId=null;state.draftImage=null;state.page='dish-form';render()};
  app.querySelectorAll('.cover-upload input').forEach(file=>file.onchange=()=>{const item=file.files?.[0];if(!item)return;if(!item.type.startsWith('image/')){notify('请选择图片文件');file.value='';return}const reader=new FileReader();reader.onerror=()=>notify('图片读取失败');reader.onload=()=>{const image=new Image();image.onerror=()=>notify('图片格式不支持');image.onload=()=>{const scale=Math.min(1,800/Math.max(image.width,image.height));const canvas=document.createElement('canvas');canvas.width=Math.max(1,Math.round(image.width*scale));canvas.height=Math.max(1,Math.round(image.height*scale));const context=canvas.getContext('2d');context.fillStyle='#fff';context.fillRect(0,0,canvas.width,canvas.height);context.drawImage(image,0,0,canvas.width,canvas.height);state.draftImage=canvas.toDataURL('image/jpeg',.82);app.querySelector('#cover-preview').src=state.draftImage};image.src=reader.result};reader.readAsDataURL(item)});
- const form=app.querySelector('#dish-form');if(form)form.onsubmit=e=>{e.preventDefault();const name=form.elements.name.value.trim();if(!name){form.elements.name.focus();return}const existing=dishes.find(d=>d.id===state.editingId);const dish={id:existing?.id || `dish-${Date.now()}-${Math.random().toString(36).slice(2,8)}`,name,category:form.elements.category.value,note:form.elements.note.value.trim(),image:state.draftImage || existing?.image || 'tomato.jpg'};const next=existing?dishes.map(d=>d.id===existing.id?dish:d):[...dishes,dish];if(persistDishes(next)){state.editingId=null;state.draftImage=null;state.page='manage';render();notify(existing?'菜品已更新':'菜品已添加')}};
+ const form=app.querySelector('#dish-form');if(form)form.onsubmit=e=>{e.preventDefault();const name=form.elements.name.value.trim();if(!name){form.elements.name.focus();return}const existing=dishes.find(d=>d.id===state.editingId);const dish={id:existing?.id || `dish-${Date.now()}-${Math.random().toString(36).slice(2,8)}`,name,category:form.elements.category.value,note:form.elements.note.value.trim(),image:state.draftImage || existing?.image || 'tomato.jpg'};const next=existing?dishes.map(d=>d.id===existing.id?dish:d):[...dishes,dish];saveLocalDishes(next);cloudUpsertDish(dish);state.editingId=null;state.draftImage=null;state.page='manage';render();notify(existing?'菜品已更新':'菜品已添加');};
 
  const search=app.querySelector('input[type=search]');if(search)search.oninput=e=>{state.query=e.target.value;const position=e.target.selectionStart;render();const input=app.querySelector('input[type=search]');input.focus();input.setSelectionRange(position,position)};
  const title=app.querySelector('.menu-title-input');if(title)title.oninput=e=>{state.title=e.target.value};

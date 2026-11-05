@@ -1,3 +1,5 @@
 .DS_Store
 *.log
 .superpowers/
+.playwright-mcp/
+.claude/
