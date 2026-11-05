@@ -80,7 +80,7 @@ async function syncFromCloud() {
  if (!sb) return;
  let rows;
  try {
-  const { data, error } = await sb.from('dishes').select('*').order('created_at', { ascending: true });
+  const { data, error } = await sb.from('dishes').select('*').order('created_at', { ascending: true }).order('id', { ascending: true });
   if (error) throw error;
   rows = data;
  } catch (_) { notify('云端暂不可达，当前显示本机菜谱'); return; }
