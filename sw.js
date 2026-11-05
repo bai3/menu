@@ -1,6 +1,6 @@
 // 家宴 Service Worker：预缓存全部静态资源，离线也能打开。
 // 更新页面内容后，把下面 VERSION 加一（如 'v2'）即可让所有客户端换用新缓存。
-const VERSION = 'v12';
+const VERSION = 'v13';
 const CACHE = `jiayan-${VERSION}`;
 const ASSETS = [
   './',
@@ -8,6 +8,8 @@ const ASSETS = [
   './style.css',
   './app.js',
   './manifest.json',
+  './config.js',
+  './public/vendor/supabase.js',
   './public/assets/icon-192.png',
   './public/assets/icon-512.png',
   './public/assets/icon-maskable-512.png',
