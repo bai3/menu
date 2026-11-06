@@ -1,6 +1,6 @@
 // 家宴 Service Worker：预缓存全部静态资源，离线也能打开。
 // 更新页面内容后，把下面 VERSION 加一（如 'v2'）即可让所有客户端换用新缓存。
-const VERSION = 'v71';
+const VERSION = 'v73';
 const CACHE = `jiayan-${VERSION}`;
 // 本机开发不使用离线缓存，已有旧 Worker 更新后也会切换到网络。
 const LOCAL_DEV = ['localhost', '127.0.0.1', '[::1]'].includes(self.location.hostname);
@@ -53,6 +53,9 @@ self.addEventListener('fetch', (event) => {
   if (request.method !== 'GET') return;
   const url = new URL(request.url);
   if (url.origin !== location.origin) return;
+
+  // 管理看板是独立页面，不使用点菜应用的离线首页或静态缓存。
+  if (/\/admin(?:\/|$)/.test(url.pathname)) return;
 
   // 页面导航优先使用当前版本的预缓存首页，不必等待慢网络。
   // 新版本由 Service Worker 更新时整体预缓存，避免首页与脚本版本不一致。
