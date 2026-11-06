@@ -105,7 +105,7 @@ async function drawPaperMenu(selected){
  ctx.save();ctx.translate(430,126);ctx.scale(1.2,1.2);ctx.strokeStyle='#b9523e';ctx.lineWidth=4;ctx.lineCap='round';ctx.lineJoin='round';
  ctx.beginPath();ctx.moveTo(-30,0);ctx.lineTo(30,0);ctx.bezierCurveTo(27,23,15,32,0,32);ctx.bezierCurveTo(-15,32,-27,23,-30,0);ctx.stroke();
  [-16,0,16].forEach(x=>{ctx.beginPath();ctx.moveTo(x,-10);ctx.bezierCurveTo(x-6,-19,x+5,-22,x,-31);ctx.stroke()});ctx.restore();
- ctx.textAlign='left';ctx.fillStyle='#b9523e';ctx.font='bold 42px "Songti SC", "STSong", serif';ctx.fillText('白家私厨',482,140);
+ ctx.textAlign='left';ctx.fillStyle='#b9523e';ctx.font='bold 42px "Songti SC", "STSong", serif';ctx.fillText('家宴',482,140);
  ctx.strokeStyle='#d9b7a4';ctx.lineWidth=2;ctx.setLineDash([7,10]);ctx.beginPath();ctx.moveTo(130,225);ctx.lineTo(width-130,225);ctx.stroke();ctx.setLineDash([]);
  let y=302;
  selected.forEach((dish,i)=>{
@@ -131,7 +131,7 @@ function drawBbqMenu(selected){
  ctx.save();ctx.shadowColor='rgba(75,51,29,.18)';ctx.shadowBlur=24;ctx.shadowOffsetY=9;ctx.fillStyle='#f8efd9';ctx.fillRect(55,40,970,height-80);ctx.restore();
  // Fine ruled edges evoke a pad of inexpensive paper order slips.
  ctx.strokeStyle='#bfa783';ctx.lineWidth=2;ctx.strokeRect(76,61,928,height-122);
- text('白家私厨  ·  烟火小摊',120,122,25,red);
+ text('家宴  ·  烟火小摊',120,122,25,red);
  text('ORDER  /  点单纸',960,122,22,faded,'right');
  text('今晚吃点啥',540,220,72,ink,'center','"Songti SC", "STSong", serif');
  text('想吃的都勾上，热乎乎端上桌',540,270,26,faded,'center');
@@ -181,7 +181,7 @@ function drawPicnicMenu(selected){
   line(left+76,y+35,right,y+35,p.rule,1);
  });
  const footer=height-91;
- text('白家私厨  ·  好好吃饭',left,footer,24,p.muted,{serif:true});
+ text('家宴  ·  好好吃饭',left,footer,24,p.muted,{serif:true});
  text(`${selected.length} 道菜`,right,footer,26,p.accent,{align:'right',bold:true});
  return canvas;
 }
@@ -249,7 +249,7 @@ async function drawCheckMenu(selected){
  const footY=height-footH;
  ctx.strokeStyle=ink;ctx.lineWidth=2;ctx.setLineDash([8,10]);ctx.beginPath();ctx.moveTo(margin,footY+16);ctx.lineTo(width-margin,footY+16);ctx.stroke();ctx.setLineDash([]);
  text('· 今天也要好好吃饭呀 ·',width/2,footY+74,26,ink,{align:'center',kai:true});
- text('白家私厨 · FAMILY KITCHEN',width/2,footY+118,16,muted,{align:'center'});
+ text('家宴 · FAMILY KITCHEN',width/2,footY+118,16,muted,{align:'center'});
  return canvas;
 }
 
@@ -310,7 +310,7 @@ async function drawFilmMenu(selected){
  });
  const footY=height-footH;
  text('被拍下来的，都是好时光',width/2,footY+60,26,ink,{align:'center',kai:true});
- text('白家私厨 · FAMILY KITCHEN',width/2,footY+102,16,muted,{align:'center'});
+ text('家宴 · FAMILY KITCHEN',width/2,footY+102,16,muted,{align:'center'});
  return canvas;
 }
 
@@ -367,7 +367,7 @@ async function drawFeastMenu(selected){
  ctx.strokeStyle=goldSoft;ctx.lineWidth=2;ctx.beginPath();roundedPath(ctx,-37,-37,74,74,6);ctx.stroke();
  ctx.fillStyle=cream;ctx.textAlign='center';ctx.font='44px '+serif;ctx.fillText('家',0,16);
  ctx.restore();
- text('白家私厨 · 今晚恭候入席',width/2,height-84,22,goldSoft,{align:'center',serif:true});
+ text('家宴 · 今晚恭候入席',width/2,height-84,22,goldSoft,{align:'center',serif:true});
  return canvas;
 }
 
@@ -379,7 +379,7 @@ async function saveMenuImage(overrideSelected, overrideTitle){
  let imageUrl=null;
  try{
   const overlay=document.createElement('div');overlay.className='image-overlay';
-  overlay.innerHTML=`<div class="image-dialog" role="dialog" aria-modal="true" aria-label="菜单图片预览"><div class="image-dialog-head"><div><strong>菜单图片</strong><span>左右滑动，挑一张喜欢的菜单</span></div><button class="image-close" aria-label="关闭预览">${icon('close')}</button></div><div class="image-preview"><img alt="生成的家庭菜单图片" draggable="false"></div><div class="image-style-picker"><button class="image-style-prev" type="button" aria-label="上一种样式"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m14 6-6 6 6 6"/></svg></button><div class="image-style-label" aria-live="polite"><strong></strong><span></span></div><button class="image-style-next" type="button" aria-label="下一种样式"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m10 6 6 6-6 6"/></svg></button></div><div class="image-style-dots" aria-label="选择图片样式">${menuImageStyles.map((style,i)=>`<button type="button" aria-label="${style.name}" data-style="${i}"></button>`).join('')}</div><div class="image-actions"><button class="image-save" type="button" hidden>保存到相册</button><a class="image-download" download="白家私厨菜单.jpg">下载图片</a></div><p class="image-save-hint">也可以长按图片保存</p></div>`;
+  overlay.innerHTML=`<div class="image-dialog" role="dialog" aria-modal="true" aria-label="菜单图片预览"><div class="image-dialog-head"><div><strong>菜单图片</strong><span>左右滑动，挑一张喜欢的菜单</span></div><button class="image-close" aria-label="关闭预览">${icon('close')}</button></div><div class="image-preview"><img alt="生成的家庭菜单图片" draggable="false"></div><div class="image-style-picker"><button class="image-style-prev" type="button" aria-label="上一种样式"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m14 6-6 6 6 6"/></svg></button><div class="image-style-label" aria-live="polite"><strong></strong><span></span></div><button class="image-style-next" type="button" aria-label="下一种样式"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m10 6 6 6-6 6"/></svg></button></div><div class="image-style-dots" aria-label="选择图片样式">${menuImageStyles.map((style,i)=>`<button type="button" aria-label="${style.name}" data-style="${i}"></button>`).join('')}</div><div class="image-actions"><button class="image-save" type="button" hidden>保存到相册</button><a class="image-download" download="家宴菜单.jpg">下载图片</a></div><p class="image-save-hint">也可以长按图片保存</p></div>`;
   document.body.appendChild(overlay);
   let index=0, file=null, version=0, closed=false;
   const img=overlay.querySelector('.image-preview img'), download=overlay.querySelector('.image-download'), share=overlay.querySelector('.image-save');
@@ -396,7 +396,7 @@ async function saveMenuImage(overrideSelected, overrideTitle){
     if(!blob)throw new Error('image encoding failed');
     if(closed||current!==version)return;
     const nextUrl=URL.createObjectURL(blob), previousUrl=imageUrl;imageUrl=nextUrl;
-    file=new File([blob],`白家私厨菜单-${style.name}.jpg`,{type:'image/jpeg'});
+    file=new File([blob],`家宴菜单-${style.name}.jpg`,{type:'image/jpeg'});
     img.src=nextUrl;img.alt=`${style.name}菜单图片`;download.href=nextUrl;download.download=file.name;
     share.hidden=!(typeof navigator.canShare==='function'&&navigator.canShare({files:[file]}));
     if(previousUrl)URL.revokeObjectURL(previousUrl);
@@ -404,7 +404,7 @@ async function saveMenuImage(overrideSelected, overrideTitle){
   };
   const close=()=>{closed=true;overlay.remove();if(imageUrl)URL.revokeObjectURL(imageUrl);document.removeEventListener('keydown',onKey)};
   const onKey=e=>{if(e.key==='Escape')close();else if(e.key==='ArrowLeft')changeStyle(index-1);else if(e.key==='ArrowRight')changeStyle(index+1)};
-  share.onclick=async()=>{if(!file)return;try{await navigator.share({files:[file],title:'白家私厨菜单',text:'好好吃饭，慢慢生活'});close()}catch(err){if(err&&err.name!=='AbortError')notify('未能调起系统保存，试试长按图片')}};
+  share.onclick=async()=>{if(!file)return;try{await navigator.share({files:[file],title:'家宴菜单',text:'好好吃饭，慢慢生活'});close()}catch(err){if(err&&err.name!=='AbortError')notify('未能调起系统保存，试试长按图片')}};
   overlay.querySelector('.image-close').onclick=close;
   overlay.onclick=e=>{if(e.target===overlay)close()};
   overlay.querySelector('.image-style-prev').onclick=()=>changeStyle(index-1);

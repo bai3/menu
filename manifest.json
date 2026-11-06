@@ -1,6 +1,6 @@
 {
-  "name": "白家私厨 · 今天吃什么",
-  "short_name": "白家私厨",
+  "name": "家宴 · 今天吃什么",
+  "short_name": "家宴",
   "description": "家庭点菜小助手——挑喜欢的菜、生成菜单图片、管理家里的家常菜。",
   "lang": "zh-CN",
   "start_url": "./",

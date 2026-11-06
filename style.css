@@ -487,3 +487,12 @@ button.filter[hidden]{display:none}
  .shared-dish-names{max-width:100%}
 }
 @media (max-width: 420px){.shared-catalog button.filter{padding-left:6px;padding-right:4px;gap:2px;font-size:10px}.shared-catalog .filter-name{white-space:nowrap}}
+
+/* 家宴: a warm seal for the family table. */
+.brand-mark{background:#793e34;color:#f9f0e1;border-radius:12px}
+.top-brand .brand-mark,.beta-brand .brand-mark{border-radius:11px}
+.brand-mark svg,.top-brand .brand-mark svg{width:100%;height:100%;stroke:none}
+.brand-mark .brand-bowl{fill:currentColor}
+.brand-mark .brand-foot{fill:none;stroke:currentColor;stroke-width:1;stroke-linecap:round}
+.brand-mark .brand-smile{fill:none;stroke:#793e34;stroke-width:.85;stroke-linecap:round}
+.brand-mark .brand-chopsticks{fill:none;stroke:currentColor;stroke-width:1.05;stroke-linecap:round}
