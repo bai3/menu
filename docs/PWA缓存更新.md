@@ -9,3 +9,9 @@
 ```
 
 需要 Git 和 Python 3。Git 钩子是本地配置，不会自动随克隆启用；使用 `git -c core.hooksPath=...` 或 `git commit --no-verify` 也可能跳过它。发布时须同时部署 `sw.js` 和页面资源，并确保服务器或 CDN 不会长期缓存旧的 `sw.js`。Service Worker 更新后，已打开的页面仍可能需要重新打开或刷新才能看到新内容。
+
+## 本机开发
+
+通过 `localhost`、`127.0.0.1` 或 `[::1]` 访问时，应用不会注册 Service Worker，并会注销本项目旧的 Worker、清除 `jiayan-` 缓存。旧 Worker 首次更新可能需要刷新一到两次；如果仍显示旧内容，可在浏览器开发者工具的 Application → Service Workers 中注销，再刷新。只清除本应用的缓存，不需要清除 IndexedDB 中的菜品。
+
+局域网 IP 和线上域名仍启用 PWA；要在手机上测试离线行为，请使用这些地址。若本地服务器另有 HTTP 缓存，可在开发者工具 Network 勾选 Disable cache。

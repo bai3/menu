@@ -1,7 +1,9 @@
 // 家宴 Service Worker：预缓存全部静态资源，离线也能打开。
 // 更新页面内容后，把下面 VERSION 加一（如 'v2'）即可让所有客户端换用新缓存。
-const VERSION = 'v34';
+const VERSION = 'v40';
 const CACHE = `jiayan-${VERSION}`;
+// 本机开发不使用离线缓存，已有旧 Worker 更新后也会切换到网络。
+const LOCAL_DEV = ['localhost', '127.0.0.1', '[::1]'].includes(self.location.hostname);
 const ASSETS = [
   './',
   './index.html',
@@ -26,6 +28,7 @@ const ASSETS = [
 ];
 
 self.addEventListener('install', (event) => {
+  if (LOCAL_DEV) { event.waitUntil(self.skipWaiting()); return; }
   event.waitUntil(
     // cache: 'reload' 强制绕过 HTTP 缓存，确保预缓存的永远是最新文件。
     caches.open(CACHE).then((cache) => cache.addAll(ASSETS.map((url) => new Request(url, { cache: 'reload' })))).then(() => self.skipWaiting())
@@ -33,6 +36,10 @@ self.addEventListener('install', (event) => {
 });
 
 self.addEventListener('activate', (event) => {
+  if (LOCAL_DEV) {
+    event.waitUntil(caches.keys().then((keys) => Promise.all(keys.filter((key) => key.startsWith('jiayan-')).map((key) => caches.delete(key)))).then(() => self.clients.claim()));
+    return;
+  }
   event.waitUntil(
     caches.keys()
       .then((keys) => Promise.all(keys.filter((key) => key !== CACHE).map((key) => caches.delete(key))))
@@ -41,6 +48,7 @@ self.addEventListener('activate', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
+  if (LOCAL_DEV) return;
   const request = event.request;
   if (request.method !== 'GET') return;
   const url = new URL(request.url);
