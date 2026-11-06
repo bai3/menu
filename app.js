@@ -1,3 +1,11 @@
+function bindDetailSwipe(scroll, onBack){
+ if(!scroll)return;
+ let start=null;
+ scroll.addEventListener('touchstart',e=>{start=e.touches.length===1?{x:e.touches[0].clientX,y:e.touches[0].clientY}:null},{passive:true});
+ scroll.addEventListener('touchmove',e=>{if(e.touches.length!==1)start=null},{passive:true});
+ scroll.addEventListener('touchcancel',()=>{start=null},{passive:true});
+ scroll.addEventListener('touchend',e=>{if(!start || e.touches.length || e.changedTouches.length!==1){start=null;return}const dx=e.changedTouches[0].clientX-start.x,dy=e.changedTouches[0].clientY-start.y;start=null;if(dx>=80 && dx>Math.abs(dy)*1.5)onBack()},{passive:true});
+}
 function bindDishButtons(){
  app.querySelectorAll('[data-detail-id]').forEach(b=>b.onclick=()=>{state.detailId=b.dataset.detailId;state.detailScroll=app.querySelector('.screen-scroll')?.scrollTop || 0;state.page='dish-detail';render()});
  app.querySelectorAll('[data-dish]').forEach(b=>b.onclick=()=>{const id=b.dataset.dish;if(!dishes.some(d=>d.id===id && d.is_available))return;state.selected=state.selected.includes(id)?state.selected.filter(x=>x!==id):[...state.selected,id];const scroll=app.querySelector('.screen-scroll').scrollTop;render();app.querySelector('.screen-scroll').scrollTop=scroll});
@@ -10,7 +18,7 @@ function bind(){
  app.querySelectorAll('[data-filter-mode]').forEach(b=>b.onclick=()=>{const scroll=app.querySelector('.screen-scroll').scrollTop;state.filterMode=b.dataset.filterMode;state.category='全部';render();app.querySelector('.screen-scroll').scrollTop=scroll});
  bindCatalog();
  bindDishButtons();
- const detailBack=app.querySelector('[data-detail-back]');if(detailBack)detailBack.onclick=()=>{const id=state.detailId;state.page='dishes';render();const scroll=app.querySelector('.screen-scroll');if(scroll)scroll.scrollTop=state.detailScroll;updateCatalogNavigation();app.querySelectorAll('[data-detail-id]').forEach(b=>{if(b.dataset.detailId===id)b.focus({preventScroll:true})})};
+ const detailBack=app.querySelector('[data-detail-back]');if(detailBack){detailBack.onclick=()=>{const id=state.detailId;state.page='dishes';render();const scroll=app.querySelector('.screen-scroll');if(scroll)scroll.scrollTop=state.detailScroll;updateCatalogNavigation();app.querySelectorAll('[data-detail-id]').forEach(b=>{if(b.dataset.detailId===id)b.focus({preventScroll:true})})};bindDetailSwipe(app.querySelector('.detail-scroll'),detailBack.onclick)}
  const detailToggle=app.querySelector('[data-detail-toggle]');if(detailToggle)detailToggle.onclick=()=>{const dish=dishes.find(d=>d.id===state.detailId);if(!dish || !dish.is_available){render();return}state.selected=state.selected.includes(dish.id)?state.selected.filter(id=>id!==dish.id):[...state.selected,dish.id];const top=app.querySelector('.screen-scroll')?.scrollTop || 0;render();app.querySelector('.screen-scroll').scrollTop=top;app.querySelector('[data-detail-toggle]')?.focus({preventScroll:true})};
  app.querySelectorAll('[data-remove]').forEach(b=>b.onclick=()=>{state.selected=state.selected.filter(x=>x!==b.dataset.remove);render()});
  app.querySelectorAll('[data-edit]').forEach(b=>b.onclick=()=>{state.editingId=b.dataset.edit;state.draftImage=null;state.page='dish-form';render()});

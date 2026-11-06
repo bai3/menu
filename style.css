@@ -613,7 +613,7 @@ button.filter[hidden]{display:none}
 .detail-nav button{min-height:44px;padding:0 10px 0 0;border:0;background:transparent;color:#a45c46;font-size:12px;font-weight:600}
 .detail-nav button:focus-visible,.detail-bottom button:focus-visible{outline:2px solid #b76b50;outline-offset:3px;border-radius:5px}
 .detail-photo{overflow:hidden;width:100%;height:clamp(190px,30vh,270px);border-radius:18px;background:#f3e8dd}
-.detail-photo img{display:block;width:100%;height:100%;object-fit:cover}
+.detail-photo img{display:block;width:100%;height:100%;object-fit:contain}
 .detail-content{padding:24px 2px 12px}
 .detail-title{display:flex;align-items:end;justify-content:space-between;gap:12px}
 .detail-overline{color:#b18870;font-size:10px;letter-spacing:.12em}
@@ -636,25 +636,25 @@ button.filter[hidden]{display:none}
 .catalog .dish-tag + .dish-detail-cue{margin-left:8px}
 .shared-catalog .dish-detail-cue{display:block}
 
-/* A small table card layered over the photograph, with a clear choice state. */
-.detail-screen{background:#f8f3eb}
+/* Keep the entire dish photo visible above its information card. */
+.detail-screen{background:#f7f2e9}
 .detail-screen .detail-scroll{padding-right:18px;padding-left:18px}
-.detail-nav{padding:0 2px;color:#ad9787}
-.detail-nav button{color:#8f5442;font-size:12px}
-.detail-photo{position:relative;height:clamp(210px,32vh,280px);border-radius:18px;background:#efe2d4}
-.detail-photo:after{content:'';position:absolute;inset:55% 0 0;background:linear-gradient(transparent,rgba(64,38,26,.32));pointer-events:none}
-.detail-photo-label{position:absolute;z-index:1;bottom:35px;left:17px;padding:6px 10px;border:1px solid rgba(255,250,241,.4);border-radius:20px;background:rgba(71,45,32,.35);color:#fffaf3;font-size:10px;letter-spacing:.06em}
-.detail-content{position:relative;margin:-20px 8px 0;padding:21px 20px 20px;border:1px solid #f0e3d6;border-radius:17px;background:#fffdf8;box-shadow:0 7px 22px #8c5e410e}
-.detail-overline{font-size:10px;color:#b48670;letter-spacing:.1em}
-.detail-title h1{margin-top:7px;font-size:26px;line-height:1.35}
-.detail-note{margin-top:11px;color:#806c60;line-height:1.8}
-.detail-facts{gap:12px 0;margin-top:18px;padding:16px 0 0;border-top:1px solid #efe4d9;border-bottom:0}
+.detail-nav{padding:0 2px;color:#aa9382;letter-spacing:.1em}
+.detail-nav button{display:flex;align-items:center;gap:4px;color:#806152;font-size:12px;font-weight:500;letter-spacing:.04em}
+.detail-nav button svg{width:17px;height:17px;flex:none;stroke-width:1.7}
+.detail-photo{display:flex;align-items:center;justify-content:center;height:auto;min-height:180px;border-radius:16px;background:#eee4d8}
+.detail-photo img{width:auto;height:auto;max-width:100%;max-height:min(48vh,460px);object-fit:contain}
+.detail-content{position:relative;margin:0;padding:26px 5px 24px;border:0;border-radius:0;background:transparent;box-shadow:none}
+.detail-overline{font-size:10px;color:#ae816a;letter-spacing:.18em}
+.detail-title h1{margin-top:10px;font-size:28px;line-height:1.35}
+.detail-note{margin-top:13px;color:#806c60;line-height:1.9}
+.detail-facts{gap:12px 0;margin-top:22px;padding:17px 0;border-top:1px solid #e7d9cb;border-bottom:1px solid #e7d9cb}
 .detail-facts div{flex:1;min-width:64px;padding:0 14px;border-right:1px solid #f0e6dc}
 .detail-facts div:first-child{padding-left:0}
 .detail-facts div:last-child{border-right:0}
 .detail-facts span{font-size:10px}
 .detail-facts strong{font-size:12px;overflow-wrap:anywhere}
-.detail-bottom{padding-top:13px;background:linear-gradient(180deg,rgba(248,243,235,0),#f8f3eb 28%)}
+.detail-bottom{padding-top:13px;background:linear-gradient(180deg,rgba(247,242,233,0),#f7f2e9 28%)}
 .detail-choice-state{display:inline-flex;align-items:center;gap:7px}
 .detail-choice-state.is-selected:before{content:'';width:6px;height:6px;flex:none;border-radius:50%;background:#b5644a}
 .detail-bottom button[aria-pressed=true]:not(:disabled){border:1px solid #d4b5a4;background:#fffaf4;color:#a35b45}
