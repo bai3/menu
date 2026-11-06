@@ -424,17 +424,81 @@ function notify(message){const old=app.querySelector('.toast');if(old)old.remove
 const menuImageStyles = [
  {id:'paper', name:'家常小票', caption:'把这一餐，认真记下来'},
  {id:'bbq', name:'烧烤点单', caption:'勾勾画画，今晚开吃'},
- {id:'bistro', name:'今日食堂', caption:'今天也要吃得有滋有味'},
  {id:'picnic', name:'野餐时光', caption:'把快乐摆上餐桌'},
- {id:'night', name:'深夜食堂', caption:'为每一个平凡的夜晚干杯'},
- {id:'banquet', name:'团圆家宴', caption:'把团圆的滋味端上桌'},
- {id:'garden', name:'春日餐桌', caption:'给生活添一点清新'},
- {id:'postcard', name:'餐桌来信', caption:'把这一餐寄给喜欢的人'}
+ {id:'check', name:'菜单打卡', caption:'今日份好饭，打卡啦'},
+ {id:'film', name:'胶片食光', caption:'把拿手菜一张张拍下来'},
+ {id:'feast', name:'家宴请柬', caption:'今晚，恭候入席'}
 ];
 
+// 照片模版共用的小工具：加载菜品图片、按封面裁切与圆角路径。
+function loadCanvasImage(src){
+ return new Promise(resolve=>{
+  if(!src)return resolve(null);
+  const image=new Image();
+  image.onload=()=>resolve(image);
+  image.onerror=()=>resolve(null);
+  image.src=src;
+ });
+}
+function roundedPath(ctx,x,y,w,h,r){
+ r=Math.min(r,w/2,h/2);
+ ctx.moveTo(x+r,y);
+ ctx.arcTo(x+w,y,x+w,y+h,r);
+ ctx.arcTo(x+w,y+h,x,y+h,r);
+ ctx.arcTo(x,y+h,x,y,r);
+ ctx.arcTo(x,y,x+w,y,r);
+ ctx.closePath();
+}
+function drawCoverImage(ctx,image,x,y,w,h,r=0){
+ ctx.save();
+ ctx.beginPath();
+ if(r)roundedPath(ctx,x,y,w,h,r);else ctx.rect(x,y,w,h);
+ ctx.clip();
+ if(image){
+  const scale=Math.max(w/image.width,h/image.height);
+  ctx.drawImage(image,x+(w-image.width*scale)/2,y+(h-image.height*scale)/2,image.width*scale,image.height*scale);
+ }else{
+  // 图片缺失时也保持体面：暖色底加一只简笔小碗。
+  const g=ctx.createLinearGradient(x,y,x+w,y+h);
+  g.addColorStop(0,'#eedcbe');g.addColorStop(1,'#dfc29c');
+  ctx.fillStyle=g;ctx.fillRect(x,y,w,h);
+  const cx=x+w/2,cy=y+h/2,u=Math.min(w,h);
+  ctx.strokeStyle='rgba(148,110,72,.55)';ctx.lineWidth=u*.02;ctx.lineCap='round';ctx.lineJoin='round';
+  ctx.beginPath();ctx.ellipse(cx,cy+u*.06,u*.17,u*.1,0,0,Math.PI*2);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(cx-u*.12,cy+u*.01);ctx.quadraticCurveTo(cx,cy+u*.08,cx+u*.12,cy+u*.01);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(cx-u*.03,cy-u*.06);ctx.bezierCurveTo(cx-u*.09,cy-u*.12,cx+u*.01,cy-u*.17,cx-u*.03,cy-u*.22);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(cx+u*.05,cy-u*.06);ctx.bezierCurveTo(cx-u*.01,cy-u*.12,cx+u*.09,cy-u*.17,cx+u*.05,cy-u*.22);ctx.stroke();
+ }
+ ctx.restore();
+}
+// 逐字排布的字距，兼容不支持 letterSpacing 的环境。
+function trackedText(ctx,value,x,y,spacing,align='left'){
+ const chars=[...value];
+ const widths=chars.map(c=>ctx.measureText(c).width);
+ const total=widths.reduce((a,b)=>a+b,0)+spacing*(chars.length-1);
+ let cursor=align==='center'?x-total/2:align==='right'?x-total:x;
+ const prevAlign=ctx.textAlign;ctx.textAlign='left';
+ chars.forEach((c,i)=>{ctx.fillText(c,cursor,y);cursor+=widths[i]+spacing});
+ ctx.textAlign=prevAlign;
+}
+const weekdayLabel=date=>'日一二三四五六'[date.getDay()];
+const cnNumeral=n=>n<10?['壹','贰','叁','肆','伍','陆','柒','捌','玖','拾'][n]:n<19?'拾'+['壹','贰','叁','肆','伍','陆','柒','捌','玖'][n-10]:String(n+1);
+// 长菜名按容器宽度缩小字号，避免硬挤压变形。
+function fittedSize(ctx,value,size,maxWidth,min=20){
+ const w=ctx.measureText(value).width;
+ return w>maxWidth?Math.max(min,Math.floor(size*maxWidth/w)):size;
+}
+
 async function drawMenuImage(selected, style){
- if(style.id === 'bbq') return drawBbqMenu(selected);
- if(style.id !== 'paper') return drawDesignedMenu(selected, style.id);
+ if(style.id==='bbq')return drawBbqMenu(selected);
+ if(style.id==='picnic')return drawPicnicMenu(selected);
+ if(style.id==='check')return drawCheckMenu(selected);
+ if(style.id==='film')return drawFilmMenu(selected);
+ if(style.id==='feast')return drawFeastMenu(selected);
+ return drawPaperMenu(selected);
+}
+
+async function drawPaperMenu(selected){
  const width=1080, height=560+selected.length*96;
  const canvas=document.createElement('canvas');canvas.width=width;canvas.height=height;
  const ctx=canvas.getContext('2d');
@@ -513,56 +577,22 @@ function drawBbqMenu(selected){
  return canvas;
 }
 
-function drawDesignedMenu(selected, style){
+function drawPicnicMenu(selected){
  const width=1080, height=650+selected.length*108;
  const canvas=document.createElement('canvas');canvas.width=width;canvas.height=height;
  const ctx=canvas.getContext('2d');
  const serif='"Songti SC", "STSong", serif', sans='"PingFang SC", sans-serif';
- const themes={
-  bistro:{bg:'#e4e4d8',paper:'#f7f5ea',ink:'#203a31',accent:'#a74634',muted:'#768579',rule:'#cbd0c1',title:'今日食堂',sub:'一桌好菜，一起吃饭',en:'THE FAMILY TABLE'},
-  picnic:{bg:'#e9c6b5',paper:'#fcf6ec',ink:'#5e3c31',accent:'#b95943',muted:'#ad8877',rule:'#ead6c9',title:'今天吃点好的',sub:'把喜欢的味道摆上餐桌',en:'A LITTLE TABLE OF JOY'},
-  night:{bg:'#192b28',paper:'#203b34',ink:'#f3ead5',accent:'#d9b67e',muted:'#afbea9',rule:'#5e7667',title:'餐桌有你',sub:'夜晚有灯，饭菜有香',en:'THE EVENING TABLE'},
-  banquet:{bg:'#89372e',paper:'#f9efdb',ink:'#67372e',accent:'#ae4b39',muted:'#a4866e',rule:'#ddc1aa',title:'团圆家宴',sub:'人间烟火，欢喜相聚',en:'A FAMILY FEAST'},
-  garden:{bg:'#d8e2d2',paper:'#f5f7ec',ink:'#364e39',accent:'#688b68',muted:'#889b84',rule:'#cad9c7',title:'春日餐桌',sub:'日子清甜，饭菜新鲜',en:'FROM OUR LITTLE GARDEN'},
-  postcard:{bg:'#cad9d7',paper:'#fbf7ec',ink:'#384f50',accent:'#b86a52',muted:'#859998',rule:'#ccd9d2',title:'餐桌来信',sub:'亲爱的，今天也要好好吃饭',en:'A NOTE FROM OUR KITCHEN'}
- };
- const p=themes[style];
+ const p={bg:'#e9c6b5',paper:'#fcf6ec',ink:'#5e3c31',accent:'#b95943',muted:'#ad8877',rule:'#ead6c9',title:'今天吃点好的',sub:'把喜欢的味道摆上餐桌',en:'A LITTLE TABLE OF JOY'};
  const text=(value,x,y,size,color,opt={})=>{ctx.fillStyle=color;ctx.textAlign=opt.align||'left';ctx.font=`${opt.bold?'600 ':''}${size}px ${opt.serif?serif:sans}`;ctx.fillText(value,x,y,opt.maxWidth||1080)};
  const line=(x1,y1,x2,y2,color,w=2)=>{ctx.strokeStyle=color;ctx.lineWidth=w;ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke()};
  const circle=(x,y,r,color)=>{ctx.fillStyle=color;ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);ctx.fill()};
- // A restrained frame and soft paper shadow give each design the feel of printed stationery.
+ // A restrained frame and soft paper shadow give the design the feel of printed stationery.
  ctx.fillStyle=p.bg;ctx.fillRect(0,0,width,height);
  ctx.save();ctx.shadowColor='rgba(39,35,25,.12)';ctx.shadowBlur=28;ctx.shadowOffsetY=10;ctx.fillStyle=p.paper;ctx.fillRect(40,38,1000,height-76);ctx.restore();
- if(style==='bistro'){
-  ctx.fillStyle=p.ink;ctx.fillRect(40,38,1000,74);
-  text('白家私厨',82,87,27,p.paper,{serif:true,bold:true});text('EST. AT HOME',998,86,20,'#b7c7b4',{align:'right'});
-  text(p.en,95,169,21,p.accent,{bold:true});text(p.title,90,260,76,p.ink,{serif:true,bold:true});text(p.sub,96,307,27,p.muted,{serif:true});
-  ctx.strokeStyle='#bf8e78';ctx.lineWidth=3;ctx.beginPath();ctx.arc(858,224,78,0,Math.PI*2);ctx.arc(858,224,62,0,Math.PI*2);ctx.stroke();
-  ctx.strokeStyle=p.ink;ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(831,255);ctx.quadraticCurveTo(858,227,878,192);ctx.moveTo(855,232);ctx.quadraticCurveTo(832,225,837,208);ctx.quadraticCurveTo(856,207,861,222);ctx.moveTo(864,217);ctx.quadraticCurveTo(858,197,879,194);ctx.quadraticCurveTo(888,209,869,221);ctx.stroke();
- }else if(style==='picnic'){
-  ctx.fillStyle='#cf8a72';ctx.fillRect(40,38,1000,15);ctx.fillRect(40,height-53,1000,15);
-  text(p.en,540,126,21,p.accent,{align:'center',bold:true});text(p.title,540,229,69,p.ink,{align:'center',serif:true,bold:true});text(p.sub,540,277,27,p.muted,{align:'center',serif:true});
-  ctx.save();ctx.translate(163,208);ctx.rotate(-.2);circle(0,0,35,'#c36c51');circle(43,28,27,'#dc9172');ctx.strokeStyle='#728260';ctx.lineWidth=5;ctx.beginPath();ctx.moveTo(0,-34);ctx.quadraticCurveTo(-9,-57,12,-65);ctx.moveTo(43,1);ctx.quadraticCurveTo(46,-17,61,-20);ctx.stroke();ctx.restore();
-  ctx.save();ctx.translate(910,220);ctx.rotate(.5);ctx.fillStyle='#8da681';ctx.beginPath();ctx.ellipse(0,0,15,54,0,0,Math.PI*2);ctx.fill();ctx.rotate(-.9);ctx.beginPath();ctx.ellipse(23,0,14,43,0,0,Math.PI*2);ctx.fill();ctx.restore();
- }else if(style==='night'){
-  ctx.strokeStyle='#738777';ctx.lineWidth=2;ctx.strokeRect(58,56,964,height-112);
-  text('白家私厨  /  HOME KITCHEN',94,112,22,p.accent,{bold:true});text('夜晚有灯',94,181,28,p.muted,{serif:true});text(p.title,90,260,76,p.ink,{serif:true,bold:true});text('THE COMFORT OF A HOME-COOKED MEAL',96,310,19,p.muted);
-  ctx.strokeStyle=p.accent;ctx.lineWidth=4;ctx.lineCap='round';ctx.beginPath();ctx.moveTo(770,219);ctx.lineTo(946,219);ctx.bezierCurveTo(939,301,898,322,858,322);ctx.bezierCurveTo(817,322,776,301,770,219);ctx.stroke();[816,858,900].forEach(x=>{ctx.beginPath();ctx.moveTo(x,200);ctx.bezierCurveTo(x-12,182,x+12,170,x,151);ctx.stroke()});
- }else if(style==='banquet'){
-  ctx.strokeStyle='#cbab90';ctx.lineWidth=2;ctx.strokeRect(58,56,964,height-112);ctx.strokeRect(66,64,948,height-128);
-  text('白 家 私 厨  ·  家 宴',540,124,23,p.accent,{align:'center',bold:true});text(p.title,540,229,78,p.ink,{align:'center',serif:true,bold:true});text(p.sub,540,279,27,p.muted,{align:'center',serif:true});
-  line(142,193,230,193,p.rule,2);line(850,193,938,193,p.rule,2);
-  ctx.fillStyle=p.accent;ctx.fillRect(862,245,50,50);text('家',887,281,32,p.paper,{align:'center',serif:true,bold:true});
- }else if(style==='garden'){
-  text('白家私厨   /   BAI JIA',96,112,22,p.accent,{bold:true});text(p.title,90,229,76,p.ink,{serif:true,bold:true});text(p.sub,96,278,27,p.muted,{serif:true});
-  ctx.strokeStyle='#89a781';ctx.lineWidth=4;ctx.beginPath();ctx.moveTo(754,319);ctx.quadraticCurveTo(846,246,926,112);ctx.stroke();
-  [[790,290,-.8],[828,252,.8],[861,211,-.8],[892,166,.8],[919,124,-.8]].forEach(([x,y,r],i)=>{ctx.save();ctx.translate(x,y);ctx.rotate(r);ctx.fillStyle=i%2?'#91ad87':'#b4c8a7';ctx.beginPath();ctx.ellipse(0,0,16,38,0,0,Math.PI*2);ctx.fill();ctx.restore()});circle(943,110,11,'#c8ad6f');
- }else{
-  // Perforated stamp and air-mail stripes, kept subtle like vintage stationery.
-  ctx.save();ctx.beginPath();ctx.rect(40,38,1000,13);ctx.rect(40,height-51,1000,13);ctx.clip();for(let x=20;x<1080;x+=76){ctx.fillStyle=(Math.floor(x/76)%2)?'#9db9b4':'#cf927b';ctx.beginPath();ctx.moveTo(x,30);ctx.lineTo(x+32,30);ctx.lineTo(x+5,70);ctx.lineTo(x-27,70);ctx.fill();ctx.beginPath();ctx.moveTo(x,height-60);ctx.lineTo(x+32,height-60);ctx.lineTo(x+5,height-20);ctx.lineTo(x-27,height-20);ctx.fill()}ctx.restore();
-  text(p.en,96,119,21,p.accent,{bold:true});text(p.title,90,226,76,p.ink,{serif:true,bold:true});text(p.sub,96,278,27,p.muted,{serif:true});
-  ctx.strokeStyle='#c69a83';ctx.lineWidth=2;ctx.setLineDash([5,5]);ctx.strokeRect(820,105,120,120);ctx.setLineDash([]);text('家',880,178,44,p.accent,{align:'center',serif:true});text('HOME',880,203,18,p.muted,{align:'center'});
- }
+ ctx.fillStyle='#cf8a72';ctx.fillRect(40,38,1000,15);ctx.fillRect(40,height-53,1000,15);
+ text(p.en,540,126,21,p.accent,{align:'center',bold:true});text(p.title,540,229,69,p.ink,{align:'center',serif:true,bold:true});text(p.sub,540,277,27,p.muted,{align:'center',serif:true});
+ ctx.save();ctx.translate(163,208);ctx.rotate(-.2);circle(0,0,35,'#c36c51');circle(43,28,27,'#dc9172');ctx.strokeStyle='#728260';ctx.lineWidth=5;ctx.beginPath();ctx.moveTo(0,-34);ctx.quadraticCurveTo(-9,-57,12,-65);ctx.moveTo(43,1);ctx.quadraticCurveTo(46,-17,61,-20);ctx.stroke();ctx.restore();
+ ctx.save();ctx.translate(910,220);ctx.rotate(.5);ctx.fillStyle='#8da681';ctx.beginPath();ctx.ellipse(0,0,15,54,0,0,Math.PI*2);ctx.fill();ctx.rotate(-.9);ctx.beginPath();ctx.ellipse(23,0,14,43,0,0,Math.PI*2);ctx.fill();ctx.restore();
  const left=104,right=976,top=353;
  line(left,top,right,top,p.rule,2);
  text('今 日 菜 单',left,top+42,23,p.muted,{bold:true});
@@ -576,6 +606,191 @@ function drawDesignedMenu(selected, style){
  const footer=height-91;
  text('白家私厨  ·  好好吃饭',left,footer,24,p.muted,{serif:true});
  text(`${selected.length} 道菜`,right,footer,26,p.accent,{align:'right',bold:true});
+ return canvas;
+}
+
+// 菜单打卡：手账格子纸、贴纸卡片与红色印章，适合发朋友圈的竖版照片。
+async function drawCheckMenu(selected){
+ const images=await Promise.all(selected.map(d=>loadCanvasImage(dishImage(d))));
+ const width=1080, margin=56;
+ const cardW=width-margin*2, cardH=212, cardGap=30;
+ const headH=326, footH=158;
+ const height=headH+selected.length*(cardH+cardGap)+footH;
+ const canvas=document.createElement('canvas');canvas.width=width;canvas.height=height;
+ const ctx=canvas.getContext('2d');
+ const kai='"Kaiti SC","STKaiti","KaiTi",serif', serif='"Songti SC","STSong",serif', sans='"PingFang SC",sans-serif';
+ const cream='#f8f1e3', ink='#463527', red='#d14a2e', muted='#9b8567';
+ const text=(v,x,y,size,color,o={})=>{ctx.fillStyle=color;ctx.textAlign=o.align||'left';ctx.font=`${o.bold?'bold ':''}${size}px ${o.kai?kai:o.serif?serif:sans}`;ctx.fillText(v,x,y,o.maxWidth)};
+ // 手账纸：奶油底铺一层淡格纹，顶部压一条和纸胶带。
+ ctx.fillStyle=cream;ctx.fillRect(0,0,width,height);
+ ctx.strokeStyle='rgba(176,144,102,.13)';ctx.lineWidth=1;
+ for(let gx=54;gx<width;gx+=54){ctx.beginPath();ctx.moveTo(gx,0);ctx.lineTo(gx,height);ctx.stroke()}
+ for(let gy=54;gy<height;gy+=54){ctx.beginPath();ctx.moveTo(0,gy);ctx.lineTo(width,gy);ctx.stroke()}
+ ctx.save();ctx.translate(width/2,0);ctx.rotate(-.035);ctx.fillStyle='rgba(233,196,138,.92)';ctx.fillRect(-112,-16,224,34);ctx.restore();
+ // 标题：荧光笔划一道，再盖上随手的红章。
+ const now=new Date();
+ text(`今天 ${now.getMonth()+1}月${now.getDate()}日 · 星期${weekdayLabel(now)}`,margin+8,96,24,muted,{kai:true});
+ ctx.save();ctx.fillStyle='rgba(244,204,92,.6)';
+ ctx.beginPath();roundedPath(ctx,margin-6,128,494,88,12);ctx.fill();ctx.restore();
+ text('今日菜单打卡',margin,196,74,ink,{kai:true,bold:true});
+ ctx.save();ctx.translate(width-margin-78,152);ctx.rotate(-.16);
+ ctx.fillStyle=red;ctx.beginPath();ctx.arc(0,0,58,0,Math.PI*2);ctx.fill();
+ ctx.strokeStyle='rgba(255,248,236,.85)';ctx.lineWidth=2;ctx.setLineDash([6,7]);ctx.beginPath();ctx.arc(0,0,44,0,Math.PI*2);ctx.stroke();ctx.setLineDash([]);
+ ctx.fillStyle='#fff8ec';ctx.textAlign='center';ctx.font='bold 30px '+kai;ctx.fillText('开饭',0,11);
+ ctx.restore();
+ text('好好吃饭的人，运气都不会太差',margin+8,268,26,muted,{kai:true});
+ // 每道菜一张微微歪着的贴纸卡片。
+ const rots=[-.008,.011,-.013,.009];
+ selected.forEach((dish,i)=>{
+  const y=headH+i*(cardH+cardGap), midY=y+cardH/2;
+  ctx.save();ctx.translate(width/2,midY);ctx.rotate(rots[i%4]);ctx.translate(-width/2,-midY);
+  ctx.shadowColor='rgba(96,66,40,.16)';ctx.shadowBlur=16;ctx.shadowOffsetY=8;
+  ctx.fillStyle='#fffdf6';
+  ctx.beginPath();roundedPath(ctx,margin,y,cardW,cardH,22);ctx.fill();
+  ctx.shadowColor='transparent';ctx.strokeStyle='#ecdcc2';ctx.lineWidth=1.5;
+  ctx.beginPath();roundedPath(ctx,margin,y,cardW,cardH,22);ctx.stroke();
+  drawCoverImage(ctx,images[i],margin+24,y+26,238,cardH-52,14);
+  // 手绘勾选框：这顿饭，已经吃定啦。
+  const bx=margin+24+238+36, by=midY-23;
+  ctx.strokeStyle=ink;ctx.lineWidth=3;ctx.lineJoin='round';ctx.lineCap='round';
+  ctx.beginPath();roundedPath(ctx,bx,by,44,44,10);ctx.stroke();
+  ctx.strokeStyle=red;ctx.lineWidth=5;
+  ctx.beginPath();ctx.moveTo(bx+9,by+25);ctx.lineTo(bx+19,by+36);ctx.lineTo(bx+38,by+8);ctx.stroke();
+  const tx=bx+66;
+  ctx.font='bold 38px '+kai;
+  const maxName=margin+cardW-96-tx;
+  const nameSize=fittedSize(ctx,dish.name,38,maxName,24);
+  ctx.font=`bold ${nameSize}px `+kai;
+  const nameW=Math.min(ctx.measureText(dish.name).width,maxName);
+  text(dish.name,tx,y+72,nameSize,ink,{kai:true,bold:true});
+  const peppers='🌶'.repeat(dish.spice_level||0);
+  if(peppers){ctx.font='23px '+sans;ctx.textAlign='left';ctx.fillText(peppers,tx+nameW+12,y+68)}
+  text(dish.note||'家的味道，百吃不厌',tx,y+132,22,muted,{maxWidth:margin+cardW-48-tx});
+  ctx.restore();
+ });
+ // 收尾：一条虚线，一句叮咛。
+ const footY=height-footH;
+ ctx.strokeStyle=ink;ctx.lineWidth=2;ctx.setLineDash([8,10]);ctx.beginPath();ctx.moveTo(margin,footY+16);ctx.lineTo(width-margin,footY+16);ctx.stroke();ctx.setLineDash([]);
+ text('· 今天也要好好吃饭呀 ·',width/2,footY+74,26,ink,{align:'center',kai:true});
+ text('白家私厨 · FAMILY KITCHEN',width/2,footY+118,16,muted,{align:'center'});
+ return canvas;
+}
+
+// 胶片食光：牛皮纸桌布上贴一墙拍立得，菜名用手写体落款。
+async function drawFilmMenu(selected){
+ const images=await Promise.all(selected.map(d=>loadCanvasImage(dishImage(d))));
+ const width=1080, gap=52;
+ const padSide=24, padTop=24, padBottom=104;
+ const photoW=396, photoH=340, cardW=padSide*2+photoW, cardH=padTop+photoH+padBottom;
+ const margin=(width-cardW*2-gap)/2, stagger=118, rowGap=66;
+ const rows=Math.ceil(selected.length/2);
+ const headH=330, footH=152;
+ // 右列整体下坠 stagger，尾部要多留出同样的余量再接页脚。
+ const tail=stagger-rowGap+60;
+ const height=headH+rows*(cardH+rowGap)+tail+footH;
+ const canvas=document.createElement('canvas');canvas.width=width;canvas.height=height;
+ const ctx=canvas.getContext('2d');
+ const kai='"Kaiti SC","STKaiti","KaiTi",serif', serif='"Songti SC","STSong",serif', sans='"PingFang SC",sans-serif';
+ const kraft='#e9d4ab', ink='#4b3826', red='#a84f2e', muted='#95805e';
+ const text=(v,x,y,size,color,o={})=>{ctx.fillStyle=color;ctx.textAlign=o.align||'left';ctx.font=`${o.bold?'bold ':''}${size}px ${o.kai?kai:o.serif?serif:sans}`;ctx.fillText(v,x,y,o.maxWidth)};
+ // 牛皮纸桌布铺底，撒一层安静的波点。
+ ctx.fillStyle=kraft;ctx.fillRect(0,0,width,height);
+ ctx.fillStyle='rgba(122,94,58,.10)';
+ for(let dy=36;dy<height;dy+=48)for(let dx=36+(Math.round(dy/48)%2)*24;dx<width;dx+=48){ctx.beginPath();ctx.arc(dx,dy,2,0,Math.PI*2);ctx.fill()}
+ // 报头与小相机涂鸦。
+ const now=new Date();
+ text('FILM DIARY · 家的味道',margin,96,20,red,{bold:true});
+ text(`${now.getMonth()+1}月${now.getDate()}日 · 星期${weekdayLabel(now)}`,width-margin,96,20,muted,{align:'right'});
+ ctx.fillStyle=ink;ctx.fillRect(margin,118,width-margin*2,4);
+ text('胶片食光',margin,226,78,ink,{serif:true,bold:true});
+ text('把今天的拿手菜，一张张拍下来',margin,278,26,muted,{kai:true});
+ ctx.strokeStyle=ink;ctx.lineWidth=4;ctx.lineCap='round';ctx.lineJoin='round';
+ ctx.beginPath();roundedPath(ctx,width-margin-116,150,104,72,14);ctx.stroke();
+ ctx.beginPath();ctx.arc(width-margin-64,188,20,0,Math.PI*2);ctx.stroke();
+ ctx.fillStyle=red;ctx.beginPath();ctx.arc(width-margin-30,164,5,0,Math.PI*2);ctx.fill();
+ // 一张张贴上拍立得，左右两列错开、微微歪着。
+ const rots=[.03,-.026,.021,-.033];
+ selected.forEach((dish,i)=>{
+  const col=i%2, row=i>>1;
+  const cx=margin+cardW/2+col*(cardW+gap);
+  const cy=headH+cardH/2+row*(cardH+rowGap)+col*stagger;
+  ctx.save();ctx.translate(cx,cy);ctx.rotate(rots[i%4]*(col?-1:1));
+  ctx.shadowColor='rgba(80,55,32,.30)';ctx.shadowBlur=20;ctx.shadowOffsetY=12;
+  ctx.fillStyle='#fffdf4';
+  ctx.beginPath();roundedPath(ctx,-cardW/2,-cardH/2,cardW,cardH,3);ctx.fill();
+  ctx.shadowColor='transparent';
+  drawCoverImage(ctx,images[i],-photoW/2,-cardH/2+padTop,photoW,photoH,2);
+  ctx.font='30px '+kai;
+  const nameSize=fittedSize(ctx,dish.name,30,photoW,18);
+  ctx.fillStyle=ink;ctx.textAlign='center';ctx.font=nameSize+'px '+kai;
+  ctx.fillText(dish.name,0,-cardH/2+padTop+photoH+56);
+  ctx.fillStyle=muted;ctx.font='15px '+sans;ctx.textAlign='right';
+  ctx.fillText('No.'+String(i+1).padStart(2,'0'),photoW/2-8,-cardH/2+padTop+photoH+86);
+  ctx.save();ctx.rotate(col?-.11:.09);
+  ctx.fillStyle='rgba(222,199,152,.88)';ctx.fillRect(-74,-cardH/2-16,148,32);
+  ctx.restore();
+  ctx.restore();
+ });
+ const footY=height-footH;
+ text('被拍下来的，都是好时光',width/2,footY+60,26,ink,{align:'center',kai:true});
+ text('白家私厨 · FAMILY KITCHEN',width/2,footY+102,16,muted,{align:'center'});
+ return canvas;
+}
+
+// 家宴请柬：深色漆面配金线双框，中式编号，一席之邀的仪式感。
+async function drawFeastMenu(selected){
+ const images=await Promise.all(selected.map(d=>loadCanvasImage(dishImage(d))));
+ const width=1080;
+ const headH=380, rowPitch=248, footH=216;
+ const height=headH+selected.length*rowPitch+footH;
+ const canvas=document.createElement('canvas');canvas.width=width;canvas.height=height;
+ const ctx=canvas.getContext('2d');
+ const serif='"Songti SC","STSong",serif', sans='"PingFang SC",sans-serif';
+ const lacquer='#58241d', cream='#f7ecd7', gold='#d9ac6b', goldSoft='rgba(217,172,107,.78)', goldFaint='rgba(217,172,107,.26)';
+ const text=(v,x,y,size,color,o={})=>{ctx.fillStyle=color;ctx.textAlign=o.align||'left';ctx.font=`${o.bold?'bold ':''}${size}px ${o.serif?serif:sans}`;ctx.fillText(v,x,y,o.maxWidth)};
+ const line=(x1,y1,x2,y2,color,w=1)=>{ctx.strokeStyle=color;ctx.lineWidth=w;ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke()};
+ const diamond=(x,y,s,color)=>{ctx.save();ctx.translate(x,y);ctx.rotate(Math.PI/4);ctx.fillStyle=color;ctx.fillRect(-s/2,-s/2,s,s);ctx.restore()};
+ // 深色漆面上开一圈暗角，像一盏灯只照着席面。
+ ctx.fillStyle=lacquer;ctx.fillRect(0,0,width,height);
+ const vig=ctx.createRadialGradient(width/2,height*.32,180,width/2,height*.55,Math.max(width,height)*.8);
+ vig.addColorStop(0,'rgba(0,0,0,0)');vig.addColorStop(1,'rgba(22,7,5,.6)');
+ ctx.fillStyle=vig;ctx.fillRect(0,0,width,height);
+ ctx.strokeStyle='rgba(217,172,107,.6)';ctx.lineWidth=2;ctx.strokeRect(44,44,width-88,height-88);
+ ctx.strokeStyle='rgba(217,172,107,.3)';ctx.lineWidth=1;ctx.strokeRect(58,58,width-116,height-116);
+ diamond(44,44,13,gold);diamond(width-44,44,13,gold);diamond(44,height-44,13,gold);diamond(width-44,height-44,13,gold);
+ // 报头：细金线夹一枚菱花，托住大字。
+ ctx.fillStyle=goldSoft;ctx.textAlign='left';ctx.font='18px '+sans;
+ trackedText(ctx,'BAI JIA FAMILY FEAST',width/2,116,6,'center');
+ line(330,152,478,152,goldFaint);line(602,152,750,152,goldFaint);
+ diamond(540,152,11,goldSoft);
+ ctx.fillStyle=cream;ctx.textAlign='left';ctx.font='bold 82px '+serif;
+ trackedText(ctx,'今夜家宴',width/2,272,18,'center');
+ text('人间烟火 · 恭候入席',width/2,326,26,goldSoft,{align:'center',serif:true});
+ // 菜单：照片一枚，编号一块，像席次牌一样排开。
+ const x0=118, x1=width-118;
+ selected.forEach((dish,i)=>{
+  const y=headH+i*rowPitch;
+  drawCoverImage(ctx,images[i],x0,y+14,272,186,14);
+  ctx.strokeStyle=goldFaint;ctx.lineWidth=1.5;ctx.beginPath();roundedPath(ctx,x0,y+14,272,186,14);ctx.stroke();
+  const tx=x0+272+46;
+  ctx.font='38px '+serif;
+  const nameSize=fittedSize(ctx,dish.name,38,x1-70-tx,24);
+  text(dish.name,tx,y+76,nameSize,cream,{serif:true});
+  ctx.font='21px '+serif;
+  const note=dish.note||'家的味道';
+  text(note,tx,y+122,fittedSize(ctx,note,21,x1-70-tx,15),goldSoft,{serif:true});
+  ctx.strokeStyle=goldSoft;ctx.lineWidth=1.5;ctx.beginPath();roundedPath(ctx,x1-56,y+79,56,56,10);ctx.stroke();
+  ctx.fillStyle=gold;ctx.textAlign='center';ctx.font='26px '+serif;
+  ctx.fillText(cnNumeral(i),x1-28,y+116);
+  if(i<selected.length-1)line(x0,y+rowPitch-22,x1,y+rowPitch-22,goldFaint);
+ });
+ // 落款：一方红印，一句恭候。
+ ctx.save();ctx.translate(width/2,height-160);ctx.rotate(-.05);
+ ctx.fillStyle='#a63a28';ctx.beginPath();roundedPath(ctx,-46,-46,92,92,10);ctx.fill();
+ ctx.strokeStyle=goldSoft;ctx.lineWidth=2;ctx.beginPath();roundedPath(ctx,-37,-37,74,74,6);ctx.stroke();
+ ctx.fillStyle=cream;ctx.textAlign='center';ctx.font='44px '+serif;ctx.fillText('家',0,16);
+ ctx.restore();
+ text('白家私厨 · 今晚恭候入席',width/2,height-84,22,goldSoft,{align:'center',serif:true});
  return canvas;
 }
 
