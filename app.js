@@ -47,7 +47,7 @@ async function initDishes() {
   const stored = await idbGet(cacheKey('dishes'));
   if (Array.isArray(stored) && stored.every(isValidDish)) {
    dishes = stored.map(normalizeDish);
-   if (state.page === 'dishes' || state.page === 'manage') render();
+   if (state.page === 'dishes' || state.page === 'manage' || state.page === 'surprise') render();
    if (document.querySelector('.paper-overlay')) renderPaperMenu();
   }
  } catch (_) { /* 读不到已存数据时保留内置菜单。 */ }
@@ -102,7 +102,7 @@ async function syncFromCloud() {
   if (!cloudDishes.every(isValidDish)) throw new Error('云端菜谱格式无效');
   if (version !== dishChangeVersion) return;
   saveLocalDishes(cloudDishes);
-  if (state.page === 'dishes' || state.page === 'manage') render();
+  if (state.page === 'dishes' || state.page === 'manage' || state.page === 'surprise') render();
   if (document.querySelector('.paper-overlay')) renderPaperMenu();
  } catch (_) { notify('云端暂不可达，当前显示本机菜谱'); }
 }
@@ -132,7 +132,7 @@ function subscribeRealtime() {
 const categories = ['全部', '家常菜', '清爽凉菜', '暖心汤羹', '主食', '饮品', '甜点', '小吃', '火锅', '烧烤', '其他'];
 const cuisines = ['未分类', '川菜', '鲁菜', '粤菜', '苏菜', '浙菜', '闽菜', '湘菜', '徽菜', '东北菜', '西北菜', '京菜', '日料', '韩料', '泰餐', '越南菜', '印度菜', '法餐', '意餐', '美式料理', '其他'];
 function dishImage(d) { return d.image.startsWith('data:image/') ? d.image : './public/assets/' + d.image; }
-const state = { diaryNote: '', page: 'dishes', category: '全部', filterMode: 'category', manageFilterMode: 'category', manageFilter: '全部', query: '', selected: [], title: '今天的菜单', editingId: null, draftImage: null };
+const state = { diaryNote: '', page: 'dishes', category: '全部', filterMode: 'category', manageFilterMode: 'category', manageFilter: '全部', query: '', selected: [], title: '今天的菜单', editingId: null, draftImage: null, surpriseId: null };
 const app = document.querySelector('#app');
 const icon = (name) => {
  const paths = {
@@ -143,6 +143,7 @@ const icon = (name) => {
   home:'<path d="M3 10.5 12 3l9 7.5v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/>',
   search:'<circle cx="11" cy="11" r="7"/><path d="m16 16 4 4"/>',
   basket:'<path d="M3 9h18l-2 10H5L3 9Z"/><path d="m8 9 4-6 4 6M9 13v3m3-3v3m3-3v3"/>',
+  surprise:'<path d="M5 12c0 4 3 7 7 7s7-3 7-7H5ZM8 8c-1-2 2-2 1-4m4 4c-1-2 2-2 1-4"/><path d="M3 10h18"/>',
   menu:'<rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 8h6M9 12h6M9 16h4"/>',
   back:'<path d="m14 6-6 6 6 6"/>',
   camera:'<path d="M4 8h3l2-3h6l2 3h3a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1Z"/><circle cx="12" cy="14" r="3.5"/>',
@@ -159,7 +160,7 @@ const categoryIcon = {'全部':'all','家常菜':'hot','清爽凉菜':'cold','�
 const spiceLabels = ['不辣', '微辣', '中辣', '特辣'];
 const spiceBadge = d => d.spice_level ? `<span class="spice-badge" role="img" aria-label="${spiceLabels[d.spice_level]}" title="${spiceLabels[d.spice_level]}">${'<span aria-hidden="true">🌶</span>'.repeat(d.spice_level)}</span>` : '';
 const escapeText = (str) => String(str).replace(/[&<>"']/g, s => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[s]));
-function nav(){return `<nav class="nav" aria-label="页面导航"><button data-page="dishes" class="${state.page==='dishes'?'active':''}" ${state.page==='dishes'?'aria-current="page"':''}>${icon('basket')}<span>点菜</span></button><button data-page="menu" class="${state.page==='menu'?'active':''}" ${state.page==='menu'?'aria-current="page"':''}>${icon('menu')}<span>菜单</span></button></nav>`}
+function nav(){return `<nav class="nav" aria-label="页面导航"><button data-page="dishes" class="${state.page==='dishes'?'active':''}" ${state.page==='dishes'?'aria-current="page"':''}>${icon('basket')}<span>点菜</span></button><button data-page="surprise" class="${state.page==='surprise'?'active':''}" ${state.page==='surprise'?'aria-current="page"':''}>${icon('surprise')}<span>都可以</span></button><button data-page="menu" class="${state.page==='menu'?'active':''}" ${state.page==='menu'?'aria-current="page"':''}>${icon('menu')}<span>菜单</span></button></nav>`}
 const heroSlides = [
  { image:'hero.jpg', tag:'白家私厨 / 家的味道', title:'今天，<br>一起好好吃饭。', note:'把喜欢的菜，点给爱的人', seal:'家味' },
  { image:'soup.jpg', tag:'一碗热汤 / 一份牵挂', title:'热汤上桌，<br>心也暖了。', note:'忙碌的日子，也要记得喝口汤', seal:'暖意' },
@@ -200,6 +201,41 @@ function renderDishes(){
  <div class="catalog"><nav class="filters" aria-label="${state.filterMode==='category'?'菜品分类':'菜系'}">${filters.map(c=>{const selectedCount=selectedDishes().filter(d=>c==='全部'||d[field]===c).length;return `<button class="filter ${state.category===c?'active':''}" data-category="${c}" aria-pressed="${state.category===c}"><span class="filter-name">${c}</span>${selectedCount ? `<span class="filter-count">${selectedCount}</span>` : ''}</button>`}).join('')}</nav>
  <section class="catalog-content" aria-label="${state.category}菜品"><div class="catalog-heading"><h3>${state.category==='全部'?'全部菜品':state.category}</h3><span>${filtered.length} 道菜</span></div><div class="dish-list">${filtered.length ? filtered.map(d=>`<article class="dish ${d.is_available?'':'dish-unavailable'}"><img class="dish-img" src="${escapeText(dishImage(d))}" alt="${escapeText(d.name)}" onerror="this.style.visibility='hidden'"><div class="dish-info"><h3>${escapeText(d.name)} ${spiceBadge(d)}</h3><p>${escapeText(d.note)}</p><span class="dish-tag">${escapeText(d.category)}${d.cuisine !== '未分类' ? ' · ' + escapeText(d.cuisine) : ''}</span>${d.is_available?'':'<span class="unavailable-label">已下架</span>'}</div><button class="add ${state.selected.includes(d.id)?'selected':''}" data-dish="${escapeText(d.id)}" aria-label="${state.selected.includes(d.id)?'移除':'选择'}${escapeText(d.name)}" aria-pressed="${state.selected.includes(d.id)}" ${d.is_available?'':'disabled'}>${icon(state.selected.includes(d.id)?'check':'plus')}</button></article>`).join('') : '<div class="empty">没有找到这道菜<br>换个关键词试试吧</div>'}</div></section></div></div>
  <div class="bottom"><div class="order-dock">${nav()}<button class="dock-action" data-action="make-menu" aria-label="${state.selected.length ? `已选${state.selected.length}道菜，下单` : '请先选择菜品'}" ${state.selected.length?'':'disabled'}><strong>下单</strong>${state.selected.length ? `<span class="order-count">${state.selected.length}</span>` : ''}</button></div></div>`;
+ bind();
+}
+let motionEnabled = false;
+let lastShake = 0;
+let previousAcceleration = null;
+function drawSurprise() {
+ const candidates = dishes.filter(d => d.is_available && !state.selected.includes(d.id));
+ if (!candidates.length) { notify(dishes.some(d => d.is_available) ? '所有上架菜品都已加入菜单' : '暂时没有上架的菜品'); return; }
+ const dish = candidates[Math.floor(Math.random() * candidates.length)];
+ state.selected.push(dish.id);
+ state.surpriseId = dish.id;
+ render();
+}
+async function enableMotion() {
+ if (typeof DeviceMotionEvent === 'undefined') { notify('当前设备不支持摇动感应，请点击按钮'); return; }
+ try {
+  if (typeof DeviceMotionEvent.requestPermission === 'function' && await DeviceMotionEvent.requestPermission() !== 'granted') { notify('未开启摇动感应，点击按钮也可以选菜'); return; }
+  motionEnabled = true; previousAcceleration = null; render();
+ } catch (_) { notify('无法开启摇动感应，点击按钮也可以选菜'); }
+}
+window.addEventListener('devicemotion', event => {
+ if (!motionEnabled || state.page !== 'surprise') return;
+ const a = event.accelerationIncludingGravity;
+ if (!a || a.x == null || a.y == null || a.z == null) return;
+ const now = Date.now();
+ if (previousAcceleration && now - lastShake > 1500 && Math.abs(a.x - previousAcceleration.x) + Math.abs(a.y - previousAcceleration.y) + Math.abs(a.z - previousAcceleration.z) > 24) {
+  lastShake = now; drawSurprise();
+ }
+ previousAcceleration = {x:a.x, y:a.y, z:a.z};
+});
+function renderSurprise() {
+ app.className='phone-screen surprise-screen';
+ const dish = dishes.find(d => d.id === state.surpriseId && state.selected.includes(d.id));
+ const remaining = dishes.filter(d => d.is_available && !state.selected.includes(d.id)).length;
+ app.innerHTML=`<div class="screen-scroll surprise-scroll"><header class="topbar"><div class="top-brand">${logo}<div><strong>白家私厨</strong><small>把喜欢的菜端上桌</small></div></div></header><div class="surprise-heading"><span class="menu-kicker">A LITTLE SURPRISE FOR TODAY</span><h2>都可以</h2><p>把选择交给一点点运气。</p></div><section class="surprise-card" aria-live="polite"><div class="surprise-card-top"><span>今日灵感</span><span>✳</span></div>${dish ? `<div class="surprise-result"><img src="${escapeText(dishImage(dish))}" alt=""><span>已经加入菜单</span><h3>${escapeText(dish.name)}</h3><p>${escapeText(dish.note || '这一餐，值得期待')}</p></div>` : `<div class="surprise-placeholder"><div class="surprise-bowl">${icon('surprise')}</div><h3>下一道好菜，会是什么？</h3><p>摇一摇，给餐桌添一份惊喜</p></div>`}<div class="surprise-card-foot">${remaining ? `还有 ${remaining} 道菜可以抽取` : '没有更多可抽取的菜了'}</div></section><button class="surprise-draw" data-action="surprise" ${remaining ? '' : 'disabled'}>${dish ? '再选一道' : '摇一摇，选一道'}</button><button class="motion-toggle" data-action="enable-motion" ${motionEnabled ? 'disabled' : ''}>${motionEnabled ? '摇动感应已开启 · 摇动手机即可选菜' : '开启手机摇动感应'}</button><p class="surprise-hint">每次随机加入一道未点过的菜</p></div><div class="bottom"><div class="order-dock">${nav()}<button class="dock-action" data-action="make-menu" ${state.selected.length?'':'disabled'}><strong>下单</strong>${state.selected.length ? `<span class="order-count">${state.selected.length}</span>` : ''}</button></div></div>`;
  bind();
 }
 function renderMenu(){
@@ -273,7 +309,7 @@ async function saveHistory() {
  finally { if(button.isConnected){button.disabled=false;button.textContent='保存到吃饭日记';} }
 }
 
-function render(){if(state.page==='history')renderHistory();else if(state.page==='menu')renderMenu();else if(state.page==='manage')renderManage();else if(state.page==='dish-form')renderDishForm();else renderDishes()}
+function render(){if(state.page==='history')renderHistory();else if(state.page==='menu')renderMenu();else if(state.page==='surprise')renderSurprise();else if(state.page==='manage')renderManage();else if(state.page==='dish-form')renderDishForm();else renderDishes()}
 function notify(message){const old=app.querySelector('.toast');if(old)old.remove();const el=document.createElement('div');el.className='toast';el.textContent=message;app.appendChild(el);setTimeout(()=>el.remove(),2400)}
 
 const menuImageStyles = [
@@ -630,6 +666,8 @@ function bind(){
  const diary=app.querySelector('#diary-note');if(diary)diary.oninput=e=>{state.diaryNote=e.target.value};
  const saveDiary=app.querySelector('[data-action=save-diary]');if(saveDiary)saveDiary.onclick=saveHistory;
  const title=app.querySelector('.menu-title-input');if(title)title.oninput=e=>{state.title=e.target.value};
+ const surprise=app.querySelector('[data-action=surprise]');if(surprise)surprise.onclick=drawSurprise;
+ const motion=app.querySelector('[data-action=enable-motion]');if(motion)motion.onclick=enableMotion;
  const make=app.querySelector('[data-action=make-menu]');if(make)make.onclick=()=>{state.page='menu';render()};
  const save=app.querySelector('[data-action=save]');if(save)save.onclick=saveMenuImage;
 }

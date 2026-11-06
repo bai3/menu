@@ -376,3 +376,15 @@ body.paper-open{overflow:hidden}
 /* Android standalone: the shell follows the window, so pin the dock to the
    visible viewport instead of anchoring it inside the scrolling document. */
 @media(max-width:800px){.bottom,.manage-bottom{position:fixed;left:0;right:0;bottom:0}}
+
+/* A small moment of chance at the family table. */
+.order-dock .nav{gap:0;justify-content:space-around}
+.order-dock .nav button{min-width:0;padding:0 7px;gap:4px;font-size:11px}
+.order-dock .nav svg{width:18px;height:18px}
+.dock-action{min-width:85px;padding:0 12px}.dock-save{min-width:108px}
+.surprise-scroll{padding-bottom:120px}
+.surprise-heading{margin:28px 0 23px}.surprise-heading h2{font-family:var(--serif);font-size:29px;letter-spacing:.08em;margin:11px 0}.surprise-heading p{font-size:12px;color:#a88e7d;margin:0}
+.surprise-card{min-height:320px;border:1px solid #eddacb;border-radius:23px;background:#fffaf2;box-shadow:0 12px 32px #9e604510;padding:20px;display:flex;flex-direction:column;text-align:center}
+.surprise-card-top{display:flex;justify-content:space-between;color:#bf846b;font-size:10px;letter-spacing:.13em}.surprise-card-top span:last-child{font-size:20px;line-height:1;color:#d9b8a2}
+.surprise-placeholder,.surprise-result{flex:1;display:flex;align-items:center;justify-content:center;flex-direction:column;padding:12px 0}.surprise-bowl{display:grid;place-items:center;width:110px;height:110px;background:#f5e3d6;border-radius:50%;color:#b76049}.surprise-bowl svg{width:64px;height:64px;stroke-width:1.1}.surprise-placeholder h3,.surprise-result h3{font-family:var(--serif);font-size:19px;letter-spacing:.06em;margin:19px 0 8px}.surprise-placeholder p,.surprise-result p{color:#aa9382;font-size:11px;margin:0;line-height:1.6}.surprise-result img{width:122px;height:122px;object-fit:cover;border-radius:50%;border:5px solid #f7e8dc}.surprise-result span{margin-top:12px;color:#b65d47;font-size:10px}.surprise-result h3{margin:7px 0}.surprise-card-foot{border-top:1px dashed #ead8c9;padding-top:15px;color:#b49c8b;font-size:10px}.surprise-draw{width:100%;height:51px;margin-top:18px;border:0;border-radius:14px;background:#ae5d48;color:#fff;font-size:13px;font-weight:700;letter-spacing:.08em}.surprise-draw:disabled{background:#eadbd0;color:#ac988b}.motion-toggle{display:block;margin:13px auto 0;border:0;background:none;color:#a75b46;font-size:11px;padding:8px}.motion-toggle:disabled{color:#9e8b7d}.surprise-hint{text-align:center;margin:5px 0;color:#bba99b;font-size:10px}
+@media(max-width:350px){.order-dock .nav button{padding:0 4px;gap:3px;font-size:10px}.order-dock .nav svg{width:16px}.dock-action{min-width:75px;padding:0 8px}.dock-save{min-width:92px;font-size:10px}}
