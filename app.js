@@ -185,12 +185,17 @@ function bindHero() {
 }
 setInterval(()=>{const hero=app.querySelector('.hero');if(hero && !document.hidden && !hero.matches(':hover') && !hero.contains(document.activeElement) && !matchMedia('(prefers-reduced-motion: reduce)').matches)showHero(heroIndex+1)},6000);
 function selectedDishes(){return state.selected.map(id=>dishes.find(d=>d.id===id)).filter(Boolean)}
+function filteredDishes() {
+ const field = state.filterMode === 'category' ? 'category' : 'cuisine';
+ return dishes.filter(d => (state.category==='全部'||d[field]===state.category) && `${d.name}${d.category}${d.cuisine}${d.note}`.includes(state.query.trim()));
+}
+function catalogContent(filtered){ return `<div class="catalog-heading"><h3>${state.category==='全部'?'全部菜品':state.category}</h3><span>${filtered.length} 道菜</span></div><div class="dish-list">${filtered.length ? filtered.map(d=>`<article class="dish ${d.is_available?'':'dish-unavailable'}"><img class="dish-img" src="${escapeText(dishImage(d))}" alt="${escapeText(d.name)}" onerror="this.style.visibility='hidden'"><div class="dish-info"><h3>${escapeText(d.name)} ${spiceBadge(d)}</h3><p>${escapeText(d.note)}</p><span class="dish-tag">${escapeText(d.category)}${d.cuisine !== '未分类' ? ' · ' + escapeText(d.cuisine) : ''}</span>${d.is_available?'':'<span class="unavailable-label">已下架</span>'}</div><button class="add ${state.selected.includes(d.id)?'selected':''}" data-dish="${escapeText(d.id)}" aria-label="${state.selected.includes(d.id)?'移除':'选择'}${escapeText(d.name)}" aria-pressed="${state.selected.includes(d.id)}" ${d.is_available?'':'disabled'}>${icon(state.selected.includes(d.id)?'check':'plus')}</button></article>`).join('') : '<div class="empty">没有找到这道菜<br>换个关键词试试吧</div>'}</div>`; }
 function renderDishes(){
  const field = state.filterMode === 'category' ? 'category' : 'cuisine';
  const options = state.filterMode === 'category' ? categories.slice(1) : cuisines;
  const present = new Set(dishes.map(d => d[field]));
  const filters = ['全部', ...options.filter(value => present.has(value)), ...[...present].filter(value => value && !options.includes(value))];
- const filtered = dishes.filter(d => (state.category==='全部'||d[field]===state.category) && `${d.name}${d.category}${d.cuisine}${d.note}`.includes(state.query.trim()));
+ const filtered = filteredDishes();
  app.className='phone-screen';
  app.innerHTML=`<div class="screen-scroll">${''}<header class="topbar"><div class="top-brand">${logo}<div><strong>白家私厨</strong><small>把喜欢的菜端上桌</small></div></div></header>
  ${heroMarkup()}
@@ -199,7 +204,7 @@ function renderDishes(){
  <label class="search">${icon('search')}<input type="search" placeholder="搜索想吃的菜" value="${escapeText(state.query)}" aria-label="搜索想吃的菜"></label>
  <div class="filter-switch" role="group" aria-label="筛选方式"><button data-filter-mode="category" aria-pressed="${state.filterMode==='category'}">菜品分类</button><button data-filter-mode="cuisine" aria-pressed="${state.filterMode==='cuisine'}">菜系</button></div>
  <div class="catalog"><nav class="filters" aria-label="${state.filterMode==='category'?'菜品分类':'菜系'}">${filters.map(c=>{const selectedCount=selectedDishes().filter(d=>c==='全部'||d[field]===c).length;return `<button class="filter ${state.category===c?'active':''}" data-category="${c}" aria-pressed="${state.category===c}"><span class="filter-name">${c}</span>${selectedCount ? `<span class="filter-count">${selectedCount}</span>` : ''}</button>`}).join('')}</nav>
- <section class="catalog-content" aria-label="${state.category}菜品"><div class="catalog-heading"><h3>${state.category==='全部'?'全部菜品':state.category}</h3><span>${filtered.length} 道菜</span></div><div class="dish-list">${filtered.length ? filtered.map(d=>`<article class="dish ${d.is_available?'':'dish-unavailable'}"><img class="dish-img" src="${escapeText(dishImage(d))}" alt="${escapeText(d.name)}" onerror="this.style.visibility='hidden'"><div class="dish-info"><h3>${escapeText(d.name)} ${spiceBadge(d)}</h3><p>${escapeText(d.note)}</p><span class="dish-tag">${escapeText(d.category)}${d.cuisine !== '未分类' ? ' · ' + escapeText(d.cuisine) : ''}</span>${d.is_available?'':'<span class="unavailable-label">已下架</span>'}</div><button class="add ${state.selected.includes(d.id)?'selected':''}" data-dish="${escapeText(d.id)}" aria-label="${state.selected.includes(d.id)?'移除':'选择'}${escapeText(d.name)}" aria-pressed="${state.selected.includes(d.id)}" ${d.is_available?'':'disabled'}>${icon(state.selected.includes(d.id)?'check':'plus')}</button></article>`).join('') : '<div class="empty">没有找到这道菜<br>换个关键词试试吧</div>'}</div></section></div></div>
+ <section class="catalog-content" aria-label="${escapeText(state.category)}菜品">${catalogContent(filtered)}</section></div></div>
  <div class="bottom"><div class="order-dock">${nav()}<button class="dock-action" data-action="make-menu" aria-label="${state.selected.length ? `已选${state.selected.length}道菜，下单` : '请先选择菜品'}" ${state.selected.length?'':'disabled'}><strong>下单</strong>${state.selected.length ? `<span class="order-count">${state.selected.length}</span>` : ''}</button></div></div>`;
  bind();
 }
@@ -702,6 +707,10 @@ function closePaperMenu() {
  if (state.page === 'dishes') { render(); app.querySelector('[data-action=paper-mode]')?.focus(); }
 }
 
+function bindDishButtons(){
+ app.querySelectorAll('[data-dish]').forEach(b=>b.onclick=()=>{const id=b.dataset.dish;if(!dishes.some(d=>d.id===id && d.is_available))return;state.selected=state.selected.includes(id)?state.selected.filter(x=>x!==id):[...state.selected,id];const scroll=app.querySelector('.screen-scroll').scrollTop;render();app.querySelector('.screen-scroll').scrollTop=scroll});
+}
+
 function bind(){
  bindHero();
  app.querySelectorAll('[data-page]').forEach(b=>b.onclick=()=>{state.page=b.dataset.page;render();if(state.page==='history')loadHistory()});
@@ -709,7 +718,7 @@ function bind(){
  app.querySelectorAll('[data-manage-filter]').forEach(b=>b.onclick=()=>{state.manageFilter=b.dataset.manageFilter;render();app.querySelector('[data-manage-filter][aria-pressed=true]')?.focus({preventScroll:true})});
  app.querySelectorAll('[data-filter-mode]').forEach(b=>b.onclick=()=>{const scroll=app.querySelector('.screen-scroll').scrollTop;state.filterMode=b.dataset.filterMode;state.category='全部';render();app.querySelector('.screen-scroll').scrollTop=scroll});
  app.querySelectorAll('[data-category]').forEach(b=>b.onclick=()=>{const scroll=app.querySelector('.screen-scroll').scrollTop;state.category=b.dataset.category;render();app.querySelector('.screen-scroll').scrollTop=scroll});
- app.querySelectorAll('[data-dish]').forEach(b=>b.onclick=()=>{const id=b.dataset.dish;if(!dishes.some(d=>d.id===id && d.is_available))return;state.selected=state.selected.includes(id)?state.selected.filter(x=>x!==id):[...state.selected,id];const scroll=app.querySelector('.screen-scroll').scrollTop;render();app.querySelector('.screen-scroll').scrollTop=scroll});
+ bindDishButtons();
  app.querySelectorAll('[data-remove]').forEach(b=>b.onclick=()=>{state.selected=state.selected.filter(x=>x!==b.dataset.remove);render()});
  app.querySelectorAll('[data-edit]').forEach(b=>b.onclick=()=>{state.editingId=b.dataset.edit;state.draftImage=null;state.page='dish-form';render()});
  app.querySelectorAll('[data-delete]').forEach(b=>b.onclick=async()=>{const dish=dishes.find(d=>d.id===b.dataset.delete);if(!dish || !window.confirm(`确定删除“${dish.name}”吗？`))return;b.disabled=true;if(!await cloudDeleteDish(dish.id)){b.disabled=false;return}saveLocalDishes(dishes.filter(d=>d.id!==dish.id));state.selected=state.selected.filter(id=>id!==dish.id);render();notify('菜品已删除');});
@@ -719,7 +728,7 @@ function bind(){
  app.querySelectorAll('.cover-upload input').forEach(file=>file.onchange=()=>{const item=file.files?.[0];if(!item)return;if(!item.type.startsWith('image/')){notify('请选择图片文件');file.value='';return}const reader=new FileReader();reader.onerror=()=>notify('图片读取失败');reader.onload=()=>{const image=new Image();image.onerror=()=>notify('图片格式不支持');image.onload=()=>{const scale=Math.min(1,800/Math.max(image.width,image.height));const canvas=document.createElement('canvas');canvas.width=Math.max(1,Math.round(image.width*scale));canvas.height=Math.max(1,Math.round(image.height*scale));const context=canvas.getContext('2d');context.fillStyle='#fff';context.fillRect(0,0,canvas.width,canvas.height);context.drawImage(image,0,0,canvas.width,canvas.height);state.draftImage=canvas.toDataURL('image/jpeg',.82);app.querySelector('#cover-preview').src=state.draftImage};image.src=reader.result};reader.readAsDataURL(item)});
  const form=app.querySelector('#dish-form');if(form)form.onsubmit=async e=>{e.preventDefault();const name=form.elements.name.value.trim();if(!name){form.elements.name.focus();return}const existing=dishes.find(d=>d.id===state.editingId);const dish={id:existing?.id || `dish-${Date.now()}-${Math.random().toString(36).slice(2,8)}`,name,category:form.elements.category.value,cuisine:form.elements.cuisine.value,note:form.elements.note.value.trim(),image:state.draftImage || existing?.image || 'tomato.jpg',spice_level:Number(form.elements.spice_level.value),is_available:form.elements.is_available.value==='true'};const saveButton=form.querySelector('[type=submit]');saveButton.disabled=true;if(!await cloudUpsertDish(dish)){saveButton.disabled=false;return}const latest=dishes.find(d=>d.id===dish.id);saveLocalDishes(latest?dishes.map(d=>d.id===dish.id?dish:d):[...dishes,dish]);state.editingId=null;state.draftImage=null;state.page='manage';render();notify(existing?'菜品已更新':'菜品已添加');};
 
- const search=app.querySelector('input[type=search]');if(search)search.oninput=e=>{state.query=e.target.value;const position=e.target.selectionStart;render();const input=app.querySelector('input[type=search]');input.focus();input.setSelectionRange(position,position)};
+ const search=app.querySelector('input[type=search]');if(search)search.oninput=e=>{state.query=e.target.value;const catalog=app.querySelector('.catalog-content');catalog.innerHTML=catalogContent(filteredDishes());bindDishButtons()};
  const diary=app.querySelector('#diary-note');if(diary)diary.oninput=e=>{state.diaryNote=e.target.value};
  const saveDiary=app.querySelector('[data-action=save-diary]');if(saveDiary)saveDiary.onclick=saveHistory;
  const title=app.querySelector('.menu-title-input');if(title)title.oninput=e=>{state.title=e.target.value};
