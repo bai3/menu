@@ -383,6 +383,7 @@ function notify(message){const old=app.querySelector('.toast');if(old)old.remove
 
 const menuImageStyles = [
  {id:'paper', name:'家常小票', caption:'把这一餐，认真记下来'},
+ {id:'bbq', name:'烧烤点单', caption:'勾勾画画，今晚开吃'},
  {id:'bistro', name:'今日食堂', caption:'今天也要吃得有滋有味'},
  {id:'picnic', name:'野餐时光', caption:'把快乐摆上餐桌'},
  {id:'night', name:'深夜食堂', caption:'为每一个平凡的夜晚干杯'},
@@ -392,6 +393,7 @@ const menuImageStyles = [
 ];
 
 async function drawMenuImage(selected, style){
+ if(style.id === 'bbq') return drawBbqMenu(selected);
  if(style.id !== 'paper') return drawDesignedMenu(selected, style.id);
  const width=1080, height=560+selected.length*96;
  const canvas=document.createElement('canvas');canvas.width=width;canvas.height=height;
@@ -434,6 +436,40 @@ async function drawMenuImage(selected, style){
  ctx.textAlign='left';ctx.fillStyle='#8b6a57';ctx.font='28px "PingFang SC", sans-serif';ctx.fillText('本餐合计',150,line+65);
  ctx.textAlign='right';ctx.fillStyle='#b9523e';ctx.font='bold 38px "PingFang SC", sans-serif';ctx.fillText(selected.length+' 道菜',width-150,line+65);
  ctx.textAlign='center';ctx.fillStyle='#b49784';ctx.font='26px "Songti SC", "STSong", serif';ctx.fillText('好好吃饭  ·  好好生活',width/2,height-94);
+ return canvas;
+}
+
+function drawBbqMenu(selected){
+ const width=1080, height=650+selected.length*96;
+ const canvas=document.createElement('canvas');canvas.width=width;canvas.height=height;
+ const ctx=canvas.getContext('2d');
+ const ink='#513e2e', red='#a3432d', faded='#a38b6c';
+ const text=(value,x,y,size,color,align='left',font='"PingFang SC", sans-serif')=>{ctx.fillStyle=color;ctx.textAlign=align;ctx.font=`${size}px ${font}`;ctx.fillText(value,x,y)};
+ const rule=(y,color='#cdbb9a',dash=[])=>{ctx.strokeStyle=color;ctx.lineWidth=2;ctx.setLineDash(dash);ctx.beginPath();ctx.moveTo(118,y);ctx.lineTo(962,y);ctx.stroke();ctx.setLineDash([])};
+ ctx.fillStyle='#dfcfb2';ctx.fillRect(0,0,width,height);
+ ctx.save();ctx.shadowColor='rgba(75,51,29,.18)';ctx.shadowBlur=24;ctx.shadowOffsetY=9;ctx.fillStyle='#f8efd9';ctx.fillRect(55,40,970,height-80);ctx.restore();
+ // Fine ruled edges evoke a pad of inexpensive paper order slips.
+ ctx.strokeStyle='#bfa783';ctx.lineWidth=2;ctx.strokeRect(76,61,928,height-122);
+ text('白家私厨  ·  烟火小摊',120,122,25,red);
+ text('ORDER  /  点单纸',960,122,22,faded,'right');
+ text('今晚吃点啥',540,220,72,ink,'center','"Songti SC", "STSong", serif');
+ text('想吃的都勾上，热乎乎端上桌',540,270,26,faded,'center');
+ rule(310,red);
+ text('勾选',145,358,24,red);text('菜品',240,358,24,red);text('份数',925,358,24,red,'right');
+ rule(382,'#bfa783');
+ selected.forEach((dish,i)=>{
+  const y=425+i*96;
+  ctx.strokeStyle='#907354';ctx.lineWidth=3;ctx.strokeRect(145,y-25,32,32);
+  ctx.strokeStyle=red;ctx.lineWidth=5;ctx.lineCap='round';ctx.lineJoin='round';ctx.beginPath();ctx.moveTo(149,y-12);ctx.lineTo(158,y-3);ctx.lineTo(178,y-30);ctx.stroke();
+  ctx.fillStyle=ink;ctx.textAlign='left';ctx.font='38px "Songti SC", "STSong", serif';ctx.fillText(dish.name,240,y+4,570);
+  text('1',910,y+4,32,ink,'center');
+  rule(y+35,'#d8c9ad',[4,7]);
+ });
+ const footer=height-170;
+ rule(footer,red);
+ text('已点 '+selected.length+' 道',145,footer+55,29,ink);
+ text('好好吃饭  ·  慢慢生活',935,footer+55,25,red,'right','"Songti SC", "STSong", serif');
+ text('FAMILY KITCHEN  /  MADE WITH LOVE',540,height-75,18,faded,'center');
  return canvas;
 }
 
