@@ -388,3 +388,42 @@ body.paper-open{overflow:hidden}
 .surprise-card-top{display:flex;justify-content:space-between;color:#bf846b;font-size:10px;letter-spacing:.13em}.surprise-card-top span:last-child{font-size:20px;line-height:1;color:#d9b8a2}
 .surprise-placeholder,.surprise-result{flex:1;display:flex;align-items:center;justify-content:center;flex-direction:column;padding:12px 0}.surprise-bowl{display:grid;place-items:center;width:110px;height:110px;background:#f5e3d6;border-radius:50%;color:#b76049}.surprise-bowl svg{width:64px;height:64px;stroke-width:1.1}.surprise-placeholder h3,.surprise-result h3{font-family:var(--serif);font-size:19px;letter-spacing:.06em;margin:19px 0 8px}.surprise-placeholder p,.surprise-result p{color:#aa9382;font-size:11px;margin:0;line-height:1.6}.surprise-result img{width:122px;height:122px;object-fit:cover;border-radius:50%;border:5px solid #f7e8dc}.surprise-result span{margin-top:12px;color:#b65d47;font-size:10px}.surprise-result h3{margin:7px 0}.surprise-card-foot{border-top:1px dashed #ead8c9;padding-top:15px;color:#b49c8b;font-size:10px}.surprise-draw{width:100%;height:51px;margin-top:18px;border:0;border-radius:14px;background:#ae5d48;color:#fff;font-size:13px;font-weight:700;letter-spacing:.08em}.surprise-draw:disabled{background:#eadbd0;color:#ac988b}.motion-toggle{display:block;margin:13px auto 0;border:0;background:none;color:#a75b46;font-size:11px;padding:8px}.motion-toggle:disabled{color:#9e8b7d}.surprise-hint{text-align:center;margin:5px 0;color:#bba99b;font-size:10px}
 @media(max-width:350px){.order-dock .nav button{padding:0 4px;gap:3px;font-size:10px}.order-dock .nav svg{width:16px}.dock-action{min-width:75px;padding:0 8px}.dock-save{min-width:92px;font-size:10px}}
+
+/* The daily suggestion is presented like a little note on the table. */
+.surprise-screen{background:#fdf9f2}
+.surprise-scroll{padding-bottom:125px}
+.surprise-heading{margin:18px 0 20px}
+.surprise-heading .menu-kicker{color:#b77a62;letter-spacing:.16em}
+.surprise-heading h2{font-size:27px;letter-spacing:.04em;margin:10px 0 9px;color:#513b30}
+.surprise-heading h2 span{color:#b66049}
+.surprise-heading p{font-size:12px;color:#a38b7b}
+.surprise-card{min-height:322px;padding:19px 20px 17px;border-color:#eedcce;background:linear-gradient(155deg,#fffdf8,#fbf1e6);box-shadow:0 10px 30px #98634510;position:relative;overflow:hidden}
+.surprise-card:before{content:'';position:absolute;inset:8px;border:1px solid #f4e7db;border-radius:16px;pointer-events:none}
+.surprise-card-top{position:relative;align-items:center;color:#b9856f;font-size:10px;letter-spacing:.12em;text-align:left}
+.surprise-card-top span:last-child{color:#d3a78e;font-size:19px}
+.surprise-placeholder,.surprise-result{position:relative;padding:4px 0 12px}
+.surprise-bowl{position:relative;width:154px;height:154px;background:#f6e4d7;border:1px solid #efdbcc}
+.surprise-bowl:before{content:'';position:absolute;inset:8px;border:1px dashed #e8caba;border-radius:50%}
+.surprise-bowl svg{position:relative;width:126px;height:110px;stroke-width:initial}
+.surprise-spark{position:absolute;color:#cf987d;font-size:17px}.spark-one{top:25px;left:20px}.spark-two{right:23px;top:34px;font-size:12px}
+.surprise-placeholder h3,.surprise-result h3{font-size:18px;color:#624336;margin:15px 0 7px}
+.surprise-placeholder p,.surprise-result p{color:#a68d7c}
+.surprise-result img{width:142px;height:142px;border:6px solid #f5e4d7;box-shadow:0 5px 16px #9f63421a}
+.surprise-result span{background:#f5e6da;border-radius:20px;padding:5px 11px;color:#aa604a}
+.surprise-card-foot{position:relative;border-color:#ead5c5;padding-top:13px}
+.surprise-draw{height:52px;margin-top:16px;border-radius:14px;background:#b45f49;box-shadow:0 6px 16px #a65d422b;font-size:13px}
+.motion-toggle{margin:12px auto 0;padding:9px 15px;border:1px solid #ead8ca;border-radius:22px;background:#fffaf5;color:#a7614d}
+.motion-toggle:disabled{background:#f5eee6;color:#9e8b7d}
+.surprise-hint{margin:9px 0 0;color:#b6a092}
+@media(max-height:700px){.surprise-heading{margin:8px 0 14px}.surprise-card{min-height:285px}.surprise-bowl{width:130px;height:130px}.surprise-bowl svg{width:108px;height:100px}}
+
+/* A brief reveal gives each random pick a little ceremony. */
+.surprise-reveal .surprise-result img{animation:surprise-appear .55s cubic-bezier(.2,.8,.25,1) both}
+.surprise-reveal .surprise-result span,.surprise-reveal .surprise-result h3,.surprise-reveal .surprise-result p{animation:surprise-rise .4s ease-out .12s both}
+.surprise-reveal .surprise-card-top span:last-child{animation:surprise-sparkle .6s ease-out both}
+.surprise-draw:not(:disabled){transition:transform .15s,box-shadow .15s}
+.surprise-draw:not(:disabled):active{transform:scale(.98);box-shadow:0 2px 7px #a65d422b}
+@keyframes surprise-appear{0%{opacity:0;transform:scale(.76) rotate(-8deg)}65%{opacity:1;transform:scale(1.04) rotate(2deg)}100%{opacity:1;transform:scale(1) rotate(0)}}
+@keyframes surprise-rise{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+@keyframes surprise-sparkle{0%{transform:scale(.5) rotate(-40deg);opacity:.3}65%{transform:scale(1.3) rotate(20deg);opacity:1}100%{transform:scale(1) rotate(0)}}
+@media(prefers-reduced-motion:reduce){.surprise-reveal .surprise-result img,.surprise-reveal .surprise-result span,.surprise-reveal .surprise-result h3,.surprise-reveal .surprise-result p,.surprise-reveal .surprise-card-top span:last-child{animation:none}.surprise-draw:not(:disabled){transition:none}}
