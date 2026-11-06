@@ -641,7 +641,32 @@ if (document.documentElement.classList.contains('is-standalone')) {
 initDishes();
 if ('serviceWorker' in navigator) addEventListener('load', async () => {
  const localDev = ['localhost', '127.0.0.1', '[::1]'].includes(location.hostname);
- if (!localDev) { navigator.serviceWorker.register('./sw.js').catch(() => {}); return; }
+ if (!localDev) {
+  let hadController = Boolean(navigator.serviceWorker.controller);
+  let updateNoticeShown = false;
+  const showUpdateNotice = () => {
+   if (updateNoticeShown) return;
+   updateNoticeShown = true;
+   const notice = document.createElement('div');
+   notice.className = 'update-notice';
+   notice.setAttribute('role', 'status');
+   notice.innerHTML = '<span>发现新版本，刷新后即可使用</span><button type="button">立即刷新</button>';
+   notice.querySelector('button').onclick = () => location.reload();
+   document.body.appendChild(notice);
+  };
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+   if (hadController) showUpdateNotice();
+   hadController = true;
+  });
+  try {
+   const registration = await navigator.serviceWorker.register('./sw.js', { updateViaCache: 'none' });
+   const checkForUpdate = () => { if (!document.hidden) registration.update().catch(() => {}); };
+   checkForUpdate();
+   document.addEventListener('visibilitychange', checkForUpdate);
+   window.addEventListener('online', checkForUpdate);
+  } catch (_) { /* 保持当前版本可用，稍后重新打开时再尝试更新。 */ }
+  return;
+ }
  try {
   // 旧版本可能仍在控制当前页面；注销后重新加载一次，解除控制。
   const registration = await navigator.serviceWorker.getRegistration('./');

@@ -1,6 +1,6 @@
 // 家宴 Service Worker：预缓存全部静态资源，离线也能打开。
 // 更新页面内容后，把下面 VERSION 加一（如 'v2'）即可让所有客户端换用新缓存。
-const VERSION = 'v40';
+const VERSION = 'v42';
 const CACHE = `jiayan-${VERSION}`;
 // 本机开发不使用离线缓存，已有旧 Worker 更新后也会切换到网络。
 const LOCAL_DEV = ['localhost', '127.0.0.1', '[::1]'].includes(self.location.hostname);
@@ -42,7 +42,7 @@ self.addEventListener('activate', (event) => {
   }
   event.waitUntil(
     caches.keys()
-      .then((keys) => Promise.all(keys.filter((key) => key !== CACHE).map((key) => caches.delete(key))))
+      .then((keys) => Promise.all(keys.filter((key) => key.startsWith('jiayan-') && key !== CACHE).map((key) => caches.delete(key))))
       .then(() => self.clients.claim())
   );
 });

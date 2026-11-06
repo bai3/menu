@@ -347,3 +347,6 @@ body.paper-open{overflow:hidden}
 .hero-dots button[aria-pressed=true]{width:25px}.hero-dots button[aria-pressed=true]:after{width:19px;background:#fff}
 .hero-dots button:focus-visible{outline:2px solid white;outline-offset:1px;border-radius:5px}
 @media(prefers-reduced-motion:reduce){.hero-slide,.hero-dots button:after{transition:none}}
+
+/* Keep in-progress selections and drafts until the user chooses to refresh. */
+.update-notice{position:fixed;z-index:100;left:50%;bottom:max(22px,env(safe-area-inset-bottom));transform:translateX(-50%);display:flex;align-items:center;justify-content:space-between;gap:16px;width:max-content;max-width:calc(100% - 32px);padding:11px 12px 11px 16px;border:1px solid #e8d2c1;border-radius:14px;background:#fffaf3;color:#654537;box-shadow:0 8px 28px #57362938;font-size:12px;line-height:1.5}.update-notice button{flex:none;border:0;border-radius:9px;background:#ae5d48;color:#fff;padding:9px 12px;font-size:12px;font-weight:600}.update-notice button:focus-visible{outline:2px solid #6c3d2d;outline-offset:2px}
