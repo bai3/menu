@@ -187,10 +187,50 @@ function bindHero() {
 setInterval(()=>{const hero=app.querySelector('.hero');if(hero && !document.hidden && !hero.matches(':hover') && !hero.contains(document.activeElement) && !matchMedia('(prefers-reduced-motion: reduce)').matches)showHero(heroIndex+1)},6000);
 function selectedDishes(){return state.selected.map(id=>dishes.find(d=>d.id===id)).filter(Boolean)}
 function filteredDishes() {
- const field = state.filterMode === 'category' ? 'category' : 'cuisine';
- return dishes.filter(d => (state.category==='全部'||d[field]===state.category) && `${d.name}${d.category}${d.cuisine}${d.note}`.includes(state.query.trim()));
+ return dishes.filter(d => `${d.name}${d.category}${d.cuisine}${d.note}`.includes(state.query.trim()));
 }
-function catalogContent(filtered){ return `<div class="catalog-heading"><h3>${state.category==='全部'?'全部菜品':state.category}</h3><span>${filtered.length} 道菜</span></div><div class="dish-list">${filtered.length ? filtered.map(d=>`<article class="dish ${d.is_available?'':'dish-unavailable'}"><img class="dish-img" src="${escapeText(dishImage(d))}" alt="${escapeText(d.name)}" onerror="this.style.visibility='hidden'"><div class="dish-info"><h3>${escapeText(d.name)} ${spiceBadge(d)}</h3><p>${escapeText(d.note)}</p><span class="dish-tag">${escapeText(d.category)}${d.cuisine !== '未分类' ? ' · ' + escapeText(d.cuisine) : ''}</span>${d.is_available?'':'<span class="unavailable-label">已下架</span>'}</div><button class="add ${state.selected.includes(d.id)?'selected':''}" data-dish="${escapeText(d.id)}" aria-label="${state.selected.includes(d.id)?'移除':'选择'}${escapeText(d.name)}" aria-pressed="${state.selected.includes(d.id)}" ${d.is_available?'':'disabled'}>${icon(state.selected.includes(d.id)?'check':'plus')}</button></article>`).join('') : '<div class="empty">没有找到这道菜<br>换个关键词试试吧</div>'}</div>`; }
+function catalogContent(filtered){
+ const field = state.filterMode === 'category' ? 'category' : 'cuisine';
+ const options = state.filterMode === 'category' ? categories.slice(1) : cuisines;
+ const present = [...new Set(filtered.map(d => d[field]))];
+ const groups = [...options.filter(value => present.includes(value)), ...present.filter(value => !options.includes(value))];
+ if (!groups.length) return '<div class="empty">没有找到这道菜<br>换个关键词试试吧</div>';
+ return `<div class="catalog-heading"><h3>全部菜品</h3><span>${filtered.length} 道菜</span></div>` + groups.map(value => {
+  const group = filtered.filter(d => d[field] === value);
+  return `<section class="catalog-group" data-group="${escapeText(value)}"><div class="catalog-heading"><h3>${escapeText(value)}</h3><span>${group.length} 道菜</span></div><div class="dish-list">${group.map(d=>`<article class="dish ${d.is_available?'':'dish-unavailable'}"><img class="dish-img" src="${escapeText(dishImage(d))}" alt="${escapeText(d.name)}" onerror="this.style.visibility='hidden'"><div class="dish-info"><h3>${escapeText(d.name)} ${spiceBadge(d)}</h3><p>${escapeText(d.note)}</p><span class="dish-tag">${escapeText(d.category)}${d.cuisine !== '未分类' ? ' · ' + escapeText(d.cuisine) : ''}</span>${d.is_available?'':'<span class="unavailable-label">已下架</span>'}</div><button class="add ${state.selected.includes(d.id)?'selected':''}" data-dish="${escapeText(d.id)}" aria-label="${state.selected.includes(d.id)?'移除':'选择'}${escapeText(d.name)}" aria-pressed="${state.selected.includes(d.id)}" ${d.is_available?'':'disabled'}>${icon(state.selected.includes(d.id)?'check':'plus')}</button></article>`).join('')}</div></section>`;
+ }).join('');
+}
+function updateCatalogNavigation(shared = false) {
+ const scroll = app.querySelector('.screen-scroll'), nav = app.querySelector('.filters');
+ if (!scroll || !nav) return;
+ const groups = [...app.querySelectorAll('.catalog-group')];
+ const selector = shared ? '[data-shared-category]' : '[data-category]';
+ const categoryOf = button => shared ? button.dataset.sharedCategory : button.dataset.category;
+ const names = new Set(groups.map(group => group.dataset.group));
+ nav.querySelectorAll(selector).forEach(button => { button.hidden = categoryOf(button) !== '全部' && !names.has(categoryOf(button)); });
+ const top = scroll.getBoundingClientRect().top + 8;
+ let active = '全部';
+ for (const group of groups) if (group.getBoundingClientRect().top <= top) active = group.dataset.group;
+ if (shared) sharedMeal.category = active; else state.category = active;
+ nav.querySelectorAll(selector).forEach(button => {
+  const selected = categoryOf(button) === active;
+  button.classList.toggle('active', selected); button.setAttribute('aria-pressed', String(selected));
+  if (selected && (button.offsetTop < nav.scrollTop || button.offsetTop + button.offsetHeight > nav.scrollTop + nav.clientHeight)) nav.scrollTop = button.offsetTop - nav.clientHeight / 2 + button.offsetHeight / 2;
+ });
+}
+function bindCatalog(shared = false) {
+ const scroll = app.querySelector('.screen-scroll');
+ if (!scroll || !app.querySelector('.catalog')) return;
+ scroll.addEventListener('scroll', () => updateCatalogNavigation(shared), {passive:true});
+ const selector = shared ? '[data-shared-category]' : '[data-category]';
+ app.querySelectorAll(selector).forEach(button => button.onclick = () => {
+  const category = shared ? button.dataset.sharedCategory : button.dataset.category;
+  const target = category === '全部' ? app.querySelector('.catalog') : [...app.querySelectorAll('.catalog-group')].find(group => group.dataset.group === category);
+  if (target) scroll.scrollTo({top: scroll.scrollTop + target.getBoundingClientRect().top - scroll.getBoundingClientRect().top, behavior: 'auto'});
+  updateCatalogNavigation(shared);
+ });
+ updateCatalogNavigation(shared);
+}
 function renderDishes(){
  const field = state.filterMode === 'category' ? 'category' : 'cuisine';
  const options = state.filterMode === 'category' ? categories.slice(1) : cuisines;
@@ -198,14 +238,14 @@ function renderDishes(){
  const filters = ['全部', ...options.filter(value => present.has(value)), ...[...present].filter(value => value && !options.includes(value))];
  const filtered = filteredDishes();
  app.className='phone-screen';
- app.innerHTML=`<div class="screen-scroll">${''}<header class="topbar"><div class="top-brand">${logo}<div><strong>白家私厨</strong><small>把喜欢的菜端上桌</small></div></div></header>
+ app.innerHTML=`<div class="screen-scroll">${''}<header class="topbar"><div class="top-brand">${logo}<div><strong>白家私厨</strong><small>把喜欢的菜端上桌</small></div></div><button class="shared-entry" data-action="shared-create">邀请一起点</button></header>
  ${heroMarkup()}
  <div class="section-title"><div><h2>今天吃什么？</h2><p>挑几道喜欢的菜，凑成一桌好饭</p></div><button class="manage-entry" data-page="manage">${icon('edit')} 编辑菜单</button></div>
  <button class="paper-entry" data-action="paper-mode"><span><small>THE FAMILY MENU</small><strong>翻开纸质菜单</strong><em>像在餐厅一样，慢慢挑选</em></span><span class="paper-entry-mark" aria-hidden="true">菜单<br><i>MENU</i></span><b>打开菜单</b></button>
  <label class="search">${icon('search')}<input type="search" placeholder="搜索想吃的菜" value="${escapeText(state.query)}" aria-label="搜索想吃的菜"></label>
  <div class="filter-switch" role="group" aria-label="筛选方式"><button data-filter-mode="category" aria-pressed="${state.filterMode==='category'}">菜品分类</button><button data-filter-mode="cuisine" aria-pressed="${state.filterMode==='cuisine'}">菜系</button></div>
- <div class="catalog"><nav class="filters" aria-label="${state.filterMode==='category'?'菜品分类':'菜系'}">${filters.map(c=>{const selectedCount=selectedDishes().filter(d=>c==='全部'||d[field]===c).length;return `<button class="filter ${state.category===c?'active':''}" data-category="${c}" aria-pressed="${state.category===c}"><span class="filter-name">${c}</span>${selectedCount ? `<span class="filter-count">${selectedCount}</span>` : ''}</button>`}).join('')}</nav>
- <section class="catalog-content" aria-label="${escapeText(state.category)}菜品">${catalogContent(filtered)}</section></div></div>
+ <div class="catalog"><nav class="filters" aria-label="${state.filterMode==='category'?'菜品分类':'菜系'}">${filters.map(c=>{const selectedCount=selectedDishes().filter(d=>c==='全部'||d[field]===c).length;return `<button class="filter ${state.category===c?'active':''}" data-category="${escapeText(c)}" aria-pressed="${state.category===c}"><span class="filter-name">${escapeText(c)}</span>${selectedCount ? `<span class="filter-count">${selectedCount}</span>` : ''}</button>`}).join('')}</nav>
+ <section class="catalog-content" aria-label="菜品列表">${catalogContent(filtered)}</section></div></div>
  <div class="bottom"><div class="order-dock">${nav()}<button class="dock-action" data-action="make-menu" aria-label="${state.selected.length ? `已选${state.selected.length}道菜，下单` : '请先选择菜品'}" ${state.selected.length?'':'disabled'}><strong>下单</strong>${state.selected.length ? `<span class="order-count">${state.selected.length}</span>` : ''}</button></div></div>`;
  bind();
 }
@@ -378,7 +418,7 @@ async function saveHistory() {
  finally { if(button.isConnected){button.disabled=false;button.textContent='保存到吃饭日记';} }
 }
 
-function render(){if(state.page==='history')renderHistory();else if(state.page==='menu')renderMenu();else if(state.page==='surprise')renderSurprise();else if(state.page==='manage')renderManage();else if(state.page==='dish-form')renderDishForm();else renderDishes()}
+function render(){if(state.page==='shared-create')renderSharedCreate();else if(state.page==='history')renderHistory();else if(state.page==='menu')renderMenu();else if(state.page==='surprise')renderSurprise();else if(state.page==='manage')renderManage();else if(state.page==='dish-form')renderDishForm();else renderDishes()}
 function notify(message){const old=app.querySelector('.toast');if(old)old.remove();const el=document.createElement('div');el.className='toast';el.textContent=message;app.appendChild(el);setTimeout(()=>el.remove(),2400)}
 
 const menuImageStyles = [
@@ -539,8 +579,8 @@ function drawDesignedMenu(selected, style){
  return canvas;
 }
 
-async function saveMenuImage(){
- const selected=selectedDishes(); if(!selected.length)return;
+async function saveMenuImage(overrideSelected, overrideTitle){
+ const selected=Array.isArray(overrideSelected)?overrideSelected:selectedDishes(); if(!selected.length)return;
  const saveBtn=app.querySelector('[data-action=save]');
  if(saveBtn){saveBtn.disabled=true;saveBtn.textContent='生成中…'}
  await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));
@@ -559,7 +599,7 @@ async function saveMenuImage(){
    overlay.querySelectorAll('[data-style]').forEach((dot,i)=>{dot.classList.toggle('active',i===index);dot.setAttribute('aria-pressed',String(i===index))});
    download.removeAttribute('href');share.hidden=true;
    try{
-    const canvas=await drawMenuImage(selected,style);
+    const oldTitle=state.title; if(overrideTitle)state.title=overrideTitle; let canvas; try { canvas=await drawMenuImage(selected,style); } finally { state.title=oldTitle; }
     const blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/jpeg',.92));
     if(!blob)throw new Error('image encoding failed');
     if(closed||current!==version)return;
@@ -588,18 +628,20 @@ async function saveMenuImage(){
 }
 
 
-// The restaurant menu is a second way to browse the same live catalogue and order.
+// The restaurant menu uses the active catalogue without mixing local and shared selections.
+function paperDishes() { return sharedMeal.invite && sharedMeal.data?.joined ? sharedMeal.data.catalog.map(normalizeDish) : dishes; }
+function paperFilterMode() { return sharedMeal.invite && sharedMeal.data?.joined ? sharedMeal.filterMode : state.filterMode; }
 let paperPage = 0;
 let paperTurning = false;
 let paperTurnTimer = null;
 let pendingPaperTap = null;
 function paperPages() {
- const field = state.filterMode === 'cuisine' ? 'cuisine' : 'category';
+ const field = paperFilterMode() === 'cuisine' ? 'cuisine' : 'category';
  const options = field === 'cuisine' ? cuisines : categories.slice(1);
- const groups = [...options, ...new Set(dishes.map(d => d[field]).filter(value => value && !options.includes(value)))];
+ const groups = [...options, ...new Set(paperDishes().map(d => d[field]).filter(value => value && !options.includes(value)))];
  const pages = [];
  groups.forEach(group => {
-  const items = dishes.filter(d => d[field] === group && d.is_available);
+  const items = paperDishes().filter(d => d[field] === group && d.is_available);
   for (let i = 0; i < items.length; i += 2) pages.push(items.slice(i, i + 2));
  });
  if (!pages.length) pages.push([]);
@@ -607,7 +649,7 @@ function paperPages() {
  return pages;
 }
 function paperLeaf(items, pageNumber) {
- const field = state.filterMode === 'cuisine' ? 'cuisine' : 'category';
+ const field = paperFilterMode() === 'cuisine' ? 'cuisine' : 'category';
  return `<section class="paper-leaf ${pageNumber % 2 ? 'paper-leaf-right' : 'paper-leaf-left'}"><div class="paper-leaf-inner"><header class="paper-leaf-head"><span>白家私厨</span><span>THE FAMILY MENU</span></header><div class="paper-leaf-title"><span>THE TASTE OF HOME</span><h2>${items.length ? escapeText(items[0][field]) : '家的味道'}</h2><i></i></div><div class="paper-dishes">${items.length ? items.map((d, index) => `<article class="paper-dish paper-dish-${index + 1}" role="button" tabindex="0" data-paper-dish="${escapeText(d.id)}" aria-label="${escapeText(d.name)}，单击加入菜单，双击取消"><img src="${escapeText(dishImage(d))}" alt="" onerror="this.style.visibility='hidden'"><div class="paper-dish-copy"><span>${escapeText(d[field])}</span><h3>${escapeText(d.name)} ${spiceBadge(d)}</h3><p>${escapeText(d.note || '用心烹调，与你分享')}</p></div></article>`).join('') : '<div class="paper-blank">好好吃饭<br><span>慢慢生活</span></div>'}</div><footer class="paper-leaf-foot"><span>一餐一饭，皆是欢喜</span></footer></div></section>`;
 }
 function openPaperMenu() {
@@ -634,12 +676,12 @@ function renderPaperMenu() {
  const book = overlay.querySelector('.paper-book');
  const activatePaperDish = dish => {
   const id = dish.dataset.paperDish;
-  if (!dishes.some(d => d.id === id && d.is_available)) return;
+  if (!paperDishes().some(d => d.id === id && d.is_available)) return;
   if (pendingPaperTap && pendingPaperTap.id === id) {
    clearTimeout(pendingPaperTap.timer);
    pendingPaperTap = null;
-   state.selected = state.selected.filter(selectedId => selectedId !== id);
-   showPaperFeedback(id, false);
+   if (sharedMeal.invite) sharedChoose(id, false, true);
+   else { state.selected = state.selected.filter(selectedId => selectedId !== id); showPaperFeedback(id, false); }
    return;
   }
   flushPaperTap();
@@ -690,7 +732,7 @@ function renderPaperMenu() {
 }
 function showPaperFeedback(id, added) {
  const stage = document.querySelector('.paper-stage');
- const dish = dishes.find(item => item.id === id);
+ const dish = paperDishes().find(item => item.id === id);
  if (!stage || !dish) return;
  stage.querySelector('.paper-feedback-message')?.remove();
  const message = document.createElement('div');
@@ -709,9 +751,9 @@ function flushPaperTap() {
  const { id, timer } = pendingPaperTap;
  clearTimeout(timer);
  pendingPaperTap = null;
- if (!dishes.some(d => d.id === id && d.is_available)) return;
- if (!state.selected.includes(id)) state.selected.push(id);
- showPaperFeedback(id, true);
+ if (!paperDishes().some(d => d.id === id && d.is_available)) return;
+ if (sharedMeal.invite) sharedChoose(id, true, true);
+ else { if (!state.selected.includes(id)) state.selected.push(id); showPaperFeedback(id, true); }
 }
 function turnPaperPage(direction) {
  const pages = paperPages();
@@ -747,7 +789,8 @@ function closePaperMenu() {
  document.body.classList.remove('paper-open');
  clearTimeout(paperTurnTimer);
  paperTurning = false;
- if (state.page === 'dishes') { render(); app.querySelector('[data-action=paper-mode]')?.focus(); }
+ if (sharedMeal.invite && sharedMeal.data?.joined) { renderSharedMeal(); app.querySelector('[data-shared=paper]')?.focus(); }
+ else if (state.page === 'dishes') { render(); app.querySelector('[data-action=paper-mode]')?.focus(); }
 }
 
 function bindDishButtons(){
@@ -760,18 +803,19 @@ function bind(){
  app.querySelectorAll('[data-manage-mode]').forEach(b=>b.onclick=()=>{state.manageFilterMode=b.dataset.manageMode;state.manageFilter='全部';render()});
  app.querySelectorAll('[data-manage-filter]').forEach(b=>b.onclick=()=>{state.manageFilter=b.dataset.manageFilter;render();app.querySelector('[data-manage-filter][aria-pressed=true]')?.focus({preventScroll:true})});
  app.querySelectorAll('[data-filter-mode]').forEach(b=>b.onclick=()=>{const scroll=app.querySelector('.screen-scroll').scrollTop;state.filterMode=b.dataset.filterMode;state.category='全部';render();app.querySelector('.screen-scroll').scrollTop=scroll});
- app.querySelectorAll('[data-category]').forEach(b=>b.onclick=()=>{const scroll=app.querySelector('.screen-scroll').scrollTop;state.category=b.dataset.category;render();app.querySelector('.screen-scroll').scrollTop=scroll});
+ bindCatalog();
  bindDishButtons();
  app.querySelectorAll('[data-remove]').forEach(b=>b.onclick=()=>{state.selected=state.selected.filter(x=>x!==b.dataset.remove);render()});
  app.querySelectorAll('[data-edit]').forEach(b=>b.onclick=()=>{state.editingId=b.dataset.edit;state.draftImage=null;state.page='dish-form';render()});
  app.querySelectorAll('[data-delete]').forEach(b=>b.onclick=async()=>{const dish=dishes.find(d=>d.id===b.dataset.delete);if(!dish || !window.confirm(`确定删除“${dish.name}”吗？`))return;b.disabled=true;if(!await cloudDeleteDish(dish.id)){b.disabled=false;return}saveLocalDishes(dishes.filter(d=>d.id!==dish.id));state.selected=state.selected.filter(id=>id!==dish.id);render();notify('菜品已删除');});
+ const sharedCreate=app.querySelector('[data-action=shared-create]');if(sharedCreate)sharedCreate.onclick=()=>{state.page='shared-create';render()};
  const switchUser=app.querySelector('[data-action=switch-user]');if(switchUser)switchUser.onclick=()=>{state.page='beta-entry';renderBetaEntry({ canCancel: true });};
  const paperEntry=app.querySelector('[data-action=paper-mode]');if(paperEntry)paperEntry.onclick=openPaperMenu;
  const addDish=app.querySelector('[data-action=new-dish]');if(addDish)addDish.onclick=()=>{state.editingId=null;state.draftImage=null;state.page='dish-form';render()};
  app.querySelectorAll('.cover-upload input').forEach(file=>file.onchange=()=>{const item=file.files?.[0];if(!item)return;if(!item.type.startsWith('image/')){notify('请选择图片文件');file.value='';return}const reader=new FileReader();reader.onerror=()=>notify('图片读取失败');reader.onload=()=>{const image=new Image();image.onerror=()=>notify('图片格式不支持');image.onload=()=>{const scale=Math.min(1,800/Math.max(image.width,image.height));const canvas=document.createElement('canvas');canvas.width=Math.max(1,Math.round(image.width*scale));canvas.height=Math.max(1,Math.round(image.height*scale));const context=canvas.getContext('2d');context.fillStyle='#fff';context.fillRect(0,0,canvas.width,canvas.height);context.drawImage(image,0,0,canvas.width,canvas.height);state.draftImage=canvas.toDataURL('image/jpeg',.82);app.querySelector('#cover-preview').src=state.draftImage};image.src=reader.result};reader.readAsDataURL(item)});
  const form=app.querySelector('#dish-form');if(form)form.onsubmit=async e=>{e.preventDefault();const name=form.elements.name.value.trim();if(!name){form.elements.name.focus();return}const existing=dishes.find(d=>d.id===state.editingId);const dish={id:existing?.id || `dish-${Date.now()}-${Math.random().toString(36).slice(2,8)}`,name,category:form.elements.category.value,cuisine:form.elements.cuisine.value,note:form.elements.note.value.trim(),image:state.draftImage || existing?.image || 'tomato.jpg',spice_level:Number(form.elements.spice_level.value),is_available:form.elements.is_available.value==='true'};const saveButton=form.querySelector('[type=submit]');saveButton.disabled=true;if(!await cloudUpsertDish(dish)){saveButton.disabled=false;return}const latest=dishes.find(d=>d.id===dish.id);saveLocalDishes(latest?dishes.map(d=>d.id===dish.id?dish:d):[...dishes,dish]);state.editingId=null;state.draftImage=null;state.page='manage';render();notify(existing?'菜品已更新':'菜品已添加');};
 
- const search=app.querySelector('input[type=search]');if(search)search.oninput=e=>{state.query=e.target.value;const catalog=app.querySelector('.catalog-content');catalog.innerHTML=catalogContent(filteredDishes());bindDishButtons()};
+ const search=app.querySelector('input[type=search]');if(search)search.oninput=e=>{state.query=e.target.value;const catalog=app.querySelector('.catalog-content');catalog.innerHTML=catalogContent(filteredDishes());bindDishButtons();updateCatalogNavigation()};
  const diary=app.querySelector('#diary-note');if(diary)diary.oninput=e=>{state.diaryNote=e.target.value};
  const saveDiary=app.querySelector('[data-action=save-diary]');if(saveDiary)saveDiary.onclick=saveHistory;
  const title=app.querySelector('.menu-title-input');if(title)title.oninput=e=>{state.title=e.target.value};
@@ -820,6 +864,7 @@ function renderBetaEntry({ message = '', canCancel = false } = {}) {
  };
 }
 async function startApp() {
+ const invite = sharedInviteFromUrl(); if (invite) { sharedStart(invite); return; }
  if (!/^[a-f0-9]{32}$/.test(betaCode) || !sb) {
   renderBetaEntry({ message: betaCode ? '内测码格式不正确，请重新输入' : '', canCancel: Boolean(urlBetaCode !== null && savedBetaCode) });
   return;
