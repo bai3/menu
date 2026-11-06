@@ -173,7 +173,7 @@ function renderMenu(){
  app.className='phone-screen menu-screen';
  const selected=selectedDishes();
  app.innerHTML=`<div class="screen-scroll">${''}<div class="page-heading"><button data-page="dishes" aria-label="返回点菜">${icon('back')}</button><span>家的味道</span></div><div class="menu-heading"><div><span class="menu-kicker">这一餐，留给家人</span><h2>今天的菜单</h2></div><span class="menu-heading-count">${selected.length}<small>道菜</small></span></div>
- <section class="menu-card"><div class="menu-card-top"><span class="menu-card-mark">${icon('hot')}</span><small>今天吃什么</small><input class="menu-title-input" aria-label="菜单标题，可编辑" maxlength="16" value="${escapeText(state.title)}"><div class="menu-meta"><span>${new Date().toLocaleDateString('zh-CN',{year:'numeric',month:'long',day:'numeric'})}</span><span>点击标题可修改</span></div></div>${selected.length ? `<div class="menu-rows">${selected.map((d,i)=>`<div class="menu-row"><span class="number">${String(i+1).padStart(2,'0')}</span><img class="menu-dish-img" src="${escapeText(dishImage(d))}" alt=""><span class="name">${escapeText(d.name)}</span><button data-remove="${escapeText(d.id)}" aria-label="从菜单移除${escapeText(d.name)}">${icon('close')}</button></div>`).join('')}</div>` : `<div class="menu-empty"><div class="menu-empty-art" aria-hidden="true"><svg viewBox="0 0 180 126" fill="none" xmlns="http://www.w3.org/2000/svg"><ellipse cx="90" cy="113" rx="65" ry="7" fill="#EAD5C1" opacity=".55"/><path d="M37 74h106c-3 24-20 37-53 37S40 98 37 74Z" fill="#C47157"/><path d="M37 74c0-7 24-12 53-12s53 5 53 12-24 12-53 12-53-5-53-12Z" fill="#E8AB8F"/><path d="M47 73c0-5 19-9 43-9s43 4 43 9-19 9-43 9-43-4-43-9Z" fill="#F8E4C7"/><path d="M65 69c-5-10-2-21 4-27 5 7 7 17 4 27M102 67c-2-13 4-23 12-27 3 10 1 21-6 29" fill="#99A77D" stroke="#75885F" stroke-width="2" stroke-linejoin="round"/><path d="M69 48l1 18m42-19-7 18" stroke="#75885F" stroke-width="1.5" stroke-linecap="round"/><circle cx="86" cy="69" r="10" fill="#D8795E"/><path d="M82 61c2-4 6-5 8-1m-5 0 2 5" stroke="#75885F" stroke-width="2" stroke-linecap="round"/><path d="M83 40c-6-7 5-10 0-17M98 37c-6-7 5-10 0-17" stroke="#D8A98E" stroke-width="2.5" stroke-linecap="round"/><path d="M34 48l-3-4m-4 12h-5m129-4 4-5m2 14h5" stroke="#D8A98E" stroke-width="2" stroke-linecap="round"/><path d="M58 96c9 5 20 7 32 7" stroke="#E8A78C" stroke-width="2" stroke-linecap="round"/></svg></div><div class="menu-empty-copy"><strong>一桌好菜，从这里开始</strong><p>挑几道喜欢的菜，<br>为今天添一点期待。</p></div><button data-page="dishes">去挑选菜品</button></div>`}<div class="menu-card-foot"><span></span>好好吃饭，慢慢生活<span></span></div></section><div class="menu-secondary"><button data-action="copy" ${selected.length?'':'disabled'}>复制菜单</button></div></div>
+ <section class="menu-card"><div class="menu-card-top"><span class="menu-card-mark">${icon('hot')}</span><small>今天吃什么</small><input class="menu-title-input" aria-label="菜单标题，可编辑" maxlength="16" value="${escapeText(state.title)}"><div class="menu-meta"><span>${new Date().toLocaleDateString('zh-CN',{year:'numeric',month:'long',day:'numeric'})}</span><span>点击标题可修改</span></div></div>${selected.length ? `<div class="menu-rows">${selected.map((d,i)=>`<div class="menu-row"><span class="number">${String(i+1).padStart(2,'0')}</span><img class="menu-dish-img" src="${escapeText(dishImage(d))}" alt=""><span class="name">${escapeText(d.name)}</span><button data-remove="${escapeText(d.id)}" aria-label="从菜单移除${escapeText(d.name)}">${icon('close')}</button></div>`).join('')}</div>` : `<div class="menu-empty"><div class="menu-empty-art" aria-hidden="true"><svg viewBox="0 0 180 126" fill="none" xmlns="http://www.w3.org/2000/svg"><ellipse cx="90" cy="113" rx="65" ry="7" fill="#EAD5C1" opacity=".55"/><path d="M37 74h106c-3 24-20 37-53 37S40 98 37 74Z" fill="#C47157"/><path d="M37 74c0-7 24-12 53-12s53 5 53 12-24 12-53 12-53-5-53-12Z" fill="#E8AB8F"/><path d="M47 73c0-5 19-9 43-9s43 4 43 9-19 9-43 9-43-4-43-9Z" fill="#F8E4C7"/><path d="M65 69c-5-10-2-21 4-27 5 7 7 17 4 27M102 67c-2-13 4-23 12-27 3 10 1 21-6 29" fill="#99A77D" stroke="#75885F" stroke-width="2" stroke-linejoin="round"/><path d="M69 48l1 18m42-19-7 18" stroke="#75885F" stroke-width="1.5" stroke-linecap="round"/><circle cx="86" cy="69" r="10" fill="#D8795E"/><path d="M82 61c2-4 6-5 8-1m-5 0 2 5" stroke="#75885F" stroke-width="2" stroke-linecap="round"/><path d="M83 40c-6-7 5-10 0-17M98 37c-6-7 5-10 0-17" stroke="#D8A98E" stroke-width="2.5" stroke-linecap="round"/><path d="M34 48l-3-4m-4 12h-5m129-4 4-5m2 14h5" stroke="#D8A98E" stroke-width="2" stroke-linecap="round"/><path d="M58 96c9 5 20 7 32 7" stroke="#E8A78C" stroke-width="2" stroke-linecap="round"/></svg></div><div class="menu-empty-copy"><strong>一桌好菜，从这里开始</strong><p>挑几道喜欢的菜，<br>为今天添一点期待。</p></div><button data-page="dishes">去挑选菜品</button></div>`}<div class="menu-card-foot"><span></span>好好吃饭，慢慢生活<span></span></div></section></div>
  <div class="bottom"><div class="order-dock">${nav()}<button class="dock-action dock-save" data-action="save" ${selected.length?'':'disabled'}>保存菜单图片</button></div></div>`;
  bind();
 }
@@ -192,13 +192,18 @@ function renderDishForm(){
 function render(){if(state.page==='menu')renderMenu();else if(state.page==='manage')renderManage();else if(state.page==='dish-form')renderDishForm();else renderDishes()}
 function notify(message){const old=app.querySelector('.toast');if(old)old.remove();const el=document.createElement('div');el.className='toast';el.textContent=message;app.appendChild(el);setTimeout(()=>el.remove(),2400)}
 
-async function saveMenuImage(){
- const selected=selectedDishes(); if(!selected.length)return;
- const saveBtn=app.querySelector('[data-action=save]');
- if(saveBtn){saveBtn.disabled=true;saveBtn.textContent='生成中…'}
- // 先让「生成中」状态上屏，再开始绘制和编码，避免按钮来不及更新。
- await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));
- try{
+const menuImageStyles = [
+ {id:'paper', name:'家常小票', caption:'把这一餐，认真记下来'},
+ {id:'bistro', name:'今日食堂', caption:'今天也要吃得有滋有味'},
+ {id:'picnic', name:'野餐时光', caption:'把快乐摆上餐桌'},
+ {id:'night', name:'深夜食堂', caption:'为每一个平凡的夜晚干杯'},
+ {id:'banquet', name:'团圆家宴', caption:'把团圆的滋味端上桌'},
+ {id:'garden', name:'春日餐桌', caption:'给生活添一点清新'},
+ {id:'postcard', name:'餐桌来信', caption:'把这一餐寄给喜欢的人'}
+];
+
+async function drawMenuImage(selected, style){
+ if(style.id !== 'paper') return drawDesignedMenu(selected, style.id);
  const width=1080, height=560+selected.length*96;
  const canvas=document.createElement('canvas');canvas.width=width;canvas.height=height;
  const ctx=canvas.getContext('2d');
@@ -240,26 +245,121 @@ async function saveMenuImage(){
  ctx.textAlign='left';ctx.fillStyle='#8b6a57';ctx.font='28px "PingFang SC", sans-serif';ctx.fillText('本餐合计',150,line+65);
  ctx.textAlign='right';ctx.fillStyle='#b9523e';ctx.font='bold 38px "PingFang SC", sans-serif';ctx.fillText(selected.length+' 道菜',width-150,line+65);
  ctx.textAlign='center';ctx.fillStyle='#b49784';ctx.font='26px "Songti SC", "STSong", serif';ctx.fillText('好好吃饭  ·  好好生活',width/2,height-94);
- const blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/jpeg',.92));
- if(!blob){notify('生成菜单图片失败，请重试');return}
- const file=new File([blob],'白家私厨菜单.jpg',{type:'image/jpeg'});
- // 网页没有直写相册的 API；支持 Web Share 的浏览器可调起系统面板，面板里有「存储图像」。
- const canShare=typeof navigator.canShare==='function'&&navigator.canShare({files:[file]});
- const imageUrl=URL.createObjectURL(blob);
- const overlay=document.createElement('div');overlay.className='image-overlay';
- overlay.innerHTML=`<div class="image-dialog" role="dialog" aria-modal="true" aria-label="菜单图片预览"><div class="image-dialog-head"><div><strong>菜单图片</strong><span>${canShare?'保存到相册，或长按图片':'长按图片保存，也可以点击下载'}</span></div><button class="image-close" aria-label="关闭预览">${icon('close')}</button></div><div class="image-preview"><img src="${imageUrl}" alt="生成的家庭菜单图片"></div><div class="image-actions">${canShare?'<button class="image-save" type="button">保存到相册</button>':''}<a class="image-download" href="${imageUrl}" download="白家私厨菜单.jpg">下载图片</a></div></div>`;
- document.body.appendChild(overlay);
- const close=()=>{overlay.remove();URL.revokeObjectURL(imageUrl);document.removeEventListener('keydown',onKey)};
- const onKey=e=>{if(e.key==='Escape')close()};
- const saveToAlbum=overlay.querySelector('.image-save');
- if(saveToAlbum)saveToAlbum.onclick=async()=>{try{await navigator.share({files:[file],title:'白家私厨菜单',text:'好好吃饭，慢慢生活'});close()}catch(err){if(err&&err.name!=='AbortError')notify('未能调起系统保存，试试长按图片')}};
- overlay.querySelector('.image-close').onclick=close;
- overlay.onclick=e=>{if(e.target===overlay)close()};
- document.addEventListener('keydown',onKey);
- overlay.querySelector('.image-close').focus();
- }finally{
-  if(saveBtn){saveBtn.disabled=false;saveBtn.textContent='保存菜单图片'}
+ return canvas;
+}
+
+function drawDesignedMenu(selected, style){
+ const width=1080, height=650+selected.length*108;
+ const canvas=document.createElement('canvas');canvas.width=width;canvas.height=height;
+ const ctx=canvas.getContext('2d');
+ const serif='"Songti SC", "STSong", serif', sans='"PingFang SC", sans-serif';
+ const themes={
+  bistro:{bg:'#e4e4d8',paper:'#f7f5ea',ink:'#203a31',accent:'#a74634',muted:'#768579',rule:'#cbd0c1',title:'今日食堂',sub:'一桌好菜，一起吃饭',en:'THE FAMILY TABLE'},
+  picnic:{bg:'#e9c6b5',paper:'#fcf6ec',ink:'#5e3c31',accent:'#b95943',muted:'#ad8877',rule:'#ead6c9',title:'今天吃点好的',sub:'把喜欢的味道摆上餐桌',en:'A LITTLE TABLE OF JOY'},
+  night:{bg:'#192b28',paper:'#203b34',ink:'#f3ead5',accent:'#d9b67e',muted:'#afbea9',rule:'#5e7667',title:'餐桌有你',sub:'夜晚有灯，饭菜有香',en:'THE EVENING TABLE'},
+  banquet:{bg:'#89372e',paper:'#f9efdb',ink:'#67372e',accent:'#ae4b39',muted:'#a4866e',rule:'#ddc1aa',title:'团圆家宴',sub:'人间烟火，欢喜相聚',en:'A FAMILY FEAST'},
+  garden:{bg:'#d8e2d2',paper:'#f5f7ec',ink:'#364e39',accent:'#688b68',muted:'#889b84',rule:'#cad9c7',title:'春日餐桌',sub:'日子清甜，饭菜新鲜',en:'FROM OUR LITTLE GARDEN'},
+  postcard:{bg:'#cad9d7',paper:'#fbf7ec',ink:'#384f50',accent:'#b86a52',muted:'#859998',rule:'#ccd9d2',title:'餐桌来信',sub:'亲爱的，今天也要好好吃饭',en:'A NOTE FROM OUR KITCHEN'}
+ };
+ const p=themes[style];
+ const text=(value,x,y,size,color,opt={})=>{ctx.fillStyle=color;ctx.textAlign=opt.align||'left';ctx.font=`${opt.bold?'600 ':''}${size}px ${opt.serif?serif:sans}`;ctx.fillText(value,x,y,opt.maxWidth||1080)};
+ const line=(x1,y1,x2,y2,color,w=2)=>{ctx.strokeStyle=color;ctx.lineWidth=w;ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke()};
+ const circle=(x,y,r,color)=>{ctx.fillStyle=color;ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);ctx.fill()};
+ // A restrained frame and soft paper shadow give each design the feel of printed stationery.
+ ctx.fillStyle=p.bg;ctx.fillRect(0,0,width,height);
+ ctx.save();ctx.shadowColor='rgba(39,35,25,.12)';ctx.shadowBlur=28;ctx.shadowOffsetY=10;ctx.fillStyle=p.paper;ctx.fillRect(40,38,1000,height-76);ctx.restore();
+ if(style==='bistro'){
+  ctx.fillStyle=p.ink;ctx.fillRect(40,38,1000,74);
+  text('白家私厨',82,87,27,p.paper,{serif:true,bold:true});text('EST. AT HOME',998,86,20,'#b7c7b4',{align:'right'});
+  text(p.en,95,169,21,p.accent,{bold:true});text(p.title,90,260,76,p.ink,{serif:true,bold:true});text(p.sub,96,307,27,p.muted,{serif:true});
+  ctx.strokeStyle='#bf8e78';ctx.lineWidth=3;ctx.beginPath();ctx.arc(858,224,78,0,Math.PI*2);ctx.arc(858,224,62,0,Math.PI*2);ctx.stroke();
+  ctx.strokeStyle=p.ink;ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(831,255);ctx.quadraticCurveTo(858,227,878,192);ctx.moveTo(855,232);ctx.quadraticCurveTo(832,225,837,208);ctx.quadraticCurveTo(856,207,861,222);ctx.moveTo(864,217);ctx.quadraticCurveTo(858,197,879,194);ctx.quadraticCurveTo(888,209,869,221);ctx.stroke();
+ }else if(style==='picnic'){
+  ctx.fillStyle='#cf8a72';ctx.fillRect(40,38,1000,15);ctx.fillRect(40,height-53,1000,15);
+  text(p.en,540,126,21,p.accent,{align:'center',bold:true});text(p.title,540,229,69,p.ink,{align:'center',serif:true,bold:true});text(p.sub,540,277,27,p.muted,{align:'center',serif:true});
+  ctx.save();ctx.translate(163,208);ctx.rotate(-.2);circle(0,0,35,'#c36c51');circle(43,28,27,'#dc9172');ctx.strokeStyle='#728260';ctx.lineWidth=5;ctx.beginPath();ctx.moveTo(0,-34);ctx.quadraticCurveTo(-9,-57,12,-65);ctx.moveTo(43,1);ctx.quadraticCurveTo(46,-17,61,-20);ctx.stroke();ctx.restore();
+  ctx.save();ctx.translate(910,220);ctx.rotate(.5);ctx.fillStyle='#8da681';ctx.beginPath();ctx.ellipse(0,0,15,54,0,0,Math.PI*2);ctx.fill();ctx.rotate(-.9);ctx.beginPath();ctx.ellipse(23,0,14,43,0,0,Math.PI*2);ctx.fill();ctx.restore();
+ }else if(style==='night'){
+  ctx.strokeStyle='#738777';ctx.lineWidth=2;ctx.strokeRect(58,56,964,height-112);
+  text('白家私厨  /  HOME KITCHEN',94,112,22,p.accent,{bold:true});text('夜晚有灯',94,181,28,p.muted,{serif:true});text(p.title,90,260,76,p.ink,{serif:true,bold:true});text('THE COMFORT OF A HOME-COOKED MEAL',96,310,19,p.muted);
+  ctx.strokeStyle=p.accent;ctx.lineWidth=4;ctx.lineCap='round';ctx.beginPath();ctx.moveTo(770,219);ctx.lineTo(946,219);ctx.bezierCurveTo(939,301,898,322,858,322);ctx.bezierCurveTo(817,322,776,301,770,219);ctx.stroke();[816,858,900].forEach(x=>{ctx.beginPath();ctx.moveTo(x,200);ctx.bezierCurveTo(x-12,182,x+12,170,x,151);ctx.stroke()});
+ }else if(style==='banquet'){
+  ctx.strokeStyle='#cbab90';ctx.lineWidth=2;ctx.strokeRect(58,56,964,height-112);ctx.strokeRect(66,64,948,height-128);
+  text('白 家 私 厨  ·  家 宴',540,124,23,p.accent,{align:'center',bold:true});text(p.title,540,229,78,p.ink,{align:'center',serif:true,bold:true});text(p.sub,540,279,27,p.muted,{align:'center',serif:true});
+  line(142,193,230,193,p.rule,2);line(850,193,938,193,p.rule,2);
+  ctx.fillStyle=p.accent;ctx.fillRect(862,245,50,50);text('家',887,281,32,p.paper,{align:'center',serif:true,bold:true});
+ }else if(style==='garden'){
+  text('白家私厨   /   BAI JIA',96,112,22,p.accent,{bold:true});text(p.title,90,229,76,p.ink,{serif:true,bold:true});text(p.sub,96,278,27,p.muted,{serif:true});
+  ctx.strokeStyle='#89a781';ctx.lineWidth=4;ctx.beginPath();ctx.moveTo(754,319);ctx.quadraticCurveTo(846,246,926,112);ctx.stroke();
+  [[790,290,-.8],[828,252,.8],[861,211,-.8],[892,166,.8],[919,124,-.8]].forEach(([x,y,r],i)=>{ctx.save();ctx.translate(x,y);ctx.rotate(r);ctx.fillStyle=i%2?'#91ad87':'#b4c8a7';ctx.beginPath();ctx.ellipse(0,0,16,38,0,0,Math.PI*2);ctx.fill();ctx.restore()});circle(943,110,11,'#c8ad6f');
+ }else{
+  // Perforated stamp and air-mail stripes, kept subtle like vintage stationery.
+  ctx.save();ctx.beginPath();ctx.rect(40,38,1000,13);ctx.rect(40,height-51,1000,13);ctx.clip();for(let x=20;x<1080;x+=76){ctx.fillStyle=(Math.floor(x/76)%2)?'#9db9b4':'#cf927b';ctx.beginPath();ctx.moveTo(x,30);ctx.lineTo(x+32,30);ctx.lineTo(x+5,70);ctx.lineTo(x-27,70);ctx.fill();ctx.beginPath();ctx.moveTo(x,height-60);ctx.lineTo(x+32,height-60);ctx.lineTo(x+5,height-20);ctx.lineTo(x-27,height-20);ctx.fill()}ctx.restore();
+  text(p.en,96,119,21,p.accent,{bold:true});text(p.title,90,226,76,p.ink,{serif:true,bold:true});text(p.sub,96,278,27,p.muted,{serif:true});
+  ctx.strokeStyle='#c69a83';ctx.lineWidth=2;ctx.setLineDash([5,5]);ctx.strokeRect(820,105,120,120);ctx.setLineDash([]);text('家',880,178,44,p.accent,{align:'center',serif:true});text('HOME',880,203,18,p.muted,{align:'center'});
  }
+ const left=104,right=976,top=353;
+ line(left,top,right,top,p.rule,2);
+ text('今 日 菜 单',left,top+42,23,p.muted,{bold:true});
+ text('MENU  /  '+String(selected.length).padStart(2,'0'),right,top+42,20,p.muted,{align:'right'});
+ selected.forEach((dish,i)=>{
+  const y=top+115+i*108;
+  text(String(i+1).padStart(2,'0'),left,y,23,p.accent,{bold:true});
+  text(dish.name,left+76,y+2,42,p.ink,{serif:true,maxWidth:740});
+  line(left+76,y+35,right,y+35,p.rule,1);
+ });
+ const footer=height-91;
+ text('白家私厨  ·  好好吃饭',left,footer,24,p.muted,{serif:true});
+ text(`${selected.length} 道菜`,right,footer,26,p.accent,{align:'right',bold:true});
+ return canvas;
+}
+
+async function saveMenuImage(){
+ const selected=selectedDishes(); if(!selected.length)return;
+ const saveBtn=app.querySelector('[data-action=save]');
+ if(saveBtn){saveBtn.disabled=true;saveBtn.textContent='生成中…'}
+ await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));
+ let imageUrl=null;
+ try{
+  const overlay=document.createElement('div');overlay.className='image-overlay';
+  overlay.innerHTML=`<div class="image-dialog" role="dialog" aria-modal="true" aria-label="菜单图片预览"><div class="image-dialog-head"><div><strong>菜单图片</strong><span>左右滑动，挑一张喜欢的菜单</span></div><button class="image-close" aria-label="关闭预览">${icon('close')}</button></div><div class="image-preview"><img alt="生成的家庭菜单图片" draggable="false"></div><div class="image-style-picker"><button class="image-style-prev" type="button" aria-label="上一种样式"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m14 6-6 6 6 6"/></svg></button><div class="image-style-label" aria-live="polite"><strong></strong><span></span></div><button class="image-style-next" type="button" aria-label="下一种样式"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m10 6 6 6-6 6"/></svg></button></div><div class="image-style-dots" aria-label="选择图片样式">${menuImageStyles.map((style,i)=>`<button type="button" aria-label="${style.name}" data-style="${i}"></button>`).join('')}</div><div class="image-actions"><button class="image-save" type="button" hidden>保存到相册</button><a class="image-download" download="白家私厨菜单.jpg">下载图片</a></div><p class="image-save-hint">也可以长按图片保存</p></div>`;
+  document.body.appendChild(overlay);
+  let index=0, file=null, version=0, closed=false;
+  const img=overlay.querySelector('.image-preview img'), download=overlay.querySelector('.image-download'), share=overlay.querySelector('.image-save');
+  const changeStyle=async next=>{
+   index=(next+menuImageStyles.length)%menuImageStyles.length;
+   const current=++version, style=menuImageStyles[index];
+   overlay.querySelector('.image-style-label strong').textContent=style.name;
+   overlay.querySelector('.image-style-label span').textContent=style.caption;
+   overlay.querySelectorAll('[data-style]').forEach((dot,i)=>{dot.classList.toggle('active',i===index);dot.setAttribute('aria-pressed',String(i===index))});
+   download.removeAttribute('href');share.hidden=true;
+   try{
+    const canvas=await drawMenuImage(selected,style);
+    const blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/jpeg',.92));
+    if(!blob)throw new Error('image encoding failed');
+    if(closed||current!==version)return;
+    const nextUrl=URL.createObjectURL(blob), previousUrl=imageUrl;imageUrl=nextUrl;
+    file=new File([blob],`白家私厨菜单-${style.name}.jpg`,{type:'image/jpeg'});
+    img.src=nextUrl;img.alt=`${style.name}菜单图片`;download.href=nextUrl;download.download=file.name;
+    share.hidden=!(typeof navigator.canShare==='function'&&navigator.canShare({files:[file]}));
+    if(previousUrl)URL.revokeObjectURL(previousUrl);
+   }catch(_){if(!closed&&current===version)notify('生成菜单图片失败，请重试')}
+  };
+  const close=()=>{closed=true;overlay.remove();if(imageUrl)URL.revokeObjectURL(imageUrl);document.removeEventListener('keydown',onKey)};
+  const onKey=e=>{if(e.key==='Escape')close();else if(e.key==='ArrowLeft')changeStyle(index-1);else if(e.key==='ArrowRight')changeStyle(index+1)};
+  share.onclick=async()=>{if(!file)return;try{await navigator.share({files:[file],title:'白家私厨菜单',text:'好好吃饭，慢慢生活'});close()}catch(err){if(err&&err.name!=='AbortError')notify('未能调起系统保存，试试长按图片')}};
+  overlay.querySelector('.image-close').onclick=close;
+  overlay.onclick=e=>{if(e.target===overlay)close()};
+  overlay.querySelector('.image-style-prev').onclick=()=>changeStyle(index-1);
+  overlay.querySelector('.image-style-next').onclick=()=>changeStyle(index+1);
+  overlay.querySelectorAll('[data-style]').forEach(dot=>dot.onclick=()=>changeStyle(Number(dot.dataset.style)));
+  let touch=null;const preview=overlay.querySelector('.image-preview');
+  preview.addEventListener('touchstart',e=>{if(e.touches.length===1)touch={x:e.touches[0].clientX,y:e.touches[0].clientY}},{passive:true});
+  preview.addEventListener('touchend',e=>{if(!touch||!e.changedTouches.length)return;const dx=e.changedTouches[0].clientX-touch.x,dy=e.changedTouches[0].clientY-touch.y;touch=null;if(Math.abs(dx)>45&&Math.abs(dx)>Math.abs(dy)*1.25)changeStyle(index+(dx<0?1:-1))},{passive:true});
+  document.addEventListener('keydown',onKey);overlay.querySelector('.image-close').focus();
+  await changeStyle(0);
+ }catch(_){notify('生成菜单图片失败，请重试')}
+ finally{if(saveBtn){saveBtn.disabled=false;saveBtn.textContent='保存菜单图片'}}
 }
 
 
@@ -267,6 +367,7 @@ async function saveMenuImage(){
 let paperPage = 0;
 let paperTurning = false;
 let paperTurnTimer = null;
+let pendingPaperTap = null;
 function paperPages() {
  const groups = [...categories.slice(1), ...new Set(dishes.map(d => d.category).filter(c => !categories.includes(c)))];
  const pages = [];
@@ -279,7 +380,7 @@ function paperPages() {
  return pages;
 }
 function paperLeaf(items, pageNumber) {
- return `<section class="paper-leaf ${pageNumber % 2 ? 'paper-leaf-right' : 'paper-leaf-left'}"><div class="paper-leaf-inner"><header class="paper-leaf-head"><span>白家私厨</span><span>THE FAMILY MENU</span></header><div class="paper-leaf-title"><span>THE TASTE OF HOME</span><h2>${items.length ? escapeText(items[0].category) : '家的味道'}</h2><i></i></div><div class="paper-dishes">${items.length ? items.map((d, index) => `<article class="paper-dish paper-dish-${index + 1}" role="button" tabindex="0" data-paper-dish="${escapeText(d.id)}" aria-label="将${escapeText(d.name)}加入菜单"><img src="${escapeText(dishImage(d))}" alt="" onerror="this.style.visibility='hidden'"><div class="paper-dish-copy"><span>${escapeText(d.category)}</span><h3>${escapeText(d.name)} ${spiceBadge(d)}</h3><p>${escapeText(d.note || '用心烹调，与你分享')}</p></div></article>`).join('') : '<div class="paper-blank">好好吃饭<br><span>慢慢生活</span></div>'}</div><footer class="paper-leaf-foot"><span>一餐一饭，皆是欢喜</span></footer></div></section>`;
+ return `<section class="paper-leaf ${pageNumber % 2 ? 'paper-leaf-right' : 'paper-leaf-left'}"><div class="paper-leaf-inner"><header class="paper-leaf-head"><span>白家私厨</span><span>THE FAMILY MENU</span></header><div class="paper-leaf-title"><span>THE TASTE OF HOME</span><h2>${items.length ? escapeText(items[0].category) : '家的味道'}</h2><i></i></div><div class="paper-dishes">${items.length ? items.map((d, index) => `<article class="paper-dish paper-dish-${index + 1}" role="button" tabindex="0" data-paper-dish="${escapeText(d.id)}" aria-label="${escapeText(d.name)}，单击加入菜单，双击取消"><img src="${escapeText(dishImage(d))}" alt="" onerror="this.style.visibility='hidden'"><div class="paper-dish-copy"><span>${escapeText(d.category)}</span><h3>${escapeText(d.name)} ${spiceBadge(d)}</h3><p>${escapeText(d.note || '用心烹调，与你分享')}</p></div></article>`).join('') : '<div class="paper-blank">好好吃饭<br><span>慢慢生活</span></div>'}</div><footer class="paper-leaf-foot"><span>一餐一饭，皆是欢喜</span></footer></div></section>`;
 }
 function openPaperMenu() {
  paperPage = 0;
@@ -303,13 +404,22 @@ function renderPaperMenu() {
  overlay.querySelector('[data-paper-close]').onclick = closePaperMenu;
  let touchStart = null;
  const book = overlay.querySelector('.paper-book');
- const addPaperDish = dish => {
+ const activatePaperDish = dish => {
   const id = dish.dataset.paperDish;
-  if (dishes.some(d => d.id === id && d.is_available) && !state.selected.includes(id)) state.selected.push(id);
+  if (!dishes.some(d => d.id === id && d.is_available)) return;
+  if (pendingPaperTap && pendingPaperTap.id === id) {
+   clearTimeout(pendingPaperTap.timer);
+   pendingPaperTap = null;
+   state.selected = state.selected.filter(selectedId => selectedId !== id);
+   showPaperFeedback(id, false);
+   return;
+  }
+  flushPaperTap();
+  pendingPaperTap = { id, timer: setTimeout(flushPaperTap, 350) };
  };
  book.onclick = e => {
   const dish = e.target.closest('[data-paper-dish]');
-  if (dish) { addPaperDish(dish); return; }
+  if (dish) { activatePaperDish(dish); return; }
   const rect = book.getBoundingClientRect();
   const rotated = matchMedia('(orientation: portrait)').matches;
   const position = rotated ? (e.clientY - rect.top) / rect.height : (e.clientX - rect.left) / rect.width;
@@ -318,7 +428,7 @@ function renderPaperMenu() {
  };
  book.addEventListener('keydown', e => {
   const dish = e.target.closest('[data-paper-dish]');
-  if (dish && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); addPaperDish(dish); }
+  if (dish && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); activatePaperDish(dish); }
  });
  book.addEventListener('touchstart', e => {
   if (e.touches.length !== 1) { touchStart = null; return; }
@@ -350,12 +460,38 @@ function renderPaperMenu() {
  }, { passive: false });
  book.addEventListener('touchcancel', () => { touchStart = null; }, { passive: true });
 }
+function showPaperFeedback(id, added) {
+ const stage = document.querySelector('.paper-stage');
+ const dish = dishes.find(item => item.id === id);
+ if (!stage || !dish) return;
+ stage.querySelector('.paper-feedback-message')?.remove();
+ const message = document.createElement('div');
+ message.className = 'paper-feedback-message';
+ message.setAttribute('role', 'status');
+ const title = document.createElement('strong');
+ title.textContent = added ? '已加入菜单' : '已取消';
+ const name = document.createElement('span');
+ name.textContent = dish.name;
+ message.append(title, name);
+ stage.appendChild(message);
+ setTimeout(() => message.remove(), 1600);
+}
+function flushPaperTap() {
+ if (!pendingPaperTap) return;
+ const { id, timer } = pendingPaperTap;
+ clearTimeout(timer);
+ pendingPaperTap = null;
+ if (!dishes.some(d => d.id === id && d.is_available)) return;
+ if (!state.selected.includes(id)) state.selected.push(id);
+ showPaperFeedback(id, true);
+}
 function turnPaperPage(direction) {
  const pages = paperPages();
  const next = paperPage + direction;
  if (paperTurning || next < 0 || next >= pages.length / 2) return;
  const book = document.querySelector('.paper-book');
  if (!book) return;
+ flushPaperTap();
  if (matchMedia('(prefers-reduced-motion: reduce)').matches) { paperPage = next; renderPaperMenu(); return; }
  paperTurning = true;
  book.classList.add('is-turning');
@@ -378,6 +514,7 @@ function turnPaperPage(direction) {
  paperTurnTimer = setTimeout(() => { paperPage = next; paperTurning = false; renderPaperMenu(); }, 900);
 }
 function closePaperMenu() {
+ flushPaperTap();
  document.querySelector('.paper-overlay')?.remove();
  document.body.classList.remove('paper-open');
  clearTimeout(paperTurnTimer);
@@ -400,7 +537,6 @@ function bind(){
  const search=app.querySelector('input[type=search]');if(search)search.oninput=e=>{state.query=e.target.value;const position=e.target.selectionStart;render();const input=app.querySelector('input[type=search]');input.focus();input.setSelectionRange(position,position)};
  const title=app.querySelector('.menu-title-input');if(title)title.oninput=e=>{state.title=e.target.value};
  const make=app.querySelector('[data-action=make-menu]');if(make)make.onclick=()=>{state.page='menu';render()};
- const copy=app.querySelector('[data-action=copy]');if(copy)copy.onclick=async()=>{const text=`${state.title || '今天的菜单'}\n${categories.filter(c=>c!=='全部' && selectedDishes().some(d=>d.category===c)).map(c=>`${c}\n${selectedDishes().filter(d=>d.category===c).map((d,i)=>`${i+1}. ${d.name}`).join('\n')}`).join('\n\n')}\n好好吃饭 · 好好生活`;try{await navigator.clipboard.writeText(text);notify('菜单已复制，分享给家人吧')}catch{const area=document.createElement('textarea');area.value=text;document.body.appendChild(area);area.select();try{document.execCommand('copy');notify('菜单已复制，分享给家人吧')}catch{notify('复制失败，请手动选择菜单内容')}area.remove()}};
  const save=app.querySelector('[data-action=save]');if(save)save.onclick=saveMenuImage;
 }
 render();

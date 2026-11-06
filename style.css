@@ -167,9 +167,6 @@ button.filter{gap:2px;padding-left:9px;padding-right:5px}
 .dock-action:disabled{background:#f3e6dc;color:#a58b7b;cursor:not-allowed}
 .dock-action:disabled>span{color:#bca99a}
 .dock-save{font-size:12px;font-weight:700;letter-spacing:.03em}
-.menu-secondary{display:flex;justify-content:center;padding:16px 0 4px}
-.menu-secondary button{min-height:40px;padding:0 20px;border:1px solid #ead8c9;border-radius:12px;background:#fffbf6;color:#a65b46;font-size:12px;font-weight:600}
-.menu-secondary button:disabled{opacity:.5;cursor:not-allowed}
 .screen-scroll,.menu-screen .screen-scroll{padding-bottom:110px}
 @media(max-width:800px){.bottom{padding-bottom:max(12px,env(safe-area-inset-bottom))}.screen-scroll,.menu-screen .screen-scroll{padding-bottom:calc(104px + env(safe-area-inset-bottom))}}
 @media(max-width:350px){.order-dock{gap:6px}.dock-action{min-width:104px}.order-dock .nav button{min-width:48px}}
@@ -224,7 +221,6 @@ button.filter{gap:2px;padding-left:9px;padding-right:5px}
 .hero{border-radius:22px;box-shadow:0 8px 25px #79513b18}
 .dish{border-color:#f0e5da;box-shadow:0 3px 14px #79513b0b}
 .dish-img{border-radius:12px}
-.menu-secondary button{border-radius:14px;background:#fffaf4}
 @media(max-width:350px){.order-dock .nav button{min-width:58px;padding:0 7px;gap:4px}.dock-action{min-width:88px;padding:0 12px}.dock-save{min-width:110px}}
 
 .menu-empty button{padding:0 24px;min-width:120px}
@@ -285,3 +281,31 @@ body.paper-open{overflow:hidden}
 
 /* A quiet text control sits above the printed page. */
 .paper-toolbar{top:max(2px,env(safe-area-inset-top));left:max(12px,env(safe-area-inset-left))}.paper-toolbar [data-paper-close]{display:inline-flex;align-items:center;justify-content:center;min-width:76px;min-height:40px;padding:0 8px;border:0;border-radius:0;background:transparent;color:#8b7056;font-family:var(--serif);font-size:12px;letter-spacing:.1em;box-shadow:none}.paper-toolbar [data-paper-close]:hover{color:#583d2b}.paper-toolbar [data-paper-close]:focus-visible{outline:1px solid #a67d5a;outline-offset:-3px;border-radius:2px}
+
+
+/* Menu-image styles: keep the preview scrollable for long menus and swipeable sideways. */
+.image-preview{overscroll-behavior:contain;touch-action:pan-y;flex:1 1 auto}
+.image-style-picker{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:12px}
+.image-style-picker button{flex:none;width:32px;height:32px;border:1px solid #ead9cb;border-radius:50%;background:#fffaf4;color:#a96a54;font:24px/1 var(--serif);cursor:pointer}
+.image-style-label{text-align:center;min-width:0}.image-style-label strong{display:block;color:#624638;font-family:var(--serif);font-size:15px}.image-style-label span{display:block;margin-top:3px;color:#b49a88;font-size:10px}
+.image-style-dots{display:flex;justify-content:center;gap:7px;margin-top:9px}.image-style-dots button{width:6px;height:6px;padding:0;border:0;border-radius:50%;background:#dfcbbd;cursor:pointer}.image-style-dots button.active{width:17px;border-radius:5px;background:#b95b45}
+.image-actions [hidden]{display:none}.image-save-hint{margin:8px 0 0;text-align:center;color:#b49a88;font-size:10px}.image-download:not([href]){opacity:.5;pointer-events:none}
+
+/* Transient center feedback, independent of the printed menu content. */
+.paper-feedback-message{position:absolute;z-index:12;left:50%;top:50%;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;gap:7px;min-width:150px;max-width:60%;padding:17px 25px;border:1px solid #d7c3a8;background:#faf5eaeF;box-shadow:0 8px 28px #66533c24;color:#6a4f39;text-align:center;pointer-events:none;animation:paper-message-fade 1.6s ease both}.paper-feedback-message strong{font:600 14px var(--serif);letter-spacing:.12em}.paper-feedback-message span{font:11px var(--sans);color:#a0866d;overflow-wrap:anywhere}@keyframes paper-message-fade{0%{opacity:0}15%,75%{opacity:1}100%{opacity:0}}@media(prefers-reduced-motion:reduce){.paper-feedback-message{animation:none}}
+
+/* Editorial photo sizes vary across the spread, as in a printed menu. */
+.paper-stage{container-type:size}
+.paper-dish-1{grid-template-columns:minmax(0,44%) minmax(0,1fr)}
+.paper-dish-2{grid-template-columns:minmax(0,1fr) minmax(0,34%)}
+.paper-dish-1 img{aspect-ratio:1.42;max-height:26cqh}
+.paper-dish-2 img{aspect-ratio:1.08;max-height:22cqh}
+.paper-leaf-right .paper-dish-1{grid-template-columns:minmax(0,35%) minmax(0,1fr);margin-left:8%}
+.paper-leaf-right .paper-dish-1 img{aspect-ratio:1.05;max-height:22cqh}
+.paper-leaf-right .paper-dish-2{grid-template-columns:minmax(0,1fr) minmax(0,44%);margin-right:0}
+.paper-leaf-right .paper-dish-2 img{aspect-ratio:1.42;max-height:26cqh}
+@media(max-height:500px) and (orientation:landscape),(max-width:500px) and (orientation:portrait){.paper-dish-1 img,.paper-leaf-right .paper-dish-2 img{max-height:27cqh}.paper-dish-2 img,.paper-leaf-right .paper-dish-1 img{max-height:22cqh}}
+
+/* A fixed SVG viewBox keeps the chevrons optically and geometrically centered. */
+.image-style-picker button{display:grid;place-items:center;padding:0;line-height:1}
+.image-style-picker button svg{display:block;width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}

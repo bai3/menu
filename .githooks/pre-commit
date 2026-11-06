@@ -1,0 +1,3 @@
+#!/bin/sh
+# Update the staged Service Worker version without staging unrelated edits.
+exec python3 "$(git rev-parse --show-toplevel)/scripts/bump-sw-version.py"
