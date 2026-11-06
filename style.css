@@ -228,3 +228,15 @@ button.filter{gap:2px;padding-left:9px;padding-right:5px}
 @media(max-width:350px){.order-dock .nav button{min-width:58px;padding:0 7px;gap:4px}.dock-action{min-width:88px;padding:0 12px}.dock-save{min-width:110px}}
 
 .menu-empty button{padding:0 24px;min-width:120px}
+
+/* Dish availability and spice levels */
+.form-pair{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:7px}
+.form-pair .form-label{display:block;margin:0 0 7px}
+.spice-badge{display:inline-flex;align-items:center;gap:0;margin-left:3px;font-family:var(--sans);font-size:12px;letter-spacing:-2px;vertical-align:1px;white-space:nowrap}
+.manage-dish-copy .spice-badge{margin-top:0;padding:0;background:none;vertical-align:middle}
+.manage-dish-copy .manage-unavailable,.unavailable-label{margin-left:5px;color:#958a80;background:#f0eeeb}
+.unavailable-label{display:inline-block;padding:2px 6px;border-radius:6px;font-size:9px}
+.dish-unavailable{background:#f6f4f1;border-color:#ebe7e2;box-shadow:none}
+.dish-unavailable .dish-img{filter:grayscale(1);opacity:.55}
+.dish-unavailable .dish-info{opacity:.6}
+.dish-unavailable .add{background:#eae7e3;color:#bcb5ae;cursor:not-allowed}
