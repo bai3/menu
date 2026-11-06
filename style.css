@@ -474,3 +474,16 @@ button.filter[hidden]{display:none}
 
 /* Shared catalogue: the badge marks any selection; the check button marks mine. */
 .shared-catalog-dish{align-items:center;gap:10px}.shared-dish-photo{position:relative;flex:0 0 86px;width:86px;height:82px}.shared-dish-photo .dish-img{display:block;width:100%;height:100%}.shared-picked-badge{position:absolute;top:0;left:0;padding:4px 7px;border-radius:11px 0 9px 0;background:#ad614c;color:#fffaf5;font-size:10px;font-weight:600;line-height:1.2}.shared-catalog-dish .dish-info{align-self:center;min-width:0}.shared-catalog-dish .dish-info h3{margin-bottom:5px}.shared-catalog-dish .dish-tag{margin-top:5px}.shared-dish-names{display:flex;align-items:center;gap:5px;min-width:0;margin-top:6px;color:#9a715d;font-size:10px;line-height:1.4}.shared-names-label{flex:none;color:#bb765d}.shared-names-value{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.shared-catalog-dish .add{align-self:center}
+
+/* Keep shared names clear of the fixed selection control on compact screens. */
+.catalog .shared-catalog-dish .dish-info{padding-bottom:38px}
+@media (max-width: 420px){
+ .shared-search,.shared-filter-switch,.shared-catalog{margin-left:0;margin-right:0}
+ .shared-heading,.shared-bar{margin-left:3px;margin-right:3px}
+ .shared-catalog{grid-template-columns:70px minmax(0,1fr);gap:8px}
+ .shared-catalog-dish .shared-dish-photo{flex-basis:64px;width:64px;height:70px}
+ .catalog .shared-catalog-dish .dish-info h3{font-size:13px;line-height:1.35;overflow-wrap:anywhere}
+ .catalog .shared-catalog-dish .dish-info{padding-bottom:38px}
+ .shared-dish-names{max-width:100%}
+}
+@media (max-width: 420px){.shared-catalog button.filter{padding-left:6px;padding-right:4px;gap:2px;font-size:10px}.shared-catalog .filter-name{white-space:nowrap}}
