@@ -422,12 +422,12 @@ function render(){if(state.page==='shared-create')renderSharedCreate();else if(s
 function notify(message){const old=app.querySelector('.toast');if(old)old.remove();const el=document.createElement('div');el.className='toast';el.textContent=message;app.appendChild(el);setTimeout(()=>el.remove(),2400)}
 
 const menuImageStyles = [
- {id:'paper', name:'家常小票', caption:'把这一餐，认真记下来'},
- {id:'bbq', name:'烧烤点单', caption:'勾勾画画，今晚开吃'},
- {id:'picnic', name:'野餐时光', caption:'把快乐摆上餐桌'},
  {id:'check', name:'菜单打卡', caption:'今日份好饭，打卡啦'},
  {id:'film', name:'胶片食光', caption:'把拿手菜一张张拍下来'},
- {id:'feast', name:'家宴请柬', caption:'今晚，恭候入席'}
+ {id:'feast', name:'家宴请柬', caption:'今晚，恭候入席'},
+ {id:'paper', name:'家常小票', caption:'把这一餐，认真记下来'},
+ {id:'bbq', name:'烧烤点单', caption:'勾勾画画，今晚开吃'},
+ {id:'picnic', name:'野餐时光', caption:'把快乐摆上餐桌'}
 ];
 
 // 照片模版共用的小工具：加载菜品图片、按封面裁切与圆角路径。
