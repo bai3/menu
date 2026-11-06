@@ -1,6 +1,6 @@
 // 家宴 Service Worker：预缓存全部静态资源，离线也能打开。
 // 更新页面内容后，把下面 VERSION 加一（如 'v2'）即可让所有客户端换用新缓存。
-const VERSION = 'v17';
+const VERSION = 'v20';
 const CACHE = `jiayan-${VERSION}`;
 const ASSETS = [
   './',

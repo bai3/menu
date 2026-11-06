@@ -51,6 +51,7 @@ async function initDishes() {
   if (Array.isArray(stored) && stored.every(isValidDish)) {
    dishes = stored.map(normalizeDish);
    if (state.page === 'dishes' || state.page === 'manage') render();
+   if (document.querySelector('.paper-overlay')) renderPaperMenu();
   }
  } catch (_) { /* 读不到已存数据时保留内置菜单。 */ }
  await syncFromCloud();
@@ -98,6 +99,7 @@ async function syncFromCloud() {
   if (version !== dishChangeVersion) return;
   saveLocalDishes(cloudDishes);
   if (state.page === 'dishes' || state.page === 'manage') render();
+  if (document.querySelector('.paper-overlay')) renderPaperMenu();
  } catch (_) { notify('云端暂不可达，当前显示本机菜谱'); }
 }
 // 实时订阅：家人增删改菜，本机即时生效。自己写入的回声与本地一致时跳过，避免无谓重渲染。
@@ -119,6 +121,7 @@ function subscribeRealtime() {
    }
    // 表单中的草稿尚未写入 state，重绘会清空用户输入。
    if (state.page !== 'dish-form') render();
+   if (document.querySelector('.paper-overlay')) renderPaperMenu();
   })
   .subscribe();
 }
@@ -159,6 +162,7 @@ function renderDishes(){
  app.innerHTML=`<div class="screen-scroll">${''}<header class="topbar"><div class="top-brand">${logo}<div><strong>白家私厨</strong><small>把喜欢的菜端上桌</small></div></div></header>
  <section class="hero"><div class="hero-image"></div><div class="hero-text"><span class="tag">白家私厨 &nbsp; / &nbsp; 家的味道</span><h2>今天，<br>一起好好吃饭。</h2><p>把喜欢的菜，点给爱的人</p></div><span class="hero-seal">家味</span></section>
  <div class="section-title"><div><h2>今天吃什么？</h2><p>挑几道喜欢的菜，凑成一桌好饭</p></div><button class="manage-entry" data-page="manage">${icon('edit')} 编辑菜单</button></div>
+ <button class="paper-entry" data-action="paper-mode"><span><small>THE FAMILY MENU</small><strong>翻开纸质菜单</strong><em>像在餐厅一样，慢慢挑选</em></span><span class="paper-entry-mark" aria-hidden="true">菜单<br><i>MENU</i></span><b>打开菜单</b></button>
  <label class="search">${icon('search')}<input type="search" placeholder="搜索想吃的菜" value="${escapeText(state.query)}" aria-label="搜索想吃的菜"></label>
  <div class="catalog"><nav class="filters" aria-label="菜品分类">${categories.map(c=>{const selectedCount=selectedDishes().filter(d=>c==='全部'||d.category===c).length;return `<button class="filter ${state.category===c?'active':''}" data-category="${c}" aria-pressed="${state.category===c}"><span class="filter-name">${c}</span>${selectedCount ? `<span class="filter-count">${selectedCount}</span>` : ''}</button>`}).join('')}</nav>
  <section class="catalog-content" aria-label="${state.category}菜品"><div class="catalog-heading"><h3>${state.category==='全部'?'全部菜品':state.category}</h3><span>${filtered.length} 道菜</span></div><div class="dish-list">${filtered.length ? filtered.map(d=>`<article class="dish ${d.is_available?'':'dish-unavailable'}"><img class="dish-img" src="${escapeText(dishImage(d))}" alt="${escapeText(d.name)}" onerror="this.style.visibility='hidden'"><div class="dish-info"><h3>${escapeText(d.name)} ${spiceBadge(d)}</h3><p>${escapeText(d.note)}</p><span class="dish-tag">${escapeText(d.category)}</span>${d.is_available?'':'<span class="unavailable-label">已下架</span>'}</div><button class="add ${state.selected.includes(d.id)?'selected':''}" data-dish="${escapeText(d.id)}" aria-label="${state.selected.includes(d.id)?'移除':'选择'}${escapeText(d.name)}" aria-pressed="${state.selected.includes(d.id)}" ${d.is_available?'':'disabled'}>${icon(state.selected.includes(d.id)?'check':'plus')}</button></article>`).join('') : '<div class="empty">没有找到这道菜<br>换个关键词试试吧</div>'}</div></section></div></div>
@@ -258,6 +262,96 @@ async function saveMenuImage(){
  }
 }
 
+
+// The restaurant menu is a second way to browse the same live catalogue and order.
+let paperPage = 0;
+let paperTurning = false;
+let paperTurnTimer = null;
+function paperPages() {
+ const groups = [...categories.slice(1), ...new Set(dishes.map(d => d.category).filter(c => !categories.includes(c)))];
+ const pages = [];
+ groups.forEach(category => {
+  const items = dishes.filter(d => d.category === category && d.is_available);
+  for (let i = 0; i < items.length; i += 2) pages.push(items.slice(i, i + 2));
+ });
+ if (!pages.length) pages.push([]);
+ if (pages.length % 2) pages.push([]);
+ return pages;
+}
+function paperLeaf(items, pageNumber) {
+ return `<section class="paper-leaf ${pageNumber % 2 ? 'paper-leaf-right' : 'paper-leaf-left'}"><div class="paper-leaf-inner"><header class="paper-leaf-head"><span>白家私厨</span><span>THE FAMILY MENU</span></header><div class="paper-leaf-title"><span>THE TASTE OF HOME</span><h2>${items.length ? escapeText(items[0].category) : '家的味道'}</h2><i></i></div><div class="paper-dishes">${items.length ? items.map((d, index) => `<article class="paper-dish paper-dish-${index + 1} "><img src="${escapeText(dishImage(d))}" alt="" onerror="this.style.visibility='hidden'"><div class="paper-dish-copy"><span>${escapeText(d.category)}</span><h3>${escapeText(d.name)} ${spiceBadge(d)}</h3><p>${escapeText(d.note || '用心烹调，与你分享')}</p></div></article>`).join('') : '<div class="paper-blank">好好吃饭<br><span>慢慢生活</span></div>'}</div><footer class="paper-leaf-foot"><span>一餐一饭，皆是欢喜</span><span>${String(pageNumber + 1).padStart(2, '0')}</span></footer></div></section>`;
+}
+function openPaperMenu() {
+ paperPage = 0;
+ const overlay = document.createElement('div');
+ overlay.className = 'paper-overlay';
+ overlay.setAttribute('role', 'dialog');
+ overlay.setAttribute('aria-modal', 'true');
+ overlay.setAttribute('aria-label', '纸质菜单，滑动或点击页面边缘翻页');
+ overlay.onkeydown = e => { if (e.key === 'ArrowLeft') turnPaperPage(-1); else if (e.key === 'ArrowRight') turnPaperPage(1); else if (e.key === 'Escape') closePaperMenu(); };
+ document.body.appendChild(overlay);
+ renderPaperMenu();
+ overlay.querySelector('[data-paper-close]').focus();
+}
+function renderPaperMenu() {
+ const overlay = document.querySelector('.paper-overlay');
+ if (!overlay) return;
+ const pages = paperPages();
+ paperPage = Math.max(0, Math.min(paperPage, pages.length / 2 - 1));
+ overlay.innerHTML = `<div class="paper-stage"><header class="paper-toolbar"><button type="button" data-paper-close>返回列表</button><div><strong>白家私厨</strong><span> · 纸质菜单</span></div><span class="paper-toolbar-spacer" aria-hidden="true"></span></header><div class="paper-book-wrap"><div class="paper-book" aria-live="polite">${paperLeaf(pages[paperPage * 2], paperPage * 2)}${paperLeaf(pages[paperPage * 2 + 1], paperPage * 2 + 1)}</div></div><footer class="paper-controls" aria-label="第 ${paperPage + 1} 页，共 ${pages.length / 2} 页"><span>${String(paperPage + 1).padStart(2, '0')} <i>/</i> ${String(pages.length / 2).padStart(2, '0')}</span></footer></div>`;
+ overlay.querySelector('[data-paper-close]').onclick = closePaperMenu;
+ let startX = 0, startY = 0;
+ const book = overlay.querySelector('.paper-book');
+ book.onclick = e => {
+  const rect = book.getBoundingClientRect();
+  const rotated = matchMedia('(orientation: portrait)').matches;
+  const position = rotated ? (e.clientY - rect.top) / rect.height : (e.clientX - rect.left) / rect.width;
+  if (position < .18) turnPaperPage(-1);
+  else if (position > .82) turnPaperPage(1);
+ };
+ book.ontouchstart = e => { startX = e.changedTouches[0].clientX; startY = e.changedTouches[0].clientY; };
+ book.ontouchend = e => {
+  const dx = e.changedTouches[0].clientX - startX, dy = e.changedTouches[0].clientY - startY;
+  // Portrait presentation is rotated clockwise, so the physical swipe is vertical.
+  const rotated = matchMedia('(orientation: portrait)').matches;
+  const delta = rotated ? dy : dx, cross = rotated ? dx : dy;
+  if (Math.abs(delta) > 55 && Math.abs(delta) > Math.abs(cross)) turnPaperPage((rotated ? delta > 0 : delta < 0) ? 1 : -1);
+ };
+}
+function turnPaperPage(direction) {
+ const pages = paperPages();
+ const next = paperPage + direction;
+ if (paperTurning || next < 0 || next >= pages.length / 2) return;
+ const book = document.querySelector('.paper-book');
+ if (!book) return;
+ if (matchMedia('(prefers-reduced-motion: reduce)').matches) { paperPage = next; renderPaperMenu(); return; }
+ paperTurning = true;
+ book.classList.add('is-turning');
+ const currentSide = direction > 0 ? '.paper-leaf-right' : '.paper-leaf-left';
+ const front = book.querySelector(currentSide).cloneNode(true);
+ const backIndex = direction > 0 ? next * 2 : next * 2 + 1;
+ const underIndex = direction > 0 ? next * 2 + 1 : next * 2;
+ const sheet = document.createElement('div');
+ sheet.className = `paper-sheet ${direction > 0 ? 'turn-forward' : 'turn-backward'}`;
+ sheet.setAttribute('aria-hidden', 'true');
+ sheet.innerHTML = `<div class="paper-sheet-face paper-sheet-front"></div><div class="paper-sheet-face paper-sheet-back">${paperLeaf(pages[backIndex], backIndex)}</div>`;
+ sheet.querySelector('.paper-sheet-front').appendChild(front);
+ sheet.querySelectorAll('button').forEach(button => { button.disabled = true; button.tabIndex = -1; });
+ // Reveal the next stationary page beneath the turning sheet; the reverse of
+ // the sheet carries the adjacent page, so there is no blank half-turn.
+ const oldLeaf = book.querySelector(currentSide);
+ oldLeaf.insertAdjacentHTML('beforebegin', paperLeaf(pages[underIndex], underIndex));
+ oldLeaf.remove();
+ book.appendChild(sheet);
+ paperTurnTimer = setTimeout(() => { paperPage = next; paperTurning = false; renderPaperMenu(); }, 900);
+}
+function closePaperMenu() {
+ document.querySelector('.paper-overlay')?.remove();
+ clearTimeout(paperTurnTimer);
+ paperTurning = false;
+ if (state.page === 'dishes') { render(); app.querySelector('[data-action=paper-mode]')?.focus(); }
+}
+
 function bind(){
  app.querySelectorAll('[data-page]').forEach(b=>b.onclick=()=>{state.page=b.dataset.page;render()});
  app.querySelectorAll('[data-category]').forEach(b=>b.onclick=()=>{const scroll=app.querySelector('.screen-scroll').scrollTop;state.category=b.dataset.category;render();app.querySelector('.screen-scroll').scrollTop=scroll});
@@ -265,6 +359,7 @@ function bind(){
  app.querySelectorAll('[data-remove]').forEach(b=>b.onclick=()=>{state.selected=state.selected.filter(x=>x!==b.dataset.remove);render()});
  app.querySelectorAll('[data-edit]').forEach(b=>b.onclick=()=>{state.editingId=b.dataset.edit;state.draftImage=null;state.page='dish-form';render()});
  app.querySelectorAll('[data-delete]').forEach(b=>b.onclick=async()=>{const dish=dishes.find(d=>d.id===b.dataset.delete);if(!dish || !window.confirm(`确定删除“${dish.name}”吗？`))return;b.disabled=true;if(!await cloudDeleteDish(dish.id)){b.disabled=false;return}saveLocalDishes(dishes.filter(d=>d.id!==dish.id));state.selected=state.selected.filter(id=>id!==dish.id);render();notify('菜品已删除');});
+ const paperEntry=app.querySelector('[data-action=paper-mode]');if(paperEntry)paperEntry.onclick=openPaperMenu;
  const addDish=app.querySelector('[data-action=new-dish]');if(addDish)addDish.onclick=()=>{state.editingId=null;state.draftImage=null;state.page='dish-form';render()};
  app.querySelectorAll('.cover-upload input').forEach(file=>file.onchange=()=>{const item=file.files?.[0];if(!item)return;if(!item.type.startsWith('image/')){notify('请选择图片文件');file.value='';return}const reader=new FileReader();reader.onerror=()=>notify('图片读取失败');reader.onload=()=>{const image=new Image();image.onerror=()=>notify('图片格式不支持');image.onload=()=>{const scale=Math.min(1,800/Math.max(image.width,image.height));const canvas=document.createElement('canvas');canvas.width=Math.max(1,Math.round(image.width*scale));canvas.height=Math.max(1,Math.round(image.height*scale));const context=canvas.getContext('2d');context.fillStyle='#fff';context.fillRect(0,0,canvas.width,canvas.height);context.drawImage(image,0,0,canvas.width,canvas.height);state.draftImage=canvas.toDataURL('image/jpeg',.82);app.querySelector('#cover-preview').src=state.draftImage};image.src=reader.result};reader.readAsDataURL(item)});
  const form=app.querySelector('#dish-form');if(form)form.onsubmit=async e=>{e.preventDefault();const name=form.elements.name.value.trim();if(!name){form.elements.name.focus();return}const existing=dishes.find(d=>d.id===state.editingId);const dish={id:existing?.id || `dish-${Date.now()}-${Math.random().toString(36).slice(2,8)}`,name,category:form.elements.category.value,note:form.elements.note.value.trim(),image:state.draftImage || existing?.image || 'tomato.jpg',spice_level:Number(form.elements.spice_level.value),is_available:form.elements.is_available.value==='true'};const saveButton=form.querySelector('[type=submit]');saveButton.disabled=true;if(!await cloudUpsertDish(dish)){saveButton.disabled=false;return}const latest=dishes.find(d=>d.id===dish.id);saveLocalDishes(latest?dishes.map(d=>d.id===dish.id?dish:d):[...dishes,dish]);state.editingId=null;state.draftImage=null;state.page='manage';render();notify(existing?'菜品已更新':'菜品已添加');};
