@@ -279,10 +279,11 @@ function paperPages() {
  return pages;
 }
 function paperLeaf(items, pageNumber) {
- return `<section class="paper-leaf ${pageNumber % 2 ? 'paper-leaf-right' : 'paper-leaf-left'}"><div class="paper-leaf-inner"><header class="paper-leaf-head"><span>白家私厨</span><span>THE FAMILY MENU</span></header><div class="paper-leaf-title"><span>THE TASTE OF HOME</span><h2>${items.length ? escapeText(items[0].category) : '家的味道'}</h2><i></i></div><div class="paper-dishes">${items.length ? items.map((d, index) => `<article class="paper-dish paper-dish-${index + 1} "><img src="${escapeText(dishImage(d))}" alt="" onerror="this.style.visibility='hidden'"><div class="paper-dish-copy"><span>${escapeText(d.category)}</span><h3>${escapeText(d.name)} ${spiceBadge(d)}</h3><p>${escapeText(d.note || '用心烹调，与你分享')}</p></div></article>`).join('') : '<div class="paper-blank">好好吃饭<br><span>慢慢生活</span></div>'}</div><footer class="paper-leaf-foot"><span>一餐一饭，皆是欢喜</span><span>${String(pageNumber + 1).padStart(2, '0')}</span></footer></div></section>`;
+ return `<section class="paper-leaf ${pageNumber % 2 ? 'paper-leaf-right' : 'paper-leaf-left'}"><div class="paper-leaf-inner"><header class="paper-leaf-head"><span>白家私厨</span><span>THE FAMILY MENU</span></header><div class="paper-leaf-title"><span>THE TASTE OF HOME</span><h2>${items.length ? escapeText(items[0].category) : '家的味道'}</h2><i></i></div><div class="paper-dishes">${items.length ? items.map((d, index) => `<article class="paper-dish paper-dish-${index + 1}" role="button" tabindex="0" data-paper-dish="${escapeText(d.id)}" aria-label="将${escapeText(d.name)}加入菜单"><img src="${escapeText(dishImage(d))}" alt="" onerror="this.style.visibility='hidden'"><div class="paper-dish-copy"><span>${escapeText(d.category)}</span><h3>${escapeText(d.name)} ${spiceBadge(d)}</h3><p>${escapeText(d.note || '用心烹调，与你分享')}</p></div></article>`).join('') : '<div class="paper-blank">好好吃饭<br><span>慢慢生活</span></div>'}</div><footer class="paper-leaf-foot"><span>一餐一饭，皆是欢喜</span></footer></div></section>`;
 }
 function openPaperMenu() {
  paperPage = 0;
+ document.body.classList.add('paper-open');
  const overlay = document.createElement('div');
  overlay.className = 'paper-overlay';
  overlay.setAttribute('role', 'dialog');
@@ -298,25 +299,56 @@ function renderPaperMenu() {
  if (!overlay) return;
  const pages = paperPages();
  paperPage = Math.max(0, Math.min(paperPage, pages.length / 2 - 1));
- overlay.innerHTML = `<div class="paper-stage"><header class="paper-toolbar"><button type="button" data-paper-close>返回列表</button><div><strong>白家私厨</strong><span> · 纸质菜单</span></div><span class="paper-toolbar-spacer" aria-hidden="true"></span></header><div class="paper-book-wrap"><div class="paper-book" aria-live="polite">${paperLeaf(pages[paperPage * 2], paperPage * 2)}${paperLeaf(pages[paperPage * 2 + 1], paperPage * 2 + 1)}</div></div><footer class="paper-controls" aria-label="第 ${paperPage + 1} 页，共 ${pages.length / 2} 页"><span>${String(paperPage + 1).padStart(2, '0')} <i>/</i> ${String(pages.length / 2).padStart(2, '0')}</span></footer></div>`;
+ overlay.innerHTML = `<div class="paper-stage"><header class="paper-toolbar"><button type="button" data-paper-close aria-label="返回菜品列表">返回列表</button><div><strong>白家私厨</strong><span> · 纸质菜单</span></div><span class="paper-toolbar-spacer" aria-hidden="true"></span></header><div class="paper-book-wrap"><div class="paper-book" aria-live="polite">${paperLeaf(pages[paperPage * 2], paperPage * 2)}${paperLeaf(pages[paperPage * 2 + 1], paperPage * 2 + 1)}</div></div></div>`;
  overlay.querySelector('[data-paper-close]').onclick = closePaperMenu;
- let startX = 0, startY = 0;
+ let touchStart = null;
  const book = overlay.querySelector('.paper-book');
+ const addPaperDish = dish => {
+  const id = dish.dataset.paperDish;
+  if (dishes.some(d => d.id === id && d.is_available) && !state.selected.includes(id)) state.selected.push(id);
+ };
  book.onclick = e => {
+  const dish = e.target.closest('[data-paper-dish]');
+  if (dish) { addPaperDish(dish); return; }
   const rect = book.getBoundingClientRect();
   const rotated = matchMedia('(orientation: portrait)').matches;
   const position = rotated ? (e.clientY - rect.top) / rect.height : (e.clientX - rect.left) / rect.width;
   if (position < .18) turnPaperPage(-1);
   else if (position > .82) turnPaperPage(1);
  };
- book.ontouchstart = e => { startX = e.changedTouches[0].clientX; startY = e.changedTouches[0].clientY; };
- book.ontouchend = e => {
-  const dx = e.changedTouches[0].clientX - startX, dy = e.changedTouches[0].clientY - startY;
-  // Portrait presentation is rotated clockwise, so the physical swipe is vertical.
+ book.addEventListener('keydown', e => {
+  const dish = e.target.closest('[data-paper-dish]');
+  if (dish && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); addPaperDish(dish); }
+ });
+ book.addEventListener('touchstart', e => {
+  if (e.touches.length !== 1) { touchStart = null; return; }
+  const touch = e.changedTouches[0];
+  touchStart = { id: touch.identifier, x: touch.clientX, y: touch.clientY };
+ }, { passive: true });
+ book.addEventListener('touchmove', e => {
+  if (!touchStart) return;
+  const touch = Array.from(e.changedTouches).find(item => item.identifier === touchStart.id);
+  if (!touch) return;
+  const dx = touch.clientX - touchStart.x, dy = touch.clientY - touchStart.y;
+  const delta = matchMedia('(orientation: portrait)').matches ? dy : dx;
+  const cross = matchMedia('(orientation: portrait)').matches ? dx : dy;
+  if (Math.abs(delta) > 10 && Math.abs(delta) > Math.abs(cross)) e.preventDefault();
+ }, { passive: false });
+ book.addEventListener('touchend', e => {
+  if (!touchStart) return;
+  const touch = Array.from(e.changedTouches).find(item => item.identifier === touchStart.id);
+  if (!touch) return;
+  const dx = touch.clientX - touchStart.x, dy = touch.clientY - touchStart.y;
+  touchStart = null;
+  // The rotated portrait layout maps the book's horizontal axis to screen Y.
   const rotated = matchMedia('(orientation: portrait)').matches;
   const delta = rotated ? dy : dx, cross = rotated ? dx : dy;
-  if (Math.abs(delta) > 55 && Math.abs(delta) > Math.abs(cross)) turnPaperPage((rotated ? delta > 0 : delta < 0) ? 1 : -1);
- };
+  if (Math.abs(delta) > 45 && Math.abs(delta) > Math.abs(cross)) {
+   e.preventDefault(); // Do not also treat the swipe as an edge tap.
+   turnPaperPage(delta < 0 ? 1 : -1);
+  }
+ }, { passive: false });
+ book.addEventListener('touchcancel', () => { touchStart = null; }, { passive: true });
 }
 function turnPaperPage(direction) {
  const pages = paperPages();
@@ -336,7 +368,7 @@ function turnPaperPage(direction) {
  sheet.setAttribute('aria-hidden', 'true');
  sheet.innerHTML = `<div class="paper-sheet-face paper-sheet-front"></div><div class="paper-sheet-face paper-sheet-back">${paperLeaf(pages[backIndex], backIndex)}</div>`;
  sheet.querySelector('.paper-sheet-front').appendChild(front);
- sheet.querySelectorAll('button').forEach(button => { button.disabled = true; button.tabIndex = -1; });
+ sheet.querySelectorAll('button, [tabindex]').forEach(element => { element.tabIndex = -1; });
  // Reveal the next stationary page beneath the turning sheet; the reverse of
  // the sheet carries the adjacent page, so there is no blank half-turn.
  const oldLeaf = book.querySelector(currentSide);
@@ -347,6 +379,7 @@ function turnPaperPage(direction) {
 }
 function closePaperMenu() {
  document.querySelector('.paper-overlay')?.remove();
+ document.body.classList.remove('paper-open');
  clearTimeout(paperTurnTimer);
  paperTurning = false;
  if (state.page === 'dishes') { render(); app.querySelector('[data-action=paper-mode]')?.focus(); }

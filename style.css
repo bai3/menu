@@ -270,3 +270,18 @@ button.filter{gap:2px;padding-left:9px;padding-right:5px}
 
 /* The printed spread contains only the dishes and its folio. */
 .paper-toolbar-spacer{width:72px}.paper-controls{min-height:28px}.paper-dish{grid-template-rows:auto}.paper-dish img,.paper-dish-2 img{grid-row:1}.paper-dish-copy,.paper-dish-2 .paper-dish-copy{align-self:center;grid-row:1}.paper-dish.is-unavailable img{filter:none;opacity:1}
+
+.paper-book{touch-action:none;user-select:none;-webkit-user-select:none}.paper-book img{-webkit-user-drag:none}
+
+/* Warm paper surrounds the open menu, with restrained depth and contrast. */
+.paper-overlay{background:#e9dfce;color:#705a46}.paper-stage{background-color:#e9dfce;background-image:radial-gradient(ellipse at 50% 32%,#faf5e9 0%,#e9dfce 78%),radial-gradient(#89745414 .6px,transparent .8px);background-size:auto,5px 5px}.paper-toolbar>div{color:#69513d}.paper-toolbar>div span{color:#a18b72}.paper-toolbar button{border-color:#bda88b;color:#80634a;background:#f8f2e7aa}.paper-controls{color:#927a60}.paper-controls i{color:#c1ae94}.paper-book{filter:drop-shadow(0 14px 18px #79634b35)}.paper-dish[role=button]{cursor:pointer;-webkit-tap-highlight-color:transparent}.paper-dish[role=button]:focus-visible{outline:1px solid #a67d5a;outline-offset:5px}
+
+/* The open spread fills the landscape canvas. */
+.paper-stage{padding:0}.paper-toolbar{position:absolute;z-index:6;top:max(8px,env(safe-area-inset-top));left:max(8px,env(safe-area-inset-left));min-height:0}.paper-toolbar>div,.paper-toolbar-spacer{display:none}.paper-toolbar button{padding:7px 10px;background:#f8f3e9eb}.paper-book-wrap{padding:0}.paper-book{width:100%;height:100%;max-height:none;filter:none}.paper-leaf,.paper-leaf-left,.paper-leaf-right{border-radius:0}.paper-leaf-inner{margin-top:48px;height:calc(100% - 68px)}
+@media(orientation:portrait){.paper-stage{padding:0}.paper-book-wrap{padding:0}}
+@media(max-height:500px) and (orientation:landscape),(max-width:500px) and (orientation:portrait){.paper-stage{padding:0}.paper-book-wrap{padding:0}.paper-leaf-inner{margin-top:42px;height:calc(100% - 52px)}}
+
+body.paper-open{overflow:hidden}
+
+/* A quiet text control sits above the printed page. */
+.paper-toolbar{top:max(2px,env(safe-area-inset-top));left:max(12px,env(safe-area-inset-left))}.paper-toolbar [data-paper-close]{display:inline-flex;align-items:center;justify-content:center;min-width:76px;min-height:40px;padding:0 8px;border:0;border-radius:0;background:transparent;color:#8b7056;font-family:var(--serif);font-size:12px;letter-spacing:.1em;box-shadow:none}.paper-toolbar [data-paper-close]:hover{color:#583d2b}.paper-toolbar [data-paper-close]:focus-visible{outline:1px solid #a67d5a;outline-offset:-3px;border-radius:2px}
