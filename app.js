@@ -272,5 +272,8 @@ function bind(){
  const save=app.querySelector('[data-action=save]');if(save)save.onclick=saveMenuImage;
 }
 render();
+if (document.documentElement.classList.contains('is-standalone')) {
+ setTimeout(() => document.getElementById('launch')?.classList.add('is-finished'), 900);
+}
 initDishes();
 if ('serviceWorker' in navigator) addEventListener('load', () => { navigator.serviceWorker.register('./sw.js').catch(() => {}) });
