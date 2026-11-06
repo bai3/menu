@@ -427,3 +427,21 @@ body.paper-open{overflow:hidden}
 @keyframes surprise-rise{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
 @keyframes surprise-sparkle{0%{transform:scale(.5) rotate(-40deg);opacity:.3}65%{transform:scale(1.3) rotate(20deg);opacity:1}100%{transform:scale(1) rotate(0)}}
 @media(prefers-reduced-motion:reduce){.surprise-reveal .surprise-result img,.surprise-reveal .surprise-result span,.surprise-reveal .surprise-result h3,.surprise-reveal .surprise-result p,.surprise-reveal .surprise-card-top span:last-child{animation:none}.surprise-draw:not(:disabled){transition:none}}
+
+/* Shake before revealing the selected dish. */
+.surprise-shaking{position:relative;flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:4px 0 12px;color:#765042}
+.shaking-orbit{position:relative;display:grid;place-items:center;width:154px;height:154px;border-radius:50%;background:#f6e4d7;border:1px dashed #e0bca8}
+.shaking-bowl{display:grid;place-items:center;width:110px;height:110px;border-radius:50%;background:#edcdbb;color:#a9503c;animation:pick-shake .42s ease-in-out infinite}
+.shaking-bowl svg{width:67px;height:67px;stroke-width:1.5}
+.shake-mark{position:absolute;color:#c8785e;font-size:20px;animation:pick-spark .42s ease-in-out infinite alternate}.shake-mark-left{left:9px;top:32px}.shake-mark-right{right:8px;top:36px;animation-delay:.18s}
+.surprise-shaking strong{font:600 18px var(--serif);letter-spacing:.06em;margin:15px 0 7px}.surprise-shaking>span{font-size:11px;color:#a68d7c}.shake-dots{display:flex;gap:5px;margin-top:9px}.shake-dots i{width:5px;height:5px;border-radius:50%;background:#c77c61;animation:pick-dot .6s ease-in-out infinite alternate}.shake-dots i:nth-child(2){animation-delay:.15s}.shake-dots i:nth-child(3){animation-delay:.3s}
+@keyframes pick-shake{0%,100%{transform:rotate(-10deg) translateX(-5px)}50%{transform:rotate(10deg) translateX(5px)}}
+@keyframes pick-spark{from{opacity:.35;transform:scale(.7)}to{opacity:1;transform:scale(1.2)}}
+@keyframes pick-dot{from{opacity:.3;transform:translateY(0)}to{opacity:1;transform:translateY(-4px)}}
+@media(max-height:700px){.shaking-orbit{width:130px;height:130px}.shaking-bowl{width:94px;height:94px}}
+
+/* Move the page and dock together without changing the fixed dock's anchor. */
+@media(prefers-reduced-motion:no-preference){
+ .page-shaking .surprise-scroll,.page-shaking .order-dock{animation:page-shake .19s ease-in-out 5}
+}
+@keyframes page-shake{0%,100%{transform:translateX(0) rotate(0)}25%{transform:translateX(-4px) rotate(-.45deg)}75%{transform:translateX(4px) rotate(.45deg)}}

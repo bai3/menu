@@ -206,17 +206,72 @@ function renderDishes(){
 let motionEnabled = false;
 let lastShake = 0;
 let previousAcceleration = null;
+let surpriseDrawing = false;
+let surpriseAudio = null;
+function prepareSurpriseAudio() {
+ try {
+  const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+  if (!AudioContextClass) return null;
+  if (!surpriseAudio || surpriseAudio.state === 'closed') surpriseAudio = new AudioContextClass();
+  if (surpriseAudio.state === 'suspended') surpriseAudio.resume().catch(() => {});
+  return surpriseAudio;
+ } catch (_) { return null; }
+}
+function playSurpriseSound() {
+ try {
+  const context = prepareSurpriseAudio();
+  if (!context) return;
+  if (context.state === 'suspended') { context.resume().then(() => { if (context.state === 'running') playSurpriseSound(); }).catch(() => {}); return; }
+  if (context.state !== 'running') return;
+  const duration = .13;
+  const buffer = context.createBuffer(1, Math.ceil(context.sampleRate * duration), context.sampleRate);
+  const samples = buffer.getChannelData(0);
+  for (let i = 0; i < samples.length; i++) samples[i] = Math.random() * 2 - 1;
+  // Two short filtered clicks evoke a camera shutter without a media download.
+  [0, .075].forEach((offset, index) => {
+   const source = context.createBufferSource();
+   const filter = context.createBiquadFilter();
+   const gain = context.createGain();
+   const start = context.currentTime + offset;
+   source.buffer = buffer;
+   filter.type = 'bandpass'; filter.frequency.value = index ? 1500 : 2400; filter.Q.value = .8;
+   gain.gain.setValueAtTime(.0001, start);
+   gain.gain.exponentialRampToValueAtTime(index ? .12 : .18, start + .003);
+   gain.gain.exponentialRampToValueAtTime(.0001, start + .055);
+   source.connect(filter); filter.connect(gain); gain.connect(context.destination);
+   source.start(start); source.stop(start + .06);
+  });
+ } catch (_) { /* 无法播放时不影响选菜。 */ }
+}
 function drawSurprise() {
+ if (surpriseDrawing) return;
  const candidates = dishes.filter(d => d.is_available && !state.selected.includes(d.id));
  if (!candidates.length) { notify(dishes.some(d => d.is_available) ? '所有上架菜品都已加入菜单' : '暂时没有上架的菜品'); return; }
  const dish = candidates[Math.floor(Math.random() * candidates.length)];
  state.selected.push(dish.id);
  state.surpriseId = dish.id;
+ playSurpriseSound();
  try { if (typeof navigator.vibrate === 'function') navigator.vibrate([30, 40, 30]); } catch (_) { /* 震动不可用时仍正常选菜。 */ }
- render();
- app.querySelector('.surprise-card')?.classList.add('surprise-reveal');
+ if (matchMedia('(prefers-reduced-motion: reduce)').matches) { render(); return; }
+ surpriseDrawing = true;
+ app.classList.add('page-shaking');
+ const card = app.querySelector('.surprise-card');
+ const content = card?.querySelector('.surprise-result, .surprise-placeholder');
+ if (content) {
+  content.outerHTML = `<div class="surprise-shaking" role="status"><div class="shaking-orbit"><span class="shake-mark shake-mark-left">✦</span><span class="shake-mark shake-mark-right">✳</span><div class="shaking-bowl">${icon('surprise')}</div></div><strong>正在为你挑选好菜</strong><span>摇一摇，好味道马上来</span><div class="shake-dots" aria-hidden="true"><i></i><i></i><i></i></div></div>`;
+  card.classList.add('is-shaking');
+ }
+ const button = app.querySelector('[data-action=surprise]');
+ if (button) { button.disabled = true; button.textContent = '正在挑选…'; }
+ setTimeout(() => {
+  surpriseDrawing = false;
+  if (state.page !== 'surprise') return;
+  render();
+  app.querySelector('.surprise-card')?.classList.add('surprise-reveal');
+ }, 950);
 }
 async function enableMotion() {
+ prepareSurpriseAudio();
  if (typeof DeviceMotionEvent === 'undefined') { notify('当前设备不支持摇动感应，请点击按钮'); return; }
  try {
   if (typeof DeviceMotionEvent.requestPermission === 'function' && await DeviceMotionEvent.requestPermission() !== 'granted') { notify('未开启摇动感应，点击按钮也可以选菜'); return; }
