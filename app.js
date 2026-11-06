@@ -6,10 +6,11 @@ const defaultDishes = [
   { id: 'soup', name: '冬瓜排骨汤', category: '暖心汤羹', note: '清润鲜美，暖暖一碗', image: 'soup.jpg' },
   { id: 'shrimp', name: '蒜蓉虾', category: '家常菜', note: '鲜香入味，餐桌上的小惊喜', image: 'shrimp.jpg' }
 ];
-const storageKey = 'jiayan.dishes.v1'; // 旧版 localStorage 键，首次启动时把数据迁入 IndexedDB 后移除。
+const betaCode = new URLSearchParams(location.search).get('code') || '';
+const cacheKey = key => `${key}:${betaCode}`;
 const isValidDish = (d) => d && typeof d.id === 'string' && typeof d.name === 'string' && typeof d.category === 'string' && typeof d.note === 'string' && typeof d.image === 'string';
 const normalizeDish = d => ({...d, cuisine: typeof d.cuisine === 'string' && d.cuisine ? d.cuisine : '未分类', spice_level: Number.isInteger(d.spice_level) && d.spice_level >= 0 && d.spice_level <= 3 ? d.spice_level : 0, is_available: d.is_available !== false});
-let dishes = defaultDishes.map(normalizeDish);
+let dishes = [];
 let dbPromise = null;
 function openDB() {
  if (!dbPromise) dbPromise = new Promise((resolve, reject) => {
@@ -39,15 +40,7 @@ async function idbSet(key, value) {
 }
 async function initDishes() {
  try {
-  const legacy = localStorage.getItem(storageKey);
-  if (legacy !== null) {
-   const parsed = JSON.parse(legacy);
-   if (Array.isArray(parsed) && parsed.every(isValidDish)) await idbSet('dishes', parsed);
-  }
-  localStorage.removeItem(storageKey);
- } catch (_) { /* 迁移失败不阻塞启动，菜单仍用默认菜品。 */ }
- try {
-  const stored = await idbGet('dishes');
+  const stored = await idbGet(cacheKey('dishes'));
   if (Array.isArray(stored) && stored.every(isValidDish)) {
    dishes = stored.map(normalizeDish);
    if (state.page === 'dishes' || state.page === 'manage') render();
@@ -55,7 +48,8 @@ async function initDishes() {
   }
  } catch (_) { /* 读不到已存数据时保留内置菜单。 */ }
  await syncFromCloud();
- subscribeRealtime();
+ // Realtime cannot carry the per-user request header; refresh on return instead.
+ window.addEventListener('focus', syncFromCloud);
  // 申请持久存储：避免浏览器在空间紧张时清理本地数据。
  try { if (navigator.storage && navigator.storage.persist) await navigator.storage.persist(); } catch (_) {}
 }
@@ -63,17 +57,17 @@ function dishImage(d) { return d.image.startsWith('data:image/') ? d.image : './
 function saveLocalDishes(next) {
  dishes = next.map(normalizeDish);
  state.selected = state.selected.filter(id => dishes.some(d => d.id === id && d.is_available));
- idbSet('dishes', dishes).catch(() => notify('保存失败，浏览器存储不可用'));
+ idbSet(cacheKey('dishes'), dishes).catch(() => notify('保存失败，浏览器存储不可用'));
 }
 // 菜谱以云端为准；缓存仅供启动和离线查看。
-const sb = (window.JIAYAN_SUPABASE && window.supabase) ? window.supabase.createClient(window.JIAYAN_SUPABASE.url, window.JIAYAN_SUPABASE.publishableKey) : null;
+const sb = (window.JIAYAN_SUPABASE && window.supabase) ? window.supabase.createClient(window.JIAYAN_SUPABASE.url, window.JIAYAN_SUPABASE.publishableKey, { global: { headers: { 'x-beta-code': betaCode } } }) : null;
 const cloudFail = () => notify('云端保存失败，请联网后重试');
 let dishChangeVersion = 0;
 async function cloudUpsertDish(d) {
  dishChangeVersion++;
  if (!sb) { cloudFail(); return false; }
  try {
-  const record = { id: d.id, name: d.name, category: d.category, cuisine: d.cuisine, note: d.note, image: d.image, spice_level: d.spice_level, is_available: d.is_available };
+  const record = { user_code: betaCode, id: d.id, name: d.name, category: d.category, cuisine: d.cuisine, note: d.note, image: d.image, spice_level: d.spice_level, is_available: d.is_available };
   let { error } = await sb.from('dishes').upsert(record);
   if (error && (error.code === 'PGRST204' || error.code === '42703') && /cuisine/i.test(error.message || '')) {
    if (d.cuisine !== '未分类') { notify('请先更新云端数据库，才能保存菜系'); return false; }
@@ -248,20 +242,20 @@ function renderHistory() {
 async function loadHistory() {
  const request=++historyRequest;
  historyLoading=true; historyError=false;
- try { const cached=await idbGet('meal_history'); if(request===historyRequest && Array.isArray(cached)) { historyEntries=cached; if(state.page==='history')render(); } } catch (_) {}
+ try { const cached=await idbGet(cacheKey('meal_history')); if(request===historyRequest && Array.isArray(cached)) { historyEntries=cached; if(state.page==='history')render(); } } catch (_) {}
  try {
   if(!sb) throw new Error('云端不可用');
   const {data,error}=await sb.from('meal_history').select('*').order('meal_date',{ascending:false}).order('created_at',{ascending:false});
   if(error) throw error;
   if(request!==historyRequest)return;
   historyEntries=data.filter(e=>typeof e.meal_date==='string' && typeof e.title==='string' && Array.isArray(e.dishes) && e.dishes.every(d=>d && typeof d.name==='string'));
-  idbSet('meal_history',historyEntries).catch(()=>{});
+  idbSet(cacheKey('meal_history'),historyEntries).catch(()=>{});
  } catch (_) { if(request===historyRequest)historyError=true; }
  finally { if(request===historyRequest){historyLoading=false;if(state.page==='history')render();} }
 }
 async function saveHistory() {
  const selected=selectedDishes(); if(!selected.length)return;
- const entry={id: typeof crypto.randomUUID==='function' ? crypto.randomUUID() : `meal-${Date.now()}-${Math.random().toString(36).slice(2)}`,meal_date:localDate(),title:state.title.trim() || '今天的菜单',note:state.diaryNote.trim(),dishes:selected.map(d=>({id:d.id,name:d.name}))};
+ const entry={user_code:betaCode,id: typeof crypto.randomUUID==='function' ? crypto.randomUUID() : `meal-${Date.now()}-${Math.random().toString(36).slice(2)}`,meal_date:localDate(),title:state.title.trim() || '今天的菜单',note:state.diaryNote.trim(),dishes:selected.map(d=>({id:d.id,name:d.name}))};
  const button=app.querySelector('[data-action=save-diary]');button.disabled=true;button.textContent='保存中…';
  try {
   if(!sb)throw new Error('云端不可用');
@@ -269,7 +263,7 @@ async function saveHistory() {
   if(error)throw error;
   ++historyRequest;
   historyEntries=[data,...historyEntries.filter(e=>e.id!==data.id)];
-  idbSet('meal_history',historyEntries).catch(()=>{});
+  idbSet(cacheKey('meal_history'),historyEntries).catch(()=>{});
   notify('已保存到吃饭日记');
  } catch (_) { notify('日记保存失败，请检查网络或数据库'); }
  finally { if(button.isConnected){button.disabled=false;button.textContent='保存到吃饭日记';} }
@@ -634,11 +628,23 @@ function bind(){
  const make=app.querySelector('[data-action=make-menu]');if(make)make.onclick=()=>{state.page='menu';render()};
  const save=app.querySelector('[data-action=save]');if(save)save.onclick=saveMenuImage;
 }
-render();
+async function startApp() {
+ if (!/^[a-f0-9]{32}$/.test(betaCode) || !sb) {
+  app.innerHTML = '<div class="empty">请使用带有效内测码的专属链接打开。</div>';
+  return;
+ }
+ try {
+  const { data, error } = await sb.rpc('validate_beta_code');
+  if (error) throw error;
+  if (!data) { app.innerHTML = '<div class="empty">内测码无效，请检查专属链接。</div>'; return; }
+  render();
+  await initDishes();
+ } catch (_) { app.innerHTML = '<div class="empty">无法验证内测码，请检查网络后刷新。</div>'; }
+}
 if (document.documentElement.classList.contains('is-standalone')) {
  setTimeout(() => document.getElementById('launch')?.classList.add('is-finished'), 900);
 }
-initDishes();
+startApp();
 if ('serviceWorker' in navigator) addEventListener('load', async () => {
  const localDev = ['localhost', '127.0.0.1', '[::1]'].includes(location.hostname);
  if (!localDev) {
