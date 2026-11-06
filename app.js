@@ -143,6 +143,7 @@ const icon = (name) => {
   home:'<path d="M3 10.5 12 3l9 7.5v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/>',
   search:'<circle cx="11" cy="11" r="7"/><path d="m16 16 4 4"/>',
   basket:'<path d="M3 9h18l-2 10H5L3 9Z"/><path d="m8 9 4-6 4 6M9 13v3m3-3v3m3-3v3"/>',
+  cheers:'<path d="M3 5.5 9.5 3l2.2 6a3.5 3.5 0 0 1-6.6 2.4L3 5.5ZM13.8 9l1.8-5 6.2 2.3-1.8 5a3.3 3.3 0 0 1-6.2-2.3ZM8.5 13.6l1.8 5M7.8 20l5-1.8M16.1 13.2l-1.7 4.7M12.1 17.1l4.5 1.6M11 2l.4-1.5M13 4l1.4-1"/>',
   surprise:'<path d="M5 12c0 4 3 7 7 7s7-3 7-7H5ZM8 8c-1-2 2-2 1-4m4 4c-1-2 2-2 1-4"/><path d="M3 10h18"/>',
   menu:'<rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 8h6M9 12h6M9 16h4"/>',
   back:'<path d="m14 6-6 6 6 6"/>',
@@ -160,7 +161,7 @@ const categoryIcon = {'全部':'all','家常菜':'hot','清爽凉菜':'cold','�
 const spiceLabels = ['不辣', '微辣', '中辣', '特辣'];
 const spiceBadge = d => d.spice_level ? `<span class="spice-badge" role="img" aria-label="${spiceLabels[d.spice_level]}" title="${spiceLabels[d.spice_level]}">${'<span aria-hidden="true">🌶</span>'.repeat(d.spice_level)}</span>` : '';
 const escapeText = (str) => String(str).replace(/[&<>"']/g, s => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[s]));
-function nav(){return `<nav class="nav" aria-label="页面导航"><button data-page="dishes" class="${state.page==='dishes'?'active':''}" ${state.page==='dishes'?'aria-current="page"':''}>${icon('basket')}<span>点菜</span></button><button data-page="surprise" class="${state.page==='surprise'?'active':''}" ${state.page==='surprise'?'aria-current="page"':''}>${icon('surprise')}<span>都可以</span></button><button data-page="menu" class="${state.page==='menu'?'active':''}" ${state.page==='menu'?'aria-current="page"':''}>${icon('menu')}<span>菜单</span></button></nav>`}
+function nav(){return `<nav class="nav" aria-label="页面导航"><button data-page="dishes" class="${state.page==='dishes'?'active':''}" ${state.page==='dishes'?'aria-current="page"':''}>${icon('basket')}<span>点菜</span></button><button data-page="surprise" class="${state.page==='surprise'?'active':''}" ${state.page==='surprise'?'aria-current="page"':''}>${icon('surprise')}<span>吃点随便</span></button><button data-page="menu" class="${state.page==='menu'?'active':''}" ${state.page==='menu'?'aria-current="page"':''}>${icon('menu')}<span>菜单</span></button></nav>`}
 const heroSlides = [
  { image:'hero.jpg', tag:'白家私厨 / 家的味道', title:'今天，<br>一起好好吃饭。', note:'把喜欢的菜，点给爱的人', seal:'家味' },
  { image:'soup.jpg', tag:'一碗热汤 / 一份牵挂', title:'热汤上桌，<br>心也暖了。', note:'忙碌的日子，也要记得喝口汤', seal:'暖意' },
@@ -218,7 +219,6 @@ function prepareSurpriseAudio() {
   const AudioContextClass = window.AudioContext || window.webkitAudioContext;
   if (!AudioContextClass) return null;
   if (!surpriseAudio || surpriseAudio.state === 'closed') surpriseAudio = new AudioContextClass();
-  if (surpriseAudio.state === 'suspended') surpriseAudio.resume().catch(() => {});
   return surpriseAudio;
  } catch (_) { return null; }
 }
@@ -226,25 +226,31 @@ function playSurpriseSound() {
  try {
   const context = prepareSurpriseAudio();
   if (!context) return;
-  if (context.state === 'suspended') { context.resume().then(() => { if (context.state === 'running') playSurpriseSound(); }).catch(() => {}); return; }
+  if (context.state === 'suspended' || context.state === 'interrupted') { context.resume().then(() => { if (context.state === 'running') playSurpriseSound(); }).catch(() => {}); return; }
   if (context.state !== 'running') return;
-  const duration = .13;
-  const buffer = context.createBuffer(1, Math.ceil(context.sampleRate * duration), context.sampleRate);
-  const samples = buffer.getChannelData(0);
-  for (let i = 0; i < samples.length; i++) samples[i] = Math.random() * 2 - 1;
-  // Two short filtered clicks evoke a camera shutter without a media download.
-  [0, .075].forEach((offset, index) => {
-   const source = context.createBufferSource();
-   const filter = context.createBiquadFilter();
+  // A playful rising flourish resolves as the surprise is revealed.
+  const base = context.currentTime;
+  [[0, 440], [.14, 554], [.28, 659], [.42, 880], [.56, 1109]].forEach(([offset, frequency]) => {
+   const start = base + offset;
+   const oscillator = context.createOscillator();
    const gain = context.createGain();
-   const start = context.currentTime + offset;
-   source.buffer = buffer;
-   filter.type = 'bandpass'; filter.frequency.value = index ? 1500 : 2400; filter.Q.value = .8;
+   oscillator.type = 'sine'; oscillator.frequency.value = frequency;
    gain.gain.setValueAtTime(.0001, start);
-   gain.gain.exponentialRampToValueAtTime(index ? .12 : .18, start + .003);
-   gain.gain.exponentialRampToValueAtTime(.0001, start + .055);
-   source.connect(filter); filter.connect(gain); gain.connect(context.destination);
-   source.start(start); source.stop(start + .06);
+   gain.gain.exponentialRampToValueAtTime(.10, start + .012);
+   gain.gain.exponentialRampToValueAtTime(.0001, start + .14);
+   oscillator.connect(gain); gain.connect(context.destination);
+   oscillator.start(start); oscillator.stop(start + .15);
+  });
+  [1047, 1319, 1568, 2093].forEach((frequency, index) => {
+   const start = base + .79 + index * .025;
+   const oscillator = context.createOscillator();
+   const gain = context.createGain();
+   oscillator.type = 'sine'; oscillator.frequency.value = frequency;
+   gain.gain.setValueAtTime(.0001, start);
+   gain.gain.exponentialRampToValueAtTime(index === 3 ? .035 : .065, start + .008);
+   gain.gain.exponentialRampToValueAtTime(.0001, start + .36);
+   oscillator.connect(gain); gain.connect(context.destination);
+   oscillator.start(start); oscillator.stop(start + .37);
   });
  } catch (_) { /* 无法播放时不影响选菜。 */ }
 }
@@ -252,8 +258,8 @@ function drawSurprise() {
  if (surpriseDrawing) return;
  const candidates = dishes.filter(d => d.is_available && !state.selected.includes(d.id));
  if (!candidates.length) { notify(dishes.some(d => d.is_available) ? '所有上架菜品都已加入菜单' : '暂时没有上架的菜品'); return; }
- const dish = candidates[Math.floor(Math.random() * candidates.length)];
- state.selected.push(dish.id);
+ const choices = candidates.length > 1 ? candidates.filter(d => d.id !== state.surpriseId) : candidates;
+ const dish = choices[Math.floor(Math.random() * choices.length)];
  state.surpriseId = dish.id;
  playSurpriseSound();
  try { if (typeof navigator.vibrate === 'function') navigator.vibrate([30, 40, 30]); } catch (_) { /* 震动不可用时仍正常选菜。 */ }
@@ -263,7 +269,7 @@ function drawSurprise() {
  const card = app.querySelector('.surprise-card');
  const content = card?.querySelector('.surprise-result, .surprise-placeholder');
  if (content) {
-  content.outerHTML = `<div class="surprise-shaking" role="status"><div class="shaking-orbit"><span class="shake-mark shake-mark-left">✦</span><span class="shake-mark shake-mark-right">✳</span><div class="shaking-bowl">${icon('surprise')}</div></div><strong>正在为你挑选好菜</strong><span>摇一摇，好味道马上来</span><div class="shake-dots" aria-hidden="true"><i></i><i></i><i></i></div></div>`;
+  content.outerHTML = `<div class="surprise-shaking" role="status"><div class="shaking-orbit"><span class="shake-mark shake-mark-left">✦</span><span class="shake-mark shake-mark-right">✳</span><div class="shaking-bowl">${icon('cheers')}</div></div><strong>正在为你挑选好菜</strong><span>摇一摇，好味道马上来</span><div class="shake-dots" aria-hidden="true"><i></i><i></i><i></i></div></div>`;
   card.classList.add('is-shaking');
  }
  const button = app.querySelector('[data-action=surprise]');
@@ -276,7 +282,8 @@ function drawSurprise() {
  }, 950);
 }
 async function enableMotion() {
- prepareSurpriseAudio();
+ const audio = prepareSurpriseAudio();
+ if (audio && audio.state !== 'running') audio.resume().catch(() => {});
  if (typeof DeviceMotionEvent === 'undefined') { notify('当前设备不支持摇动感应，请点击按钮'); return; }
  try {
   if (typeof DeviceMotionEvent.requestPermission === 'function' && await DeviceMotionEvent.requestPermission() !== 'granted') { notify('未开启摇动感应，点击按钮也可以选菜'); return; }
@@ -295,9 +302,9 @@ window.addEventListener('devicemotion', event => {
 });
 function renderSurprise() {
  app.className='phone-screen surprise-screen';
- const dish = dishes.find(d => d.id === state.surpriseId && state.selected.includes(d.id));
+ const dish = dishes.find(d => d.id === state.surpriseId && d.is_available);
  const remaining = dishes.filter(d => d.is_available && !state.selected.includes(d.id)).length;
- app.innerHTML=`<div class="screen-scroll surprise-scroll"><header class="topbar"><div class="top-brand">${logo}<div><strong>白家私厨</strong><small>把喜欢的菜端上桌</small></div></div></header><div class="surprise-heading"><span class="menu-kicker">给选择一点灵感</span><h2>今天，吃点<span>都可以</span></h2><p>不知道吃什么？让这顿饭多一点惊喜。</p></div><section class="surprise-card" aria-live="polite"><div class="surprise-card-top"><span>白家私厨 · 今日灵感</span><span>✳</span></div>${dish ? `<div class="surprise-result"><img src="${escapeText(dishImage(dish))}" alt=""><span>已经加入菜单</span><h3>${escapeText(dish.name)}</h3><p>${escapeText(dish.note || '这一餐，值得期待')}</p></div>` : `<div class="surprise-placeholder"><div class="surprise-bowl"><span class="surprise-spark spark-one">✳</span><span class="surprise-spark spark-two">✦</span><svg viewBox="0 0 160 140" fill="none" aria-hidden="true"><ellipse cx="80" cy="119" rx="55" ry="8" fill="#D9B49A" opacity=".3"/><path d="M26 78h108c-3 26-21 40-54 40S29 104 26 78Z" fill="#B9644E"/><ellipse cx="80" cy="78" rx="54" ry="12" fill="#D98D70"/><ellipse cx="80" cy="77" rx="43" ry="8" fill="#F8E5CA"/><path d="M55 74c-5-12 0-21 5-25 5 8 6 16 3 25m30 0c-3-14 4-23 10-26 3 10 1 19-4 27" fill="#9BA77A" stroke="#7C8A60" stroke-width="2"/><circle cx="79" cy="72" r="11" fill="#D67759"/><path d="M76 63c2-4 7-5 9-1M70 43c-5-7 4-10 0-17m17 14c-5-7 4-10 0-17" stroke="#C58C70" stroke-width="2.5" stroke-linecap="round"/></svg></div><h3>下一道好菜，会是什么？</h3><p>点一下，让美味自己来敲门</p></div>`}<div class="surprise-card-foot">${remaining ? `还有 ${remaining} 道菜可以抽取` : '没有更多可抽取的菜了'}</div></section><button class="surprise-draw" data-action="surprise" ${remaining ? '' : 'disabled'}>${dish ? '再选一道' : '摇一摇，选一道'}</button><button class="motion-toggle" data-action="enable-motion" ${motionEnabled ? 'disabled' : ''}>${motionEnabled ? '摇动感应已开启 · 摇动手机即可选菜' : '开启手机摇动感应'}</button><p class="surprise-hint">每次随机加入一道未点过的菜</p></div><div class="bottom"><div class="order-dock">${nav()}<button class="dock-action" data-action="make-menu" ${state.selected.length?'':'disabled'}><strong>下单</strong>${state.selected.length ? `<span class="order-count">${state.selected.length}</span>` : ''}</button></div></div>`;
+ app.innerHTML=`<div class="screen-scroll surprise-scroll"><header class="topbar"><div class="top-brand">${logo}<div><strong>白家私厨</strong><small>把喜欢的菜端上桌</small></div></div></header><div class="surprise-heading"><span class="menu-kicker">给选择一点灵感</span><h2>今天，<span>吃点随便</span></h2><p>不知道吃什么？让这顿饭多一点惊喜。</p></div><section class="surprise-card" aria-live="polite"><div class="surprise-card-top"><span>白家私厨 · 今日灵感</span><span>✳</span></div>${dish ? `<div class="surprise-result"><img src="${escapeText(dishImage(dish))}" alt=""><span>${state.selected.includes(dish.id) ? '已加入菜单' : '为你选中了'}</span><h3>${escapeText(dish.name)}</h3><p>${escapeText(dish.note || '这一餐，值得期待')}</p></div>` : `<div class="surprise-placeholder"><div class="surprise-bowl"><span class="surprise-spark spark-one">✳</span><span class="surprise-spark spark-two">✦</span><svg viewBox="0 0 160 140" fill="none" aria-hidden="true"><ellipse cx="80" cy="119" rx="55" ry="8" fill="#D9B49A" opacity=".3"/><path d="M26 78h108c-3 26-21 40-54 40S29 104 26 78Z" fill="#B9644E"/><ellipse cx="80" cy="78" rx="54" ry="12" fill="#D98D70"/><ellipse cx="80" cy="77" rx="43" ry="8" fill="#F8E5CA"/><path d="M55 74c-5-12 0-21 5-25 5 8 6 16 3 25m30 0c-3-14 4-23 10-26 3 10 1 19-4 27" fill="#9BA77A" stroke="#7C8A60" stroke-width="2"/><circle cx="79" cy="72" r="11" fill="#D67759"/><path d="M76 63c2-4 7-5 9-1M70 43c-5-7 4-10 0-17m17 14c-5-7 4-10 0-17" stroke="#C58C70" stroke-width="2.5" stroke-linecap="round"/></svg></div><h3>下一道好菜，会是什么？</h3><p>点一下，让美味自己来敲门</p></div>`}<div class="surprise-card-foot">${remaining ? `还有 ${remaining} 道菜可以抽取` : '没有更多可抽取的菜了'}</div></section><div class="surprise-actions ${dish ? 'has-result' : ''}">${dish ? `<button class="surprise-add" data-action="add-surprise" ${state.selected.includes(dish.id) ? 'disabled' : ''}>${state.selected.includes(dish.id) ? '已加入菜单' : '加入菜单'}</button>` : ''}<button class="surprise-draw" data-action="surprise" ${remaining ? '' : 'disabled'}>${dish ? '再选一道' : '摇一摇，选一道'}</button></div><button class="motion-toggle" data-action="enable-motion" ${motionEnabled ? 'disabled' : ''}>${motionEnabled ? '摇动感应已开启 · 摇动手机即可选菜' : '开启手机摇动感应'}</button><p class="surprise-hint">摇出喜欢的菜，再加入菜单</p></div><div class="bottom"><div class="order-dock">${nav()}<button class="dock-action" data-action="make-menu" ${state.selected.length?'':'disabled'}><strong>下单</strong>${state.selected.length ? `<span class="order-count">${state.selected.length}</span>` : ''}</button></div></div>`;
  bind();
 }
 function renderMenu(){
@@ -733,6 +740,7 @@ function bind(){
  const saveDiary=app.querySelector('[data-action=save-diary]');if(saveDiary)saveDiary.onclick=saveHistory;
  const title=app.querySelector('.menu-title-input');if(title)title.oninput=e=>{state.title=e.target.value};
  const surprise=app.querySelector('[data-action=surprise]');if(surprise)surprise.onclick=drawSurprise;
+ const addSurprise=app.querySelector('[data-action=add-surprise]');if(addSurprise)addSurprise.onclick=()=>{const dish=dishes.find(d=>d.id===state.surpriseId && d.is_available);if(!dish || state.selected.includes(dish.id))return;state.selected.push(dish.id);render();notify('已加入菜单')};
  const motion=app.querySelector('[data-action=enable-motion]');if(motion)motion.onclick=enableMotion;
  const make=app.querySelector('[data-action=make-menu]');if(make)make.onclick=()=>{state.page='menu';render()};
  const save=app.querySelector('[data-action=save]');if(save)save.onclick=saveMenuImage;

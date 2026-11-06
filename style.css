@@ -445,3 +445,8 @@ body.paper-open{overflow:hidden}
  .page-shaking .surprise-scroll,.page-shaking .order-dock{animation:page-shake .19s ease-in-out 5}
 }
 @keyframes page-shake{0%,100%{transform:translateX(0) rotate(0)}25%{transform:translateX(-4px) rotate(-.45deg)}75%{transform:translateX(4px) rotate(.45deg)}}
+
+.surprise-add{width:100%;height:50px;margin-top:16px;border:0;border-radius:14px;background:#b45f49;color:#fff;font-size:13px;font-weight:700;letter-spacing:.08em}.surprise-add:disabled{background:#f0e4da;color:#aa9587}.surprise-add + .surprise-draw{margin-top:9px;background:#fffaf5;color:#a85b45;border:1px solid #e8d3c4;box-shadow:none}.surprise-add + .surprise-draw:disabled{color:#b9a99e;background:#f6efe9}
+
+/* Pair the decision controls on one line after a dish is revealed. */
+.surprise-actions{display:flex;gap:10px;margin-top:16px}.surprise-actions .surprise-add,.surprise-actions .surprise-draw{margin:0;min-width:0;height:50px}.surprise-actions.has-result .surprise-add{flex:1.15}.surprise-actions.has-result .surprise-draw{flex:1;width:auto;border:1px solid #e6d3c5;background:#fffaf5;color:#a85b45;box-shadow:none}.surprise-actions.has-result .surprise-draw:disabled{background:#f6efe9;color:#b9a99e}.surprise-actions button:focus-visible{outline:2px solid #814331;outline-offset:3px}
