@@ -62,50 +62,48 @@ function saveLocalDishes(next) {
  dishes = next;
  idbSet('dishes', next).catch(() => notify('保存失败，浏览器存储不可用'));
 }
-// —— 云同步（Supabase）：本地先行，云端失败只提示，不回滚 UI ——
+// 菜谱以云端为准；缓存仅供启动和离线查看。
 const sb = (window.JIAYAN_SUPABASE && window.supabase) ? window.supabase.createClient(window.JIAYAN_SUPABASE.url, window.JIAYAN_SUPABASE.publishableKey) : null;
-const cloudFail = () => notify('已存本机，联网后同步到云端');
+const cloudFail = () => notify('云端保存失败，请联网后重试');
+let dishChangeVersion = 0;
 async function cloudUpsertDish(d) {
- if (!sb) return;
- const { error } = await sb.from('dishes').upsert({ id: d.id, name: d.name, category: d.category, note: d.note, image: d.image });
- if (error) cloudFail();
+ dishChangeVersion++;
+ if (!sb) { cloudFail(); return false; }
+ try {
+  const { error } = await sb.from('dishes').upsert({ id: d.id, name: d.name, category: d.category, note: d.note, image: d.image });
+  if (error) throw error;
+  return true;
+ } catch (_) { cloudFail(); return false; }
 }
 async function cloudDeleteDish(id) {
- if (!sb) return;
- const { error } = await sb.from('dishes').delete().eq('id', id);
- if (error) cloudFail();
+ dishChangeVersion++;
+ if (!sb) { cloudFail(); return false; }
+ try {
+  const { error } = await sb.from('dishes').delete().eq('id', id);
+  if (error) throw error;
+  return true;
+ } catch (_) { cloudFail(); return false; }
 }
-// 启动同步：云端为准合并本机。空表时把本机菜全部上云（种子）；
-// 同 id 云端优先（LWW）；只在本机存在的菜自动补传（保住离线期间的增改）。
+// 启动时只从云端更新缓存；旧缓存不能作为需要上传的菜品。
 async function syncFromCloud() {
  if (!sb) return;
- let rows;
+ const version = dishChangeVersion;
  try {
   const { data, error } = await sb.from('dishes').select('*').order('created_at', { ascending: true }).order('id', { ascending: true });
   if (error) throw error;
-  rows = data;
- } catch (_) { notify('云端暂不可达，当前显示本机菜谱'); return; }
- const toDish = (r) => ({ id: r.id, name: r.name, category: r.category, note: r.note, image: r.image });
- const cloudDishes = rows.map(toDish).filter(isValidDish);
- const cloudIds = new Set(cloudDishes.map(d => d.id));
- const localOnly = dishes.filter(d => !cloudIds.has(d.id));
- if (!cloudDishes.length && localOnly.length) {
-  const { error } = await sb.from('dishes').upsert(localOnly);
-  if (error) cloudFail();
-  return; // 本机数据已是权威，无需合并
- }
- if (localOnly.length) {
-  const { error } = await sb.from('dishes').upsert(localOnly);
-  if (error) cloudFail();
- }
- saveLocalDishes([...cloudDishes, ...localOnly]);
- if (state.page === 'dishes' || state.page === 'manage') render();
+  const cloudDishes = data.map(r => ({ id: r.id, name: r.name, category: r.category, note: r.note, image: r.image }));
+  if (!cloudDishes.every(isValidDish)) throw new Error('云端菜谱格式无效');
+  if (version !== dishChangeVersion) return;
+  saveLocalDishes(cloudDishes);
+  if (state.page === 'dishes' || state.page === 'manage') render();
+ } catch (_) { notify('云端暂不可达，当前显示本机菜谱'); }
 }
 // 实时订阅：家人增删改菜，本机即时生效。自己写入的回声与本地一致时跳过，避免无谓重渲染。
 function subscribeRealtime() {
  if (!sb) return;
  sb.channel('jiayan-dishes')
   .on('postgres_changes', { event: '*', schema: 'public', table: 'dishes' }, (payload) => {
+   dishChangeVersion++;
    if (payload.eventType === 'DELETE') {
     const id = payload.old?.id;
     if (!id || !dishes.some(d => d.id === id)) return; // 自己删除的回声
@@ -262,10 +260,10 @@ function bind(){
  app.querySelectorAll('[data-dish]').forEach(b=>b.onclick=()=>{const id=b.dataset.dish;state.selected=state.selected.includes(id)?state.selected.filter(x=>x!==id):[...state.selected,id];const scroll=app.querySelector('.screen-scroll').scrollTop;render();app.querySelector('.screen-scroll').scrollTop=scroll});
  app.querySelectorAll('[data-remove]').forEach(b=>b.onclick=()=>{state.selected=state.selected.filter(x=>x!==b.dataset.remove);render()});
  app.querySelectorAll('[data-edit]').forEach(b=>b.onclick=()=>{state.editingId=b.dataset.edit;state.draftImage=null;state.page='dish-form';render()});
- app.querySelectorAll('[data-delete]').forEach(b=>b.onclick=()=>{const dish=dishes.find(d=>d.id===b.dataset.delete);if(!dish || !window.confirm(`确定删除“${dish.name}”吗？`))return;saveLocalDishes(dishes.filter(d=>d.id!==dish.id));cloudDeleteDish(dish.id);state.selected=state.selected.filter(id=>id!==dish.id);render();notify('菜品已删除');});
+ app.querySelectorAll('[data-delete]').forEach(b=>b.onclick=async()=>{const dish=dishes.find(d=>d.id===b.dataset.delete);if(!dish || !window.confirm(`确定删除“${dish.name}”吗？`))return;b.disabled=true;if(!await cloudDeleteDish(dish.id)){b.disabled=false;return}saveLocalDishes(dishes.filter(d=>d.id!==dish.id));state.selected=state.selected.filter(id=>id!==dish.id);render();notify('菜品已删除');});
  const addDish=app.querySelector('[data-action=new-dish]');if(addDish)addDish.onclick=()=>{state.editingId=null;state.draftImage=null;state.page='dish-form';render()};
  app.querySelectorAll('.cover-upload input').forEach(file=>file.onchange=()=>{const item=file.files?.[0];if(!item)return;if(!item.type.startsWith('image/')){notify('请选择图片文件');file.value='';return}const reader=new FileReader();reader.onerror=()=>notify('图片读取失败');reader.onload=()=>{const image=new Image();image.onerror=()=>notify('图片格式不支持');image.onload=()=>{const scale=Math.min(1,800/Math.max(image.width,image.height));const canvas=document.createElement('canvas');canvas.width=Math.max(1,Math.round(image.width*scale));canvas.height=Math.max(1,Math.round(image.height*scale));const context=canvas.getContext('2d');context.fillStyle='#fff';context.fillRect(0,0,canvas.width,canvas.height);context.drawImage(image,0,0,canvas.width,canvas.height);state.draftImage=canvas.toDataURL('image/jpeg',.82);app.querySelector('#cover-preview').src=state.draftImage};image.src=reader.result};reader.readAsDataURL(item)});
- const form=app.querySelector('#dish-form');if(form)form.onsubmit=e=>{e.preventDefault();const name=form.elements.name.value.trim();if(!name){form.elements.name.focus();return}const existing=dishes.find(d=>d.id===state.editingId);const dish={id:existing?.id || `dish-${Date.now()}-${Math.random().toString(36).slice(2,8)}`,name,category:form.elements.category.value,note:form.elements.note.value.trim(),image:state.draftImage || existing?.image || 'tomato.jpg'};const next=existing?dishes.map(d=>d.id===existing.id?dish:d):[...dishes,dish];saveLocalDishes(next);cloudUpsertDish(dish);state.editingId=null;state.draftImage=null;state.page='manage';render();notify(existing?'菜品已更新':'菜品已添加');};
+ const form=app.querySelector('#dish-form');if(form)form.onsubmit=async e=>{e.preventDefault();const name=form.elements.name.value.trim();if(!name){form.elements.name.focus();return}const existing=dishes.find(d=>d.id===state.editingId);const dish={id:existing?.id || `dish-${Date.now()}-${Math.random().toString(36).slice(2,8)}`,name,category:form.elements.category.value,note:form.elements.note.value.trim(),image:state.draftImage || existing?.image || 'tomato.jpg'};const saveButton=form.querySelector('[type=submit]');saveButton.disabled=true;if(!await cloudUpsertDish(dish)){saveButton.disabled=false;return}const latest=dishes.find(d=>d.id===dish.id);saveLocalDishes(latest?dishes.map(d=>d.id===dish.id?dish:d):[...dishes,dish]);state.editingId=null;state.draftImage=null;state.page='manage';render();notify(existing?'菜品已更新':'菜品已添加');};
 
  const search=app.querySelector('input[type=search]');if(search)search.oninput=e=>{state.query=e.target.value;const position=e.target.selectionStart;render();const input=app.querySelector('input[type=search]');input.focus();input.setSelectionRange(position,position)};
  const title=app.querySelector('.menu-title-input');if(title)title.oninput=e=>{state.title=e.target.value};
