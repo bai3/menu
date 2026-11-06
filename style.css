@@ -639,6 +639,10 @@ button.filter[hidden]{display:none}
 /* Keep the entire dish photo visible above its information card. */
 .detail-screen{background:#f7f2e9}
 .detail-screen .detail-scroll{padding-right:18px;padding-left:18px}
+.detail-screen .detail-scroll{touch-action:pan-y}
+.detail-screen.detail-swipe-active .detail-scroll,.detail-screen.detail-swipe-active .detail-bottom{transform:translate3d(var(--detail-swipe-x,0px),0,0);will-change:transform}
+.detail-screen.detail-swipe-settling .detail-scroll,.detail-screen.detail-swipe-settling .detail-bottom{transition:transform .22s cubic-bezier(.22,1,.36,1)}
+@media(prefers-reduced-motion:reduce){.detail-screen.detail-swipe-settling .detail-scroll,.detail-screen.detail-swipe-settling .detail-bottom{transition:none}}
 .detail-nav{padding:0 2px;color:#aa9382;letter-spacing:.1em}
 .detail-nav button{display:flex;align-items:center;gap:4px;color:#806152;font-size:12px;font-weight:500;letter-spacing:.04em}
 .detail-nav button svg{width:17px;height:17px;flex:none;stroke-width:1.7}

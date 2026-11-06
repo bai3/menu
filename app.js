@@ -1,10 +1,37 @@
 function bindDetailSwipe(scroll, onBack){
  if(!scroll)return;
- let start=null;
- scroll.addEventListener('touchstart',e=>{start=e.touches.length===1?{x:e.touches[0].clientX,y:e.touches[0].clientY}:null},{passive:true});
- scroll.addEventListener('touchmove',e=>{if(e.touches.length!==1)start=null},{passive:true});
- scroll.addEventListener('touchcancel',()=>{start=null},{passive:true});
- scroll.addEventListener('touchend',e=>{if(!start || e.touches.length || e.changedTouches.length!==1){start=null;return}const dx=e.changedTouches[0].clientX-start.x,dy=e.changedTouches[0].clientY-start.y;start=null;if(dx>=80 && dx>Math.abs(dy)*1.5)onBack()},{passive:true});
+ const screen=scroll.parentElement;
+ let start=null, dragging=false, settling=false;
+ const reducedMotion=window.matchMedia('(prefers-reduced-motion: reduce)');
+ const reset=()=>{screen.classList.remove('detail-swipe-active','detail-swipe-settling');screen.style.removeProperty('--detail-swipe-x');settling=false};
+ function settle(exit){
+  settling=true;
+  let timer;
+  const ended=e=>{if(e.target===scroll && e.propertyName==='transform')finish()};
+  const finish=()=>{if(!settling)return;clearTimeout(timer);scroll.removeEventListener('transitionend',ended);reset();if(exit && screen.contains(scroll))onBack()};
+  if(reducedMotion.matches){finish();return}
+  screen.classList.add('detail-swipe-settling');
+  // Commit the dragged position before starting the settling transition.
+  void scroll.offsetWidth;
+  scroll.addEventListener('transitionend',ended);
+  screen.style.setProperty('--detail-swipe-x',exit?`${screen.clientWidth}px`:'0px');
+  timer=setTimeout(finish,300);
+ }
+ scroll.addEventListener('touchstart',e=>{if(settling)return;if(e.touches.length!==1){start=null;if(dragging){dragging=false;settle(false)}return}start={x:e.touches[0].clientX,y:e.touches[0].clientY};dragging=false},{passive:true});
+ scroll.addEventListener('touchmove',e=>{
+  if(!start)return;
+  if(e.touches.length!==1){start=null;if(dragging){dragging=false;settle(false)}return}
+  const dx=e.touches[0].clientX-start.x,dy=e.touches[0].clientY-start.y;
+  if(!dragging && Math.max(Math.abs(dx),Math.abs(dy))>10){if(dx<=0 || dx<=Math.abs(dy)*1.5){start=null;return}dragging=true;screen.classList.add('detail-swipe-active')}
+  if(dragging){if(e.cancelable)e.preventDefault();screen.style.setProperty('--detail-swipe-x',`${Math.max(0,Math.min(dx,screen.clientWidth))}px`)}
+ },{passive:false});
+ scroll.addEventListener('touchcancel',()=>{start=null;if(dragging){dragging=false;settle(false)}},{passive:true});
+ scroll.addEventListener('touchend',e=>{
+  if(!start || e.touches.length || e.changedTouches.length!==1){start=null;if(dragging){dragging=false;settle(false)}return}
+  const dx=e.changedTouches[0].clientX-start.x,dy=e.changedTouches[0].clientY-start.y;
+  start=null;
+  if(dragging){if(e.cancelable)e.preventDefault();dragging=false;settle(dx>=80 && dx>Math.abs(dy)*1.5)}
+ },{passive:false});
 }
 function bindDishButtons(){
  app.querySelectorAll('[data-detail-id]').forEach(b=>b.onclick=()=>{state.detailId=b.dataset.detailId;state.detailScroll=app.querySelector('.screen-scroll')?.scrollTop || 0;state.page='dish-detail';render()});
@@ -18,7 +45,7 @@ function bind(){
  app.querySelectorAll('[data-filter-mode]').forEach(b=>b.onclick=()=>{const scroll=app.querySelector('.screen-scroll').scrollTop;state.filterMode=b.dataset.filterMode;state.category='全部';render();app.querySelector('.screen-scroll').scrollTop=scroll});
  bindCatalog();
  bindDishButtons();
- const detailBack=app.querySelector('[data-detail-back]');if(detailBack){detailBack.onclick=()=>{const id=state.detailId;state.page='dishes';render();const scroll=app.querySelector('.screen-scroll');if(scroll)scroll.scrollTop=state.detailScroll;updateCatalogNavigation();app.querySelectorAll('[data-detail-id]').forEach(b=>{if(b.dataset.detailId===id)b.focus({preventScroll:true})})};bindDetailSwipe(app.querySelector('.detail-scroll'),detailBack.onclick)}
+ const detailBack=app.querySelector('[data-detail-back]');if(detailBack){const back=(restoreFocus=false)=>{const id=state.detailId;state.page='dishes';render();const scroll=app.querySelector('.screen-scroll');if(scroll)scroll.scrollTop=state.detailScroll;updateCatalogNavigation();if(restoreFocus)app.querySelectorAll('[data-detail-id]').forEach(b=>{if(b.dataset.detailId===id)b.focus({preventScroll:true})})};detailBack.onclick=e=>back(e.detail===0);bindDetailSwipe(app.querySelector('.detail-scroll'),()=>back(false))}
  const detailToggle=app.querySelector('[data-detail-toggle]');if(detailToggle)detailToggle.onclick=()=>{const dish=dishes.find(d=>d.id===state.detailId);if(!dish || !dish.is_available){render();return}state.selected=state.selected.includes(dish.id)?state.selected.filter(id=>id!==dish.id):[...state.selected,dish.id];const top=app.querySelector('.screen-scroll')?.scrollTop || 0;render();app.querySelector('.screen-scroll').scrollTop=top;app.querySelector('[data-detail-toggle]')?.focus({preventScroll:true})};
  app.querySelectorAll('[data-remove]').forEach(b=>b.onclick=()=>{state.selected=state.selected.filter(x=>x!==b.dataset.remove);render()});
  app.querySelectorAll('[data-edit]').forEach(b=>b.onclick=()=>{state.editingId=b.dataset.edit;state.draftImage=null;state.page='dish-form';render()});

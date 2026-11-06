@@ -39,8 +39,9 @@ function renderSharedMeal(error='') {
   const mine=!!dish && d.choices.some(c=>c.dish_id===dish.id && c.person_id===d.person_id);
   app.className='phone-screen detail-screen';
   app.innerHTML=detailMarkup(dish, {selected:mine, shared:true, disabled:d.status!=='open'});
-  app.querySelector('[data-detail-back]').onclick=()=>{const id=sharedMeal.detailId;sharedMeal.page='order';renderSharedMeal();const scroll=app.querySelector('.screen-scroll');if(scroll)scroll.scrollTop=sharedMeal.detailScroll;updateCatalogNavigation(true);app.querySelectorAll('[data-shared-detail]').forEach(b=>{if(b.dataset.sharedDetail===id)b.focus({preventScroll:true})})};
-  bindDetailSwipe(app.querySelector('.detail-scroll'),app.querySelector('[data-detail-back]').onclick);
+  const back=(restoreFocus=false)=>{const id=sharedMeal.detailId;sharedMeal.page='order';renderSharedMeal();const scroll=app.querySelector('.screen-scroll');if(scroll)scroll.scrollTop=sharedMeal.detailScroll;updateCatalogNavigation(true);if(restoreFocus)app.querySelectorAll('[data-shared-detail]').forEach(b=>{if(b.dataset.sharedDetail===id)b.focus({preventScroll:true})})};
+  app.querySelector('[data-detail-back]').onclick=e=>back(e.detail===0);
+  bindDetailSwipe(app.querySelector('.detail-scroll'),()=>back(false));
   const choice=app.querySelector('[data-choice]');if(choice)choice.onclick=()=>sharedChoose(choice.dataset.choice,choice.getAttribute('aria-pressed')!=='true');
   return;
  }
