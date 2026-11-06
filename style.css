@@ -350,3 +350,25 @@ body.paper-open{overflow:hidden}
 
 /* Keep in-progress selections and drafts until the user chooses to refresh. */
 .update-notice{position:fixed;z-index:100;left:50%;bottom:max(22px,env(safe-area-inset-bottom));transform:translateX(-50%);display:flex;align-items:center;justify-content:space-between;gap:16px;width:max-content;max-width:calc(100% - 32px);padding:11px 12px 11px 16px;border:1px solid #e8d2c1;border-radius:14px;background:#fffaf3;color:#654537;box-shadow:0 8px 28px #57362938;font-size:12px;line-height:1.5}.update-notice button{flex:none;border:0;border-radius:9px;background:#ae5d48;color:#fff;padding:9px 12px;font-size:12px;font-weight:600}.update-notice button:focus-visible{outline:2px solid #6c3d2d;outline-offset:2px}
+
+/* A quiet welcome card for the device's beta access code. */
+.beta-screen{background:#fdf9f2}
+.beta-scroll{height:100%;overflow:auto;padding:max(35px,env(safe-area-inset-top)) 28px max(30px,env(safe-area-inset-bottom));display:flex;flex-direction:column}
+.beta-brand{display:flex;align-items:center;gap:10px;color:#614537;font-family:var(--serif);font-size:17px;font-weight:700;letter-spacing:.13em}
+.beta-brand .brand-mark{width:38px;height:38px;border-radius:12px 12px 12px 3px}
+.beta-brand small{display:block;margin-top:3px;font-family:var(--sans);font-size:9px;font-weight:400;letter-spacing:.16em;color:#b49b8a}
+.beta-intro{margin:clamp(54px,12vh,100px) 0 33px}
+.beta-kicker{font-size:9px;font-weight:700;letter-spacing:.18em;color:#bd775e}
+.beta-intro h1{margin:14px 0 15px;font-family:var(--serif);font-size:34px;line-height:1.4;letter-spacing:.08em;color:#4d382d}
+.beta-intro p{margin:0;font-size:13px;line-height:1.9;color:#a68e7c}
+.beta-form{padding:23px 20px 20px;border:1px solid #f0e0d1;border-radius:19px;background:#fffdf8;box-shadow:0 12px 30px #9d60450e}
+.beta-form label{display:block;margin-bottom:10px;font-size:13px;font-weight:700;color:#6d4b39}
+.beta-form input{width:100%;height:51px;border:1px solid #ead8c7;border-radius:10px;padding:0 12px;background:#fffaf4;color:#4d382d;font-size:16px;outline:none}
+.beta-form input:focus{border-color:#b86a51;box-shadow:0 0 0 3px #b86a511c}
+.beta-form input::placeholder{color:#c5b3a5;font-size:13px}
+.beta-form #beta-help{margin:10px 0 0;color:#a98f7f;font-size:11px;line-height:1.6}
+.beta-error{min-height:18px;margin:8px 0;color:#ae4c38;font-size:11px;line-height:1.6}
+.beta-submit,.beta-cancel{width:100%;min-height:48px;border:0;border-radius:11px;font-size:13px;font-weight:700;letter-spacing:.08em}
+.beta-submit{background:#b85f48;color:#fff}.beta-submit:disabled{opacity:.6}.beta-cancel{margin-top:8px;background:transparent;color:#a1735e}
+.beta-foot{display:flex;align-items:center;justify-content:center;gap:12px;margin:auto 0 0;padding-top:42px;color:#c3a590;font-size:10px;letter-spacing:.13em}.beta-foot span{width:20px;height:1px;background:#e5d2c1}
+.beta-switch{display:block;margin:0 0 16px auto;border:0;background:transparent;color:#ad755d;font-size:11px;padding:6px 0;text-decoration:underline;text-underline-offset:4px}
