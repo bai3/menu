@@ -1,5 +1,5 @@
 // A shared meal uses invitation and participant credentials, never the owner's beta code.
-const sharedMeal = { invite: '', person: '', data: null, page: 'join', timer: null, busy: false, offline: false, requestVersion: 0, filterMode: 'category', category: '全部', query: '' };
+const sharedMeal = { detailId: null, detailScroll: 0, invite: '', person: '', data: null, page: 'join', timer: null, busy: false, offline: false, requestVersion: 0, filterMode: 'category', category: '全部', query: '' };
 const sharedRandom = () => Array.from(crypto.getRandomValues(new Uint8Array(32)), x => x.toString(16).padStart(2, '0')).join('');
 const sharedKey = token => `jiayan.shared-person:${token}`;
 function sharedUrl(token) { const u = new URL(location.href); u.search = ''; u.hash = `meal=${token}`; return u.href; }
@@ -34,6 +34,15 @@ function renderSharedMeal(error='') {
  const d=sharedMeal.data;
  if(!d) { sharedRenderShell(`<div class="shared-intro"><span>一起吃饭 · 一起点菜</span><h2>${error?'暂时无法加入':'正在打开邀请'}</h2><p>${escapeText(error||'请稍等片刻…')}</p><button class="shared-text" data-shared="exit">返回家宴</button></div>`); }
  else if(!d.joined) { sharedRenderShell(`<div class="shared-intro"><span>家宴 · 聚餐邀请</span><h2>好饭，要一起吃</h2><p>邀请你加入「${escapeText(d.title)}」</p><div class="shared-invite-card"><strong>${escapeText(d.title)}</strong><small>${d.status==='completed'?'这次点菜已结束':'一桌好菜，等你来选'}</small></div>${d.status==='open'?'<form id="shared-join"><label for="shared-name">怎么称呼你？</label><input id="shared-name" maxlength="12" required placeholder="例如：妈妈"><button class="shared-primary" type="submit">加入，一起点菜</button></form>':'<p>这次聚餐已完成，邀请已关闭。</p>'}<button class="shared-text" data-shared="exit">返回家宴</button></div>`); }
+ else if (sharedMeal.page === 'detail') {
+  const dish=d.catalog.find(x=>x.id===sharedMeal.detailId);
+  const mine=!!dish && d.choices.some(c=>c.dish_id===dish.id && c.person_id===d.person_id);
+  app.className='phone-screen detail-screen';
+  app.innerHTML=detailMarkup(dish, {selected:mine, shared:true, disabled:d.status!=='open'});
+  app.querySelector('[data-detail-back]').onclick=()=>{const id=sharedMeal.detailId;sharedMeal.page='order';renderSharedMeal();const scroll=app.querySelector('.screen-scroll');if(scroll)scroll.scrollTop=sharedMeal.detailScroll;updateCatalogNavigation(true);app.querySelectorAll('[data-shared-detail]').forEach(b=>{if(b.dataset.sharedDetail===id)b.focus({preventScroll:true})})};
+  const choice=app.querySelector('[data-choice]');if(choice)choice.onclick=()=>sharedChoose(choice.dataset.choice,choice.getAttribute('aria-pressed')!=='true');
+  return;
+ }
  else {
   const selected=d.catalog.filter(x=>d.choices.some(c=>c.dish_id===x.id));
   const done=d.status==='completed', menu=sharedMeal.page==='menu', sharing=sharedMeal.page==='share';
@@ -46,18 +55,18 @@ function renderSharedMeal(error='') {
    const filters=['全部',...options.filter(x=>present.has(x)),...[...present].filter(x=>x&&!options.includes(x))];
    const filtered=catalog.filter(x=>`${x.name}${x.category}${x.cuisine}${x.note}`.includes(sharedMeal.query.trim()));
    const groups=filters.slice(1).filter(value=>filtered.some(x=>x[field]===value));
-   content+=`<div class="shared-bar"><strong>一起挑选喜欢的菜</strong><button class="shared-text" data-shared="share">邀请更多人</button></div>
-   <button class="paper-entry shared-paper-entry" data-shared="paper"><span><small>THE FAMILY MENU</small><strong>翻开纸质菜单</strong><em>像在餐厅一样，慢慢挑选</em></span><span class="paper-entry-mark" aria-hidden="true">菜单<br><i>MENU</i></span><b>打开菜单</b></button>
+   content+=`<div class="shared-bar"><strong>一起挑选喜欢的菜</strong><div class="shared-bar-actions"><button class="paper-entry shared-paper-entry" data-shared="paper">${paperMenuIcon}纸质菜单</button><button class="shared-text" data-shared="share">邀请更多人</button></div></div>
    <label class="search shared-search">${icon('search')}<input id="shared-search" type="search" placeholder="搜索想吃的菜" value="${escapeText(sharedMeal.query)}" aria-label="搜索想吃的菜"></label>
    <div class="filter-switch shared-filter-switch" role="group" aria-label="筛选方式"><button data-shared-filter-mode="category" aria-pressed="${sharedMeal.filterMode==='category'}">菜品分类</button><button data-shared-filter-mode="cuisine" aria-pressed="${sharedMeal.filterMode==='cuisine'}">菜系</button></div>
    <div class="catalog shared-catalog"><nav class="filters" aria-label="${field==='category'?'菜品分类':'菜系'}">${filters.map(c=>{const count=catalog.filter(x=>(c==='全部'||x[field]===c)&&d.choices.some(v=>v.dish_id===x.id)).length;return `<button class="filter ${sharedMeal.category===c?'active':''}" data-shared-category="${escapeText(c)}" aria-pressed="${sharedMeal.category===c}"><span class="filter-name">${escapeText(c)}</span>${count?`<span class="filter-count">${count}</span>`:''}</button>`}).join('')}</nav>
-   <section class="catalog-content" aria-label="菜品列表">${filtered.length?`<div class="catalog-heading"><h3>全部菜品</h3><span>${filtered.length} 道菜</span></div>${groups.map(value=>`<section class="catalog-group" data-group="${escapeText(value)}"><div class="catalog-heading"><h3>${escapeText(value)}</h3><span>${filtered.filter(x=>x[field]===value).length} 道菜</span></div><div class="dish-list">${filtered.filter(x=>x[field]===value).map(x=>{const mine=d.choices.some(c=>c.dish_id===x.id&&c.person_id===d.person_id), names=sharedNames(x.id);return `<article class="dish shared-catalog-dish ${names?'has-choices':''}"><div class="shared-dish-photo"><img class="dish-img" src="${escapeText(dishImage(x))}" alt="${escapeText(x.name)}" onerror="this.style.visibility='hidden'">${names?'<span class="shared-picked-badge">已点</span>':''}</div><div class="dish-info"><h3>${escapeText(x.name)} ${spiceBadge(x)}</h3><p>${escapeText(x.note)}</p><span class="dish-tag">${escapeText(x.category)}${x.cuisine!=='未分类'?' · '+escapeText(x.cuisine):''}</span>${names?`<span class="shared-dish-names" title="${escapeText(names)} 想吃"><span class="shared-names-label">想吃</span><span class="shared-names-value">${escapeText(names)}</span></span>`:''}</div><button class="add ${mine?'selected':''}" data-choice="${escapeText(x.id)}" aria-label="${mine?'取消选择':'我也想吃'}${escapeText(x.name)}" aria-pressed="${mine}">${icon(mine?'check':'plus')}</button></article>`}).join('')}</div></section>`).join('')}`:'<div class="empty">没有找到这道菜<br>换个关键词试试吧</div>'}</section></div>`;
+   <section class="catalog-content" aria-label="菜品列表">${filtered.length?`<div class="catalog-heading"><h3>全部菜品</h3><span>${filtered.length} 道菜</span></div>${groups.map(value=>`<section class="catalog-group" data-group="${escapeText(value)}"><div class="catalog-heading"><h3>${escapeText(value)}</h3><span>${filtered.filter(x=>x[field]===value).length} 道菜</span></div><div class="dish-list">${filtered.filter(x=>x[field]===value).map(x=>{const mine=d.choices.some(c=>c.dish_id===x.id&&c.person_id===d.person_id), names=sharedNames(x.id);return `<article class="dish shared-catalog-dish ${names?'has-choices':''}"><button class="dish-open shared-dish-open" data-shared-detail="${escapeText(x.id)}" aria-label="查看${escapeText(x.name)}详情"><span class="shared-dish-photo"><img class="dish-img" src="${escapeText(dishImage(x))}" alt="" onerror="this.style.visibility='hidden'">${names?'<span class="shared-picked-badge">已点</span>':''}</span><span class="dish-info"><span class="dish-name">${escapeText(x.name)} ${spiceBadge(x)}</span>${x.note?`<span class="dish-note">${escapeText(x.note)}</span>`:''}<span class="dish-tag">${escapeText(x.category)}${x.cuisine!=='未分类'?' · '+escapeText(x.cuisine):''}</span>${names?`<span class="shared-dish-names" title="${escapeText(names)} 想吃"><span class="shared-names-label">想吃</span><span class="shared-names-value">${escapeText(names)}</span></span>`:''}<span class="dish-detail-cue">查看详情</span></span></button><button class="add ${mine?'selected':''}" data-choice="${escapeText(x.id)}" aria-label="${mine?'取消选择':'我也想吃'}${escapeText(x.name)}" aria-pressed="${mine}">${icon(mine?'check':'plus')}</button></article>`}).join('')}</div></section>`).join('')}`:'<div class="empty">没有找到这道菜<br>换个关键词试试吧</div>'}</section></div>`;
   }
   let foot=sharing&&!done?`<button class="shared-primary" data-shared="order">开始点菜</button>`:done?`<button class="shared-primary" data-shared="save" ${selected.length?'':'disabled'}>保存菜单图片</button>`:menu?`<button class="shared-secondary" data-shared="order">继续点菜</button>${d.is_owner?`<button class="shared-primary" data-shared="complete" ${selected.length?'':'disabled'}>完成点菜</button>`:'<span class="shared-wait">等待发起人完成点菜</span>'}`:`<button class="shared-primary" data-shared="menu">查看菜单 · ${selected.length} 道</button>`;
   sharedRenderShell(content,`<div class="bottom shared-bottom">${foot}</div>`);
  }
  app.querySelectorAll('[data-shared]').forEach(b=>b.onclick=()=>sharedAction(b.dataset.shared));
  app.querySelector('#shared-join')?.addEventListener('submit',async e=>{e.preventDefault();const name=app.querySelector('#shared-name').value.trim();if(!name)return;const token=sharedRandom();if(!sharedStorageSet(sharedKey(sharedMeal.invite),token)){notify('无法保存参与身份，请检查浏览器存储');return;} sharedMeal.busy=true;sharedMeal.requestVersion++;try{await sharedRpc('shared_meal_join',{p_invite:sharedMeal.invite,p_person:token,p_name:name});sharedMeal.person=token;await sharedLoad();}catch(_){notify('加入失败，请检查网络或邀请是否有效');}finally{sharedMeal.busy=false;}});
+ app.querySelectorAll('[data-shared-detail]').forEach(b=>b.onclick=()=>{sharedMeal.detailId=b.dataset.sharedDetail;sharedMeal.detailScroll=app.querySelector('.screen-scroll')?.scrollTop || 0;sharedMeal.page='detail';renderSharedMeal()});
  app.querySelectorAll('[data-choice]').forEach(b=>b.onclick=()=>sharedChoose(b.dataset.choice,b.getAttribute('aria-pressed')!=='true'));
  app.querySelectorAll('[data-shared-filter-mode]').forEach(b=>b.onclick=()=>{sharedMeal.filterMode=b.dataset.sharedFilterMode;sharedMeal.category='全部';sharedRenderPreservingScroll();});
  bindCatalog(true);
@@ -71,7 +80,7 @@ async function sharedChoose(id,selected,paper=false){
  const buttons=app.querySelectorAll('[data-choice]');buttons.forEach(b=>b.disabled=true);
  try{await sharedRpc('shared_meal_choose',{p_invite:sharedMeal.invite,p_person:sharedMeal.person,p_dish:id,p_selected:selected});await sharedLoad();if(paper)showPaperFeedback(id,selected);return true;}
  catch(_){notify('点菜失败，请联网后重试');return false;}
- finally{sharedMeal.busy=false;app.querySelectorAll('[data-choice]').forEach(b=>b.disabled=false);}
+ finally{sharedMeal.busy=false;app.querySelectorAll('[data-choice]').forEach(b=>b.disabled=sharedMeal.data?.status!=='open');}
 }
 
 async function sharedAction(action) {

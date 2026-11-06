@@ -102,7 +102,13 @@ async function syncFromCloud() {
   if (!cloudDishes.every(isValidDish)) throw new Error('云端菜谱格式无效');
   if (version !== dishChangeVersion) return;
   saveLocalDishes(cloudDishes);
-  if (state.page === 'dishes' || state.page === 'manage' || state.page === 'surprise') render();
+  if (state.page === 'dish-detail') {
+   const detailScroll = app.querySelector('.screen-scroll')?.scrollTop || 0;
+   const choiceFocused = document.activeElement === app.querySelector('[data-detail-toggle]');
+   render();
+   const scroll = app.querySelector('.screen-scroll'); if (scroll) scroll.scrollTop = detailScroll;
+   if (choiceFocused) app.querySelector('[data-detail-toggle]')?.focus({preventScroll:true});
+  } else if (state.page === 'dishes' || state.page === 'manage' || state.page === 'surprise') render();
   if (document.querySelector('.paper-overlay')) renderPaperMenu();
  } catch (_) { notify('云端暂不可达，当前显示本机菜谱'); }
 }

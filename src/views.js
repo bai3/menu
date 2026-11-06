@@ -1,9 +1,10 @@
 const categories = ['全部', '家常菜', '清爽凉菜', '暖心汤羹', '主食', '饮品', '甜点', '小吃', '火锅', '烧烤', '其他'];
 const cuisines = ['未分类', '川菜', '鲁菜', '粤菜', '苏菜', '浙菜', '闽菜', '湘菜', '徽菜', '东北菜', '西北菜', '京菜', '日料', '韩料', '泰餐', '越南菜', '印度菜', '法餐', '意餐', '美式料理', '其他'];
-const state = { diaryNote: '', page: 'dishes', category: '全部', filterMode: 'category', manageFilterMode: 'category', manageFilter: '全部', query: '', selected: [], title: '今天的菜单', editingId: null, draftImage: null, surpriseId: null };
+const state = { detailId: null, detailScroll: 0, diaryNote: '', page: 'dishes', category: '全部', filterMode: 'category', manageFilterMode: 'category', manageFilter: '全部', query: '', selected: [], title: '今天的菜单', editingId: null, draftImage: null, surpriseId: null };
 const app = document.querySelector('#app');
 const icon = (name) => {
  const paths = {
+  people:'<circle cx="9" cy="8" r="3"/><path d="M3.5 19v-1a5.5 5.5 0 0 1 11 0v1M16 5.5a3 3 0 0 1 0 5.8M16.5 13a5 5 0 0 1 4 5v1"/>',
   plus:'<path d="M12 5v14M5 12h14"/>',
   check:'<path d="m5 12 4.5 4.5L19 7"/>',
   edit:'<path d="M12 20h8M4 20l3.6-.8L19 7.8 16.2 5 4.8 16.4 4 20Z"/>',
@@ -24,35 +25,13 @@ const icon = (name) => {
  };
  return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${paths[name] || ''}</svg>`;
 };
+const paperMenuIcon = `<svg class="paper-menu-icon" viewBox="0 0 24 27" aria-hidden="true" focusable="false"><rect x="2.5" y="3.5" width="17" height="21" rx="2" fill="#e9d5c0" transform="rotate(-7 11 14)"/><path d="M6 2.5h14a1 1 0 0 1 1 1v19a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1v-19a1 1 0 0 1 1-1Z" fill="#fffaf2" stroke="#ba846a" stroke-width="1.1"/><path d="M8.5 8h9M8.5 11.5h9M8.5 15h6" stroke="#b7795d" stroke-width="1.2" stroke-linecap="round"/><path d="M8.5 19.1h4" stroke="#d4ad91" stroke-width="1.2" stroke-linecap="round"/></svg>`;
 const logo = `<span class="brand-mark" aria-label="家宴标志"><svg viewBox="0 0 40 40" aria-hidden="true"><path class="brand-bowl" d="M9.8 18.7h20.4q.9 0 .7.9c-1 5.2-4.9 8-10.9 8s-9.9-2.8-10.9-8q-.2-.9.7-.9Z"/><path class="brand-foot" d="M16.8 29h6.4"/><path class="brand-smile" d="M16.5 21.6q3.5 2 7 0"/><path class="brand-chopsticks" d="m14.5 16.8 9.2-8.5m-6.4 8.5 9.2-8.5"/></svg></span>`;
 const categoryIcon = {'全部':'all','家常菜':'hot','清爽凉菜':'cold','暖心汤羹':'soup'};
 const spiceLabels = ['不辣', '微辣', '中辣', '特辣'];
 const spiceBadge = d => d.spice_level ? `<span class="spice-badge" role="img" aria-label="${spiceLabels[d.spice_level]}" title="${spiceLabels[d.spice_level]}">${'<span aria-hidden="true">🌶</span>'.repeat(d.spice_level)}</span>` : '';
 const escapeText = (str) => String(str).replace(/[&<>"']/g, s => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[s]));
 function nav(){return `<nav class="nav" aria-label="页面导航"><button data-page="dishes" class="${state.page==='dishes'?'active':''}" ${state.page==='dishes'?'aria-current="page"':''}>${icon('basket')}<span>点菜</span></button><button data-page="surprise" class="${state.page==='surprise'?'active':''}" ${state.page==='surprise'?'aria-current="page"':''}>${icon('surprise')}<span>吃点随便</span></button><button data-page="menu" class="${state.page==='menu'?'active':''}" ${state.page==='menu'?'aria-current="page"':''}>${icon('menu')}<span>菜单</span></button></nav>`}
-const heroSlides = [
- { image:'hero.jpg', tag:'家宴 / 家的味道', title:'今天，<br>一起好好吃饭。', note:'把喜欢的菜，点给爱的人', seal:'家味' },
- { image:'soup.jpg', tag:'一碗热汤 / 一份牵挂', title:'热汤上桌，<br>心也暖了。', note:'忙碌的日子，也要记得喝口汤', seal:'暖意' },
- { image:'shrimp.jpg', tag:'寻常日子 / 认真吃饭', title:'一餐一饭，<br>都是小欢喜。', note:'和喜欢的人，分享喜欢的味道', seal:'欢喜' }
-];
-let heroIndex = 0;
-function heroMarkup() {
- return `<section class="hero" aria-label="餐桌温馨提示" aria-roledescription="轮播图">${heroSlides.map((slide,i)=>`<div class="hero-slide ${i===heroIndex?'active':''}" role="group" aria-label="第 ${i+1} 张，共 ${heroSlides.length} 张" aria-hidden="${i!==heroIndex}"><div class="hero-image" style="background-image:linear-gradient(90deg,rgba(58,32,22,.76),rgba(65,37,25,.36) 68%,rgba(65,37,25,.12)),url('./public/assets/${slide.image}')"></div><div class="hero-text"><span class="tag">${slide.tag}</span><h2>${slide.title}</h2><p>${slide.note}</p></div><span class="hero-seal">${slide.seal}</span></div>`).join('')}<div class="hero-dots" aria-label="选择轮播图片">${heroSlides.map((_,i)=>`<button type="button" data-hero-slide="${i}" aria-label="查看第 ${i+1} 张" aria-pressed="${i===heroIndex}"></button>`).join('')}</div></section>`;
-}
-function showHero(index) {
- const hero=app.querySelector('.hero'); if(!hero)return;
- heroIndex=(index+heroSlides.length)%heroSlides.length;
- hero.querySelectorAll('.hero-slide').forEach((slide,i)=>{slide.classList.toggle('active',i===heroIndex);slide.setAttribute('aria-hidden',String(i!==heroIndex))});
- hero.querySelectorAll('[data-hero-slide]').forEach((dot,i)=>dot.setAttribute('aria-pressed',String(i===heroIndex)));
-}
-function bindHero() {
- const hero=app.querySelector('.hero'); if(!hero)return;
- hero.querySelectorAll('[data-hero-slide]').forEach(dot=>dot.onclick=()=>showHero(Number(dot.dataset.heroSlide)));
- let startX=0, startY=0;
- hero.addEventListener('touchstart',e=>{startX=e.touches[0].clientX;startY=e.touches[0].clientY},{passive:true});
- hero.addEventListener('touchend',e=>{const dx=e.changedTouches[0].clientX-startX,dy=e.changedTouches[0].clientY-startY;if(Math.abs(dx)>45 && Math.abs(dx)>Math.abs(dy))showHero(heroIndex+(dx<0?1:-1))},{passive:true});
-}
-setInterval(()=>{const hero=app.querySelector('.hero');if(hero && !document.hidden && !hero.matches(':hover') && !hero.contains(document.activeElement) && !matchMedia('(prefers-reduced-motion: reduce)').matches)showHero(heroIndex+1)},6000);
 function selectedDishes(){return state.selected.map(id=>dishes.find(d=>d.id===id)).filter(Boolean)}
 function filteredDishes() {
  return dishes.filter(d => `${d.name}${d.category}${d.cuisine}${d.note}`.includes(state.query.trim()));
@@ -63,12 +42,12 @@ function catalogContent(filtered){
  const present = [...new Set(filtered.map(d => d[field]))];
  const groups = [...options.filter(value => present.includes(value)), ...present.filter(value => !options.includes(value))];
  if (!groups.length) return '<div class="empty">没有找到这道菜<br>换个关键词试试吧</div>';
- return `<div class="catalog-heading"><h3>全部菜品</h3><span>${filtered.length} 道菜</span></div>` + groups.map(value => {
+ return groups.map(value => {
   const group = filtered.filter(d => d[field] === value);
-  return `<section class="catalog-group" data-group="${escapeText(value)}"><div class="catalog-heading"><h3>${escapeText(value)}</h3><span>${group.length} 道菜</span></div><div class="dish-list">${group.map(d=>`<article class="dish ${d.is_available?'':'dish-unavailable'}"><img class="dish-img" src="${escapeText(dishImage(d))}" alt="${escapeText(d.name)}" onerror="this.style.visibility='hidden'"><div class="dish-info"><h3>${escapeText(d.name)} ${spiceBadge(d)}</h3><p>${escapeText(d.note)}</p><span class="dish-tag">${escapeText(d.category)}${d.cuisine !== '未分类' ? ' · ' + escapeText(d.cuisine) : ''}</span>${d.is_available?'':'<span class="unavailable-label">已下架</span>'}</div><button class="add ${state.selected.includes(d.id)?'selected':''}" data-dish="${escapeText(d.id)}" aria-label="${state.selected.includes(d.id)?'移除':'选择'}${escapeText(d.name)}" aria-pressed="${state.selected.includes(d.id)}" ${d.is_available?'':'disabled'}>${icon(state.selected.includes(d.id)?'check':'plus')}</button></article>`).join('')}</div></section>`;
+  return `<section class="catalog-group" data-group="${escapeText(value)}"><div class="catalog-heading"><h3>${escapeText(value)}</h3><span>${group.length} 道菜</span></div><div class="dish-list">${group.map(d=>`<article class="dish ${d.is_available?'':'dish-unavailable'}"><button class="dish-open" data-detail-id="${escapeText(d.id)}" aria-label="查看${escapeText(d.name)}详情"><img class="dish-img" src="${escapeText(dishImage(d))}" alt="" onerror="this.style.visibility='hidden'"><span class="dish-info"><span class="dish-name">${escapeText(d.name)} ${spiceBadge(d)}</span>${d.note ? `<span class="dish-note">${escapeText(d.note)}</span>` : ''}${state.filterMode === 'cuisine' ? `<span class="dish-tag">${escapeText(d.category)}</span>` : d.cuisine !== '未分类' ? `<span class="dish-tag">${escapeText(d.cuisine)}</span>` : ''}${d.is_available?'':'<span class="unavailable-label">已下架</span>'}<span class="dish-detail-cue">查看详情</span></span></button><button class="add ${state.selected.includes(d.id)?'selected':''}" data-dish="${escapeText(d.id)}" aria-label="${state.selected.includes(d.id)?'移除':'选择'}${escapeText(d.name)}" aria-pressed="${state.selected.includes(d.id)}" ${d.is_available?'':'disabled'}>${icon(state.selected.includes(d.id)?'check':'plus')}</button></article>`).join('')}</div></section>`;
  }).join('');
 }
-function updateCatalogNavigation(shared = false) {
+function updateCatalogNavigation(shared = false, preferredCategory = null) {
  const scroll = app.querySelector('.screen-scroll'), nav = app.querySelector('.filters');
  if (!scroll || !nav) return;
  const groups = [...app.querySelectorAll('.catalog-group')];
@@ -79,6 +58,9 @@ function updateCatalogNavigation(shared = false) {
  const top = scroll.getBoundingClientRect().top + 8;
  let active = '全部';
  for (const group of groups) if (group.getBoundingClientRect().top <= top) active = group.dataset.group;
+ // At the end of the home list the last group may not reach the top edge.
+ if (!shared && groups.length && scroll.scrollHeight > scroll.clientHeight + 1 && scroll.scrollTop > 0 && scroll.scrollTop + scroll.clientHeight >= scroll.scrollHeight - 2) active = groups[groups.length - 1].dataset.group;
+ if (preferredCategory !== null && (preferredCategory === '全部' || names.has(preferredCategory))) active = preferredCategory;
  if (shared) sharedMeal.category = active; else state.category = active;
  nav.querySelectorAll(selector).forEach(button => {
   const selected = categoryOf(button) === active;
@@ -89,13 +71,22 @@ function updateCatalogNavigation(shared = false) {
 function bindCatalog(shared = false) {
  const scroll = app.querySelector('.screen-scroll');
  if (!scroll || !app.querySelector('.catalog')) return;
- scroll.addEventListener('scroll', () => updateCatalogNavigation(shared), {passive:true});
+ let pendingScroll = null;
+ scroll.addEventListener('scroll', () => {
+  const preferred = pendingScroll && Math.abs(scroll.scrollTop - pendingScroll.top) <= 1 ? pendingScroll.category : null;
+  pendingScroll = null;
+  updateCatalogNavigation(shared, preferred);
+ }, {passive:true});
  const selector = shared ? '[data-shared-category]' : '[data-category]';
  app.querySelectorAll(selector).forEach(button => button.onclick = () => {
   const category = shared ? button.dataset.sharedCategory : button.dataset.category;
   const target = category === '全部' ? app.querySelector('.catalog') : [...app.querySelectorAll('.catalog-group')].find(group => group.dataset.group === category);
-  if (target) scroll.scrollTo({top: scroll.scrollTop + target.getBoundingClientRect().top - scroll.getBoundingClientRect().top, behavior: 'auto'});
-  updateCatalogNavigation(shared);
+  if (target) {
+   const top = Math.max(0, Math.min(scroll.scrollHeight - scroll.clientHeight, scroll.scrollTop + target.getBoundingClientRect().top - scroll.getBoundingClientRect().top));
+   pendingScroll = Math.abs(scroll.scrollTop - top) > 1 ? {top, category} : null;
+   scroll.scrollTo({top, behavior: 'auto'});
+   updateCatalogNavigation(shared, category);
+  }
  });
  updateCatalogNavigation(shared);
 }
@@ -105,16 +96,28 @@ function renderDishes(){
  const present = new Set(dishes.map(d => d[field]));
  const filters = ['全部', ...options.filter(value => present.has(value)), ...[...present].filter(value => value && !options.includes(value))];
  const filtered = filteredDishes();
- app.className='phone-screen';
- app.innerHTML=`<div class="screen-scroll">${''}<header class="topbar"><div class="top-brand">${logo}<div><strong>家宴</strong><small>把喜欢的菜端上桌</small></div></div><button class="shared-entry" data-action="shared-create">邀请一起点</button></header>
- ${heroMarkup()}
- <div class="section-title"><div><h2>今天吃什么？</h2><p>挑几道喜欢的菜，凑成一桌好饭</p></div><button class="manage-entry" data-page="manage">${icon('edit')} 编辑菜单</button></div>
- <button class="paper-entry" data-action="paper-mode"><span><small>THE FAMILY MENU</small><strong>翻开纸质菜单</strong><em>像在餐厅一样，慢慢挑选</em></span><span class="paper-entry-mark" aria-hidden="true">菜单<br><i>MENU</i></span><b>打开菜单</b></button>
- <label class="search">${icon('search')}<input type="search" placeholder="搜索想吃的菜" value="${escapeText(state.query)}" aria-label="搜索想吃的菜"></label>
- <div class="filter-switch" role="group" aria-label="筛选方式"><button data-filter-mode="category" aria-pressed="${state.filterMode==='category'}">菜品分类</button><button data-filter-mode="cuisine" aria-pressed="${state.filterMode==='cuisine'}">菜系</button></div>
+ app.className='phone-screen home-screen';
+ app.innerHTML=`<div class="screen-scroll home-scroll">${''}<header class="topbar"><div class="top-brand">${logo}<div><strong>家宴</strong><small>把喜欢的菜端上桌</small></div></div><button class="shared-entry" data-action="shared-create">${icon('people')}<span>邀请一起点</span></button></header>
+ <section class="home-welcome"><p class="home-welcome-kicker">为每一顿家常饭</p><h1>把喜欢的菜，<em>端上家的餐桌。</em></h1><p class="home-welcome-note">今天，一起好好吃饭。</p></section>
+ <div class="section-title"><h2>今天吃什么？</h2><div class="home-actions"><button class="paper-entry" data-action="paper-mode">${paperMenuIcon}纸质菜单</button><button class="manage-entry" data-page="manage">编辑菜单</button></div></div>
+ <div class="home-discovery"><label class="search">${icon('search')}<input type="search" placeholder="搜索想吃的菜" value="${escapeText(state.query)}" aria-label="搜索想吃的菜"></label>
+ <div class="filter-switch" role="group" aria-label="筛选方式"><button data-filter-mode="category" aria-pressed="${state.filterMode==='category'}">分类</button><button data-filter-mode="cuisine" aria-pressed="${state.filterMode==='cuisine'}">菜系</button></div></div>
  <div class="catalog"><nav class="filters" aria-label="${state.filterMode==='category'?'菜品分类':'菜系'}">${filters.map(c=>{const selectedCount=selectedDishes().filter(d=>c==='全部'||d[field]===c).length;return `<button class="filter ${state.category===c?'active':''}" data-category="${escapeText(c)}" aria-pressed="${state.category===c}"><span class="filter-name">${escapeText(c)}</span>${selectedCount ? `<span class="filter-count">${selectedCount}</span>` : ''}</button>`}).join('')}</nav>
  <section class="catalog-content" aria-label="菜品列表">${catalogContent(filtered)}</section></div></div>
  <div class="bottom"><div class="order-dock">${nav()}<button class="dock-action" data-action="make-menu" aria-label="${state.selected.length ? `已选${state.selected.length}道菜，下单` : '请先选择菜品'}" ${state.selected.length?'':'disabled'}><strong>下单</strong>${state.selected.length ? `<span class="order-count">${state.selected.length}</span>` : ''}</button></div></div>`;
+ bind();
+}
+function detailMarkup(dish, {selected = false, shared = false, disabled = false} = {}) {
+ if (!dish) return `<div class="screen-scroll detail-scroll"><header class="detail-nav"><button type="button" data-detail-back>返回点菜</button><span>菜品详情</span></header><div class="detail-missing">这道菜暂时无法查看</div></div>`;
+ const d = normalizeDish(dish);
+ const rows = [['分类', d.category], ...(d.cuisine !== '未分类' ? [['菜系', d.cuisine]] : []), ['辣度', spiceLabels[d.spice_level]]];
+ const unavailable = disabled || !d.is_available;
+ return `<div class="screen-scroll detail-scroll"><header class="detail-nav"><button type="button" data-detail-back>返回点菜</button><span>菜品详情</span></header><div class="detail-photo"><img src="${escapeText(dishImage(d))}" alt="${escapeText(d.name)}" onerror="this.style.visibility='hidden'"><span class="detail-photo-label">${escapeText(d.category)}</span></div><main class="detail-content"><div class="detail-title"><div><span class="detail-overline">家宴 · 家的味道</span><h1>${escapeText(d.name)}</h1></div>${!d.is_available ? '<span class="detail-status">已下架</span>' : ''}</div>${d.note ? `<p class="detail-note">${escapeText(d.note)}</p>` : ''}<div class="detail-facts" aria-label="菜品信息">${rows.map(([label,value])=>`<div><span>${label}</span><strong>${escapeText(value)}</strong></div>`).join('')}</div></main></div><div class="detail-bottom"><span class="detail-choice-state ${selected && !unavailable ? 'is-selected' : ''}">${unavailable ? (shared ? '本次点菜已结束' : '这道菜暂不可选') : selected ? '已加入菜单' : '想吃就加入菜单'}</span><button type="button" ${shared ? `data-choice="${escapeText(d.id)}"` : 'data-detail-toggle'} aria-pressed="${selected}" ${unavailable?'disabled':''}>${unavailable ? '暂不可选' : selected ? '取消选择' : '加入菜单'}</button></div>`;
+}
+function renderDishDetail() {
+ const dish = dishes.find(d => d.id === state.detailId);
+ app.className='phone-screen detail-screen';
+ app.innerHTML=detailMarkup(dish, {selected: !!dish && state.selected.includes(dish.id)});
  bind();
 }
 let motionEnabled = false;
@@ -173,11 +176,10 @@ function drawSurprise() {
  try { if (typeof navigator.vibrate === 'function') navigator.vibrate([30, 40, 30]); } catch (_) { /* 震动不可用时仍正常选菜。 */ }
  if (matchMedia('(prefers-reduced-motion: reduce)').matches) { render(); return; }
  surpriseDrawing = true;
- app.classList.add('page-shaking');
  const card = app.querySelector('.surprise-card');
  const content = card?.querySelector('.surprise-result, .surprise-placeholder');
  if (content) {
-  content.outerHTML = `<div class="surprise-shaking" role="status"><div class="shaking-orbit"><span class="shake-mark shake-mark-left">✦</span><span class="shake-mark shake-mark-right">✳</span><div class="shaking-bowl">${icon('cheers')}</div></div><strong>正在为你挑选好菜</strong><span>摇一摇，好味道马上来</span><div class="shake-dots" aria-hidden="true"><i></i><i></i><i></i></div></div>`;
+  content.outerHTML = `<div class="surprise-shaking" role="status"><div class="surprise-copy"><span>家宴 · 随心一选</span><strong>正在挑选</strong><p>请稍等片刻</p></div></div>`;
   card.classList.add('is-shaking');
  }
  const button = app.querySelector('[data-action=surprise]');
@@ -212,14 +214,14 @@ function renderSurprise() {
  app.className='phone-screen surprise-screen';
  const dish = dishes.find(d => d.id === state.surpriseId && d.is_available);
  const remaining = dishes.filter(d => d.is_available && !state.selected.includes(d.id)).length;
- app.innerHTML=`<div class="screen-scroll surprise-scroll"><header class="topbar"><div class="top-brand">${logo}<div><strong>家宴</strong><small>把喜欢的菜端上桌</small></div></div></header><div class="surprise-heading"><span class="menu-kicker">给选择一点灵感</span><h2>今天，<span>吃点随便</span></h2><p>不知道吃什么？让这顿饭多一点惊喜。</p></div><section class="surprise-card" aria-live="polite"><div class="surprise-card-top"><span>家宴 · 今日灵感</span><span>✳</span></div>${dish ? `<div class="surprise-result"><img src="${escapeText(dishImage(dish))}" alt=""><span>${state.selected.includes(dish.id) ? '已加入菜单' : '为你选中了'}</span><h3>${escapeText(dish.name)}</h3><p>${escapeText(dish.note || '这一餐，值得期待')}</p></div>` : `<div class="surprise-placeholder"><div class="surprise-bowl"><span class="surprise-spark spark-one">✳</span><span class="surprise-spark spark-two">✦</span><svg viewBox="0 0 160 140" fill="none" aria-hidden="true"><ellipse cx="80" cy="119" rx="55" ry="8" fill="#D9B49A" opacity=".3"/><path d="M26 78h108c-3 26-21 40-54 40S29 104 26 78Z" fill="#B9644E"/><ellipse cx="80" cy="78" rx="54" ry="12" fill="#D98D70"/><ellipse cx="80" cy="77" rx="43" ry="8" fill="#F8E5CA"/><path d="M55 74c-5-12 0-21 5-25 5 8 6 16 3 25m30 0c-3-14 4-23 10-26 3 10 1 19-4 27" fill="#9BA77A" stroke="#7C8A60" stroke-width="2"/><circle cx="79" cy="72" r="11" fill="#D67759"/><path d="M76 63c2-4 7-5 9-1M70 43c-5-7 4-10 0-17m17 14c-5-7 4-10 0-17" stroke="#C58C70" stroke-width="2.5" stroke-linecap="round"/></svg></div><h3>下一道好菜，会是什么？</h3><p>点一下，让美味自己来敲门</p></div>`}<div class="surprise-card-foot">${remaining ? `还有 ${remaining} 道菜可以抽取` : '没有更多可抽取的菜了'}</div></section><div class="surprise-actions ${dish ? 'has-result' : ''}">${dish ? `<button class="surprise-add" data-action="add-surprise" ${state.selected.includes(dish.id) ? 'disabled' : ''}>${state.selected.includes(dish.id) ? '已加入菜单' : '加入菜单'}</button>` : ''}<button class="surprise-draw" data-action="surprise" ${remaining ? '' : 'disabled'}>${dish ? '再选一道' : '摇一摇，选一道'}</button></div><button class="motion-toggle" data-action="enable-motion" ${motionEnabled ? 'disabled' : ''}>${motionEnabled ? '摇动感应已开启 · 摇动手机即可选菜' : '开启手机摇动感应'}</button><p class="surprise-hint">摇出喜欢的菜，再加入菜单</p></div><div class="bottom"><div class="order-dock">${nav()}<button class="dock-action" data-action="make-menu" ${state.selected.length?'':'disabled'}><strong>下单</strong>${state.selected.length ? `<span class="order-count">${state.selected.length}</span>` : ''}</button></div></div>`;
+ app.innerHTML=`<div class="screen-scroll surprise-scroll"><header class="topbar"><div class="top-brand">${logo}<div><strong>家宴</strong><small>把喜欢的菜端上桌</small></div></div></header><div class="surprise-heading"><h2>今天，<span>吃点随便</span></h2><p>不知道吃什么？让这顿饭多一点惊喜。</p></div><section class="surprise-card" aria-live="polite">${dish ? `<div class="surprise-result"><div class="surprise-copy"><span>${state.selected.includes(dish.id) ? '已加入菜单' : '今日推荐'}</span><h3>${escapeText(dish.name)}</h3>${dish.note ? `<p>${escapeText(dish.note)}</p>` : ''}</div>${dish.image ? `<img class="surprise-dish-image" src="${escapeText(dishImage(dish))}" width="88" height="104" alt="" onerror="this.remove()">` : ''}</div>` : `<div class="surprise-placeholder"><div class="surprise-copy"><span>家宴 · 随心一选</span><h3>下一道好菜，<br>交给一点运气。</h3><p>从家里的菜单中挑一道。</p></div></div>`}<div class="surprise-card-foot">${remaining ? `还有 ${remaining} 道菜可以抽取` : '没有更多可抽取的菜了'}</div></section><div class="surprise-actions ${dish ? 'has-result' : ''}">${dish ? `<button class="surprise-add" data-action="add-surprise" ${state.selected.includes(dish.id) ? 'disabled' : ''}>${state.selected.includes(dish.id) ? '已加入菜单' : '加入菜单'}</button>` : ''}<button class="surprise-draw" data-action="surprise" ${remaining ? '' : 'disabled'}>${dish ? '再选一道' : '摇一摇，选一道'}</button></div><button class="motion-toggle" data-action="enable-motion" ${motionEnabled ? 'disabled' : ''}>${motionEnabled ? '摇动感应已开启 · 摇动手机即可选菜' : '开启手机摇动感应'}</button></div><div class="bottom"><div class="order-dock">${nav()}<button class="dock-action" data-action="make-menu" ${state.selected.length?'':'disabled'}><strong>下单</strong>${state.selected.length ? `<span class="order-count">${state.selected.length}</span>` : ''}</button></div></div>`;
  bind();
 }
 function renderMenu(){
  app.className='phone-screen menu-screen';
  const selected=selectedDishes();
- app.innerHTML=`<div class="screen-scroll">${''}<div class="page-heading"><button data-page="dishes" aria-label="返回点菜">${icon('back')}</button><span>家的味道</span></div><div class="menu-heading"><div><span class="menu-kicker">这一餐，留给家人</span><h2>今天的菜单</h2></div><button class="history-entry" data-page="history">吃饭日记</button></div>
- <section class="menu-card"><div class="menu-card-top"><span class="menu-card-mark">${icon('hot')}</span><small>今天吃什么</small><input class="menu-title-input" aria-label="菜单标题，可编辑" maxlength="16" value="${escapeText(state.title)}"><div class="menu-meta"><span>${new Date().toLocaleDateString('zh-CN',{year:'numeric',month:'long',day:'numeric'})}</span><span>点击标题可修改</span></div></div>${selected.length ? `<div class="menu-rows">${selected.map((d,i)=>`<div class="menu-row"><span class="number">${String(i+1).padStart(2,'0')}</span><img class="menu-dish-img" src="${escapeText(dishImage(d))}" alt=""><span class="name">${escapeText(d.name)}</span><button data-remove="${escapeText(d.id)}" aria-label="从菜单移除${escapeText(d.name)}">${icon('close')}</button></div>`).join('')}</div>` : `<div class="menu-empty"><div class="menu-empty-art" aria-hidden="true"><svg viewBox="0 0 180 126" fill="none" xmlns="http://www.w3.org/2000/svg"><ellipse cx="90" cy="113" rx="65" ry="7" fill="#EAD5C1" opacity=".55"/><path d="M37 74h106c-3 24-20 37-53 37S40 98 37 74Z" fill="#C47157"/><path d="M37 74c0-7 24-12 53-12s53 5 53 12-24 12-53 12-53-5-53-12Z" fill="#E8AB8F"/><path d="M47 73c0-5 19-9 43-9s43 4 43 9-19 9-43 9-43-4-43-9Z" fill="#F8E4C7"/><path d="M65 69c-5-10-2-21 4-27 5 7 7 17 4 27M102 67c-2-13 4-23 12-27 3 10 1 21-6 29" fill="#99A77D" stroke="#75885F" stroke-width="2" stroke-linejoin="round"/><path d="M69 48l1 18m42-19-7 18" stroke="#75885F" stroke-width="1.5" stroke-linecap="round"/><circle cx="86" cy="69" r="10" fill="#D8795E"/><path d="M82 61c2-4 6-5 8-1m-5 0 2 5" stroke="#75885F" stroke-width="2" stroke-linecap="round"/><path d="M83 40c-6-7 5-10 0-17M98 37c-6-7 5-10 0-17" stroke="#D8A98E" stroke-width="2.5" stroke-linecap="round"/><path d="M34 48l-3-4m-4 12h-5m129-4 4-5m2 14h5" stroke="#D8A98E" stroke-width="2" stroke-linecap="round"/><path d="M58 96c9 5 20 7 32 7" stroke="#E8A78C" stroke-width="2" stroke-linecap="round"/></svg></div><div class="menu-empty-copy"><strong>一桌好菜，从这里开始</strong><p>挑几道喜欢的菜，<br>为今天添一点期待。</p></div><button data-page="dishes">去挑选菜品</button></div>`}<div class="menu-card-foot"><span></span>好好吃饭，慢慢生活<span></span></div></section>${selected.length ? `<div class="diary-compose"><label for="diary-note">写下这一餐 <span>选填</span></label><textarea id="diary-note" maxlength="200" placeholder="今天的饭，有什么想记下的？">${escapeText(state.diaryNote)}</textarea><button data-action="save-diary">保存到吃饭日记</button></div>` : ''}</div>
+ app.innerHTML=`<div class="screen-scroll">${''}<div class="page-heading"><button data-page="dishes" aria-label="返回点菜">${icon('back')}</button><span>家的味道</span></div><div class="menu-heading"><div><h2>今天的菜单</h2></div><button class="history-entry" data-page="history">吃饭日记</button></div>
+ <section class="menu-card"><div class="menu-card-top"><input class="menu-title-input" aria-label="菜单标题，可编辑" maxlength="16" value="${escapeText(state.title)}"><div class="menu-meta"><span>${new Date().toLocaleDateString('zh-CN',{year:'numeric',month:'long',day:'numeric'})}</span><span>点击标题可修改</span></div></div>${selected.length ? `<div class="menu-rows">${selected.map((d,i)=>`<div class="menu-row"><span class="number">${String(i+1).padStart(2,'0')}</span><img class="menu-dish-img" src="${escapeText(dishImage(d))}" alt=""><span class="name">${escapeText(d.name)}</span><button data-remove="${escapeText(d.id)}" aria-label="从菜单移除${escapeText(d.name)}">${icon('close')}</button></div>`).join('')}</div>` : `<div class="menu-empty"><div class="menu-empty-copy"><span class="menu-empty-kicker">今天的餐桌</span><strong>还没有选菜</strong><p>挑几道喜欢的菜，<br>为这一餐添一点期待。</p></div><button data-page="dishes">去挑选菜品</button></div>`}<div class="menu-card-foot"><span></span>好好吃饭，慢慢生活<span></span></div></section>${selected.length ? `<div class="diary-compose"><label for="diary-note">写下这一餐 <span>选填</span></label><textarea id="diary-note" maxlength="200" placeholder="今天的饭，有什么想记下的？">${escapeText(state.diaryNote)}</textarea><button data-action="save-diary">保存到吃饭日记</button></div>` : ''}</div>
  <div class="bottom"><div class="order-dock">${nav()}<button class="dock-action dock-save" data-action="save" ${selected.length?'':'disabled'}>保存菜单图片</button></div></div>`;
  bind();
 }
@@ -230,14 +232,14 @@ function renderManage(){
  const filters = ['全部', ...options.filter(value => present.has(value)), ...[...present].filter(value => value && !options.includes(value))];
  const filtered = dishes.filter(d => state.manageFilter === '全部' || d[field] === state.manageFilter);
  app.className='phone-screen manage-screen';
- app.innerHTML=`<div class="screen-scroll manage-scroll">${''}<div class="page-heading"><button data-page="dishes" aria-label="返回点菜">${icon('back')}</button><span>家的味道</span></div><div class="manage-heading"><div><span class="menu-kicker">把喜欢的菜留下来</span><h2>编辑菜单</h2><p>管理家里的菜，点菜时随心挑选</p></div><span>${dishes.length} 道菜</span></div><button class="beta-switch" data-action="switch-user">切换内测用户</button><div class="filter-switch manage-filter-switch" role="group" aria-label="编辑菜单筛选方式"><button data-manage-mode="category" aria-pressed="${state.manageFilterMode==='category'}">菜品分类</button><button data-manage-mode="cuisine" aria-pressed="${state.manageFilterMode==='cuisine'}">菜系</button></div><nav class="manage-filters" aria-label="${state.manageFilterMode==='category'?'菜品分类':'菜系'}筛选">${filters.map(value=>`<button data-manage-filter="${escapeText(value)}" aria-pressed="${state.manageFilter===value}">${escapeText(value)}</button>`).join('')}</nav><div class="manage-list" aria-label="筛选后的菜品">${filtered.length ? filtered.map(d=>`<article class="manage-dish"><img src="${escapeText(dishImage(d))}" alt=""><div class="manage-dish-copy"><strong>${escapeText(d.name)}</strong><span>${escapeText(d.category)}${d.cuisine !== '未分类' ? ' · ' + escapeText(d.cuisine) : ''}</span>${spiceBadge(d)}${d.is_available?'':'<span class="manage-unavailable">已下架</span>'}</div><button data-edit="${escapeText(d.id)}" aria-label="编辑${escapeText(d.name)}">编辑</button><button class="delete-dish" data-delete="${escapeText(d.id)}" aria-label="删除${escapeText(d.name)}">删除</button></article>`).join('') : `<div class="manage-empty">${dishes.length ? '这个分类暂时没有菜品' : '菜单还没有菜，先添加一道吧'}</div>`}</div></div><div class="manage-bottom"><button class="manage-add" data-action="new-dish">${icon('plus')} 添加菜品</button></div>`;
+ app.innerHTML=`<div class="screen-scroll manage-scroll">${''}<div class="page-heading"><button data-page="dishes" aria-label="返回点菜">${icon('back')}</button><span>家的味道</span></div><div class="manage-heading"><div><h2>编辑菜单</h2><p>${dishes.length} 道菜</p></div><button class="beta-switch" data-action="switch-user">切换内测用户</button></div><div class="filter-switch manage-filter-switch" role="group" aria-label="编辑菜单筛选方式"><button data-manage-mode="category" aria-pressed="${state.manageFilterMode==='category'}">菜品分类</button><button data-manage-mode="cuisine" aria-pressed="${state.manageFilterMode==='cuisine'}">菜系</button></div><nav class="manage-filters" aria-label="${state.manageFilterMode==='category'?'菜品分类':'菜系'}筛选">${filters.map(value=>`<button data-manage-filter="${escapeText(value)}" aria-pressed="${state.manageFilter===value}">${escapeText(value)}</button>`).join('')}</nav><div class="manage-list" aria-label="筛选后的菜品">${filtered.length ? filtered.map(d=>`<article class="manage-dish"><img src="${escapeText(dishImage(d))}" alt=""><div class="manage-dish-copy"><strong>${escapeText(d.name)}</strong><span>${escapeText(d.category)}${d.cuisine !== '未分类' ? ' · ' + escapeText(d.cuisine) : ''}</span>${spiceBadge(d)}${d.is_available?'':'<span class="manage-unavailable">已下架</span>'}</div><button data-edit="${escapeText(d.id)}" aria-label="编辑${escapeText(d.name)}">编辑</button><button class="delete-dish" data-delete="${escapeText(d.id)}" aria-label="删除${escapeText(d.name)}">删除</button></article>`).join('') : `<div class="manage-empty">${dishes.length ? '这个分类暂时没有菜品' : '菜单还没有菜，先添加一道吧'}</div>`}</div></div><div class="manage-bottom"><button class="manage-add" data-action="new-dish">${icon('plus')} 添加菜品</button></div>`;
  bind();
 }
 function renderDishForm(){
  const dish = dishes.find(d=>d.id===state.editingId);
  const image = state.draftImage || dish?.image || 'tomato.jpg';
  app.className='phone-screen manage-screen';
- app.innerHTML=`<div class="screen-scroll form-scroll">${''}<div class="page-heading"><button data-page="manage" aria-label="返回编辑菜单">${icon('back')}</button><span>家的味道</span></div><div class="manage-heading"><div><span class="menu-kicker">为餐桌添一道好菜</span><h2>${dish?'编辑菜品':'添加菜品'}</h2></div></div><form id="dish-form" class="dish-form"><label class="form-label" for="dish-name">菜品名称 <em>必填</em></label><input id="dish-name" name="name" maxlength="24" required placeholder="例如：番茄炒蛋" value="${escapeText(dish?.name || '')}"><label class="form-label" for="dish-category">菜品分类</label><select id="dish-category" name="category">${[...categories.slice(1), ...(dish?.category && !categories.includes(dish.category) ? [dish.category] : [])].map(c=>`<option value="${escapeText(c)}" ${dish?.category===c?'selected':''}>${escapeText(c)}</option>`).join('')}</select><label class="form-label" for="dish-cuisine">菜系</label><select id="dish-cuisine" name="cuisine">${[...cuisines, ...(dish?.cuisine && !cuisines.includes(dish.cuisine) ? [dish.cuisine] : [])].map(c=>`<option value="${escapeText(c)}" ${dish?.cuisine===c?'selected':''}>${escapeText(c)}</option>`).join('')}</select><div class="form-pair"><div><label class="form-label" for="dish-spice">辣度</label><select id="dish-spice" name="spice_level">${spiceLabels.map((label, level)=>`<option value="${level}" ${(dish?.spice_level ?? 0)===level?'selected':''}>${label}</option>`).join('')}</select></div><div><label class="form-label" for="dish-availability">上架状态</label><select id="dish-availability" name="is_available"><option value="true" ${dish?.is_available!==false?'selected':''}>上架</option><option value="false" ${dish?.is_available===false?'selected':''}>下架</option></select></div></div><label class="form-label" for="dish-note">一句介绍 <span>选填</span></label><input id="dish-note" name="note" maxlength="36" placeholder="写一句这道菜的味道" value="${escapeText(dish?.note || '')}"><div class="form-label">菜品封面</div><div class="cover-picker"><img id="cover-preview" src="${escapeText(dishImage({image}))}" alt="菜品封面预览"><div><strong>换一张喜欢的图片</strong><span>拍一张，或从相册挑选</span><div class="cover-actions"><label class="cover-upload">${icon('camera')}拍照<input type="file" accept="image/*" capture="environment"></label><label class="cover-upload">${icon('image')}从相册选择<input type="file" accept="image/*"></label></div></div></div><button class="form-save" type="submit">保存菜品</button></form></div>`;
+ app.innerHTML=`<div class="screen-scroll form-scroll">${''}<div class="page-heading"><button data-page="manage" aria-label="返回编辑菜单">${icon('back')}</button><span>家的味道</span></div><div class="manage-heading"><div><h2>${dish?'编辑菜品':'添加菜品'}</h2></div></div><form id="dish-form" class="dish-form"><label class="form-label" for="dish-name">菜品名称 <em>必填</em></label><input id="dish-name" name="name" maxlength="24" required placeholder="例如：番茄炒蛋" value="${escapeText(dish?.name || '')}"><label class="form-label" for="dish-category">菜品分类</label><select id="dish-category" name="category">${[...categories.slice(1), ...(dish?.category && !categories.includes(dish.category) ? [dish.category] : [])].map(c=>`<option value="${escapeText(c)}" ${dish?.category===c?'selected':''}>${escapeText(c)}</option>`).join('')}</select><label class="form-label" for="dish-cuisine">菜系</label><select id="dish-cuisine" name="cuisine">${[...cuisines, ...(dish?.cuisine && !cuisines.includes(dish.cuisine) ? [dish.cuisine] : [])].map(c=>`<option value="${escapeText(c)}" ${dish?.cuisine===c?'selected':''}>${escapeText(c)}</option>`).join('')}</select><div class="form-pair"><div><label class="form-label" for="dish-spice">辣度</label><select id="dish-spice" name="spice_level">${spiceLabels.map((label, level)=>`<option value="${level}" ${(dish?.spice_level ?? 0)===level?'selected':''}>${label}</option>`).join('')}</select></div><div><label class="form-label" for="dish-availability">上架状态</label><select id="dish-availability" name="is_available"><option value="true" ${dish?.is_available!==false?'selected':''}>上架</option><option value="false" ${dish?.is_available===false?'selected':''}>下架</option></select></div></div><label class="form-label" for="dish-note">一句介绍 <span>选填</span></label><input id="dish-note" name="note" maxlength="36" placeholder="写一句这道菜的味道" value="${escapeText(dish?.note || '')}"><div class="form-label">菜品封面</div><div class="cover-picker"><img id="cover-preview" src="${escapeText(dishImage({image}))}" alt="菜品封面预览"><div><strong>换一张喜欢的图片</strong><span>拍一张，或从相册挑选</span><div class="cover-actions"><label class="cover-upload">${icon('camera')}拍照<input type="file" accept="image/*" capture="environment"></label><label class="cover-upload">${icon('image')}从相册选择<input type="file" accept="image/*"></label></div></div></div><button class="form-save" type="submit">保存菜品</button></form></div>`;
  bind();
 }
 
@@ -286,5 +288,5 @@ async function saveHistory() {
  finally { if(button.isConnected){button.disabled=false;button.textContent='保存到吃饭日记';} }
 }
 
-function render(){if(state.page==='shared-create')renderSharedCreate();else if(state.page==='history')renderHistory();else if(state.page==='menu')renderMenu();else if(state.page==='surprise')renderSurprise();else if(state.page==='manage')renderManage();else if(state.page==='dish-form')renderDishForm();else renderDishes()}
+function render(){if(state.page==='dish-detail')renderDishDetail();else if(state.page==='shared-create')renderSharedCreate();else if(state.page==='history')renderHistory();else if(state.page==='menu')renderMenu();else if(state.page==='surprise')renderSurprise();else if(state.page==='manage')renderManage();else if(state.page==='dish-form')renderDishForm();else renderDishes()}
 function notify(message){const old=app.querySelector('.toast');if(old)old.remove();const el=document.createElement('div');el.className='toast';el.textContent=message;app.appendChild(el);setTimeout(()=>el.remove(),2400)}

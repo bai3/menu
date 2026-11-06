@@ -488,6 +488,92 @@ button.filter[hidden]{display:none}
 }
 @media (max-width: 420px){.shared-catalog button.filter{padding-left:6px;padding-right:4px;gap:2px;font-size:10px}.shared-catalog .filter-name{white-space:nowrap}}
 
+/* Home: a calm introduction and a compact path to the dishes. */
+.home-scroll .topbar{padding-bottom:16px}
+.home-scroll .hero{height:160px}
+.home-scroll .section-title{margin:20px 0 13px;align-items:center}
+.home-scroll .paper-entry{min-height:68px;padding:9px 14px;margin-bottom:14px;border-color:#eee1d3;background:#faf4eb}
+.home-scroll .paper-entry strong{margin:0 0 5px;font-size:15px}
+.home-scroll .paper-entry-mark{width:40px;height:46px}
+.home-discovery{display:flex;align-items:center;gap:8px}
+.home-discovery .search{flex:1;min-width:0;height:42px}
+.home-discovery .filter-switch{flex:none;margin:0}
+.home-discovery .filter-switch button{min-height:34px;padding:6px 10px}
+.home-scroll .catalog{margin-top:16px}
+@media(max-width:350px){.home-discovery{gap:6px}.home-discovery .search{padding:0 9px}.home-discovery .filter-switch button{padding:6px 8px}}
+
+/* Keep the category rail quiet and leave room around the selection control. */
+.home-scroll .filters{background:#f8f2eb;gap:1px}
+.home-scroll .catalog-heading{margin-bottom:9px}
+.home-scroll .catalog-group+.catalog-group{margin-top:23px}
+.home-scroll .catalog .dish{border-color:#f1e8df;box-shadow:0 3px 12px #8b654809}
+.home-scroll .catalog .dish-info{padding-bottom:30px}
+.home-scroll .catalog .dish-info h3{line-height:1.4}
+.home-scroll .catalog .add{width:36px;height:36px;right:5px;bottom:5px}
+
+/* Compact entry and quieter secondary pages. */
+.home-scroll .section-title{gap:8px}
+.home-actions{display:flex;align-items:center;gap:8px;flex:none}
+.home-scroll .paper-entry,.shared-paper-entry{display:inline-flex;align-items:center;justify-content:center;width:auto;min-height:40px;margin:0;padding:0 12px;border:1px solid #eadbce;border-radius:20px;background:#fffaf4;color:#a75c47;font-size:11px;font-weight:600;white-space:nowrap}
+.home-scroll .manage-entry{min-height:40px;padding:0 11px}
+.shared-scroll .shared-paper-entry{margin:12px 22px 14px}
+@media(max-width:420px){.shared-scroll .shared-paper-entry{margin-left:0;margin-right:0}}
+@media(max-width:350px){.home-actions{gap:4px}.home-scroll .section-title h2{font-size:18px}.home-scroll .paper-entry,.home-scroll .manage-entry{padding:0 8px;font-size:10px}}
+.menu-screen .menu-heading{margin:12px 0 16px}
+.menu-screen .menu-card{padding:23px 21px;box-shadow:0 5px 18px #9b62450e}
+.menu-screen .menu-card:before,.menu-screen .menu-card:after{display:none}
+.menu-screen .diary-compose{margin-top:14px;padding:16px}
+.manage-screen .manage-heading{margin:14px 0 16px;align-items:end}
+.manage-screen .manage-heading p{margin-top:6px;color:#aa8d7b}
+.manage-screen .beta-switch{margin:0 0 2px;padding:8px 0}
+.manage-screen .manage-list{gap:8px}
+.manage-screen .manage-dish{box-shadow:none;border-color:#f1e7dd}
+.manage-screen .dish-form{padding:18px;gap:6px;box-shadow:0 5px 18px #9b62450b}
+.manage-screen .form-label{margin-top:11px}
+.manage-screen .dish-form>.form-label:first-child{margin-top:0}
+.surprise-screen .surprise-heading{margin:14px 0 18px}
+.surprise-screen .surprise-heading h2{margin:0 0 9px}
+.surprise-screen .surprise-card{min-height:285px;box-shadow:0 5px 18px #9b62450b}
+.surprise-screen .surprise-card:before,.surprise-screen .surprise-bowl:before{display:none}
+.surprise-screen .surprise-bowl{width:130px;height:130px}
+.surprise-screen .surprise-bowl svg{width:108px;height:96px}
+.surprise-screen .surprise-result img{width:126px;height:126px}
+.history-heading{margin:18px 0 20px}
+.history-heading p{margin-top:7px}
+.shared-create-heading{padding-bottom:20px}
+.shared-create-form{box-shadow:0 5px 18px #9b62450b}
+
+/* A little paper menu keeps the compact entry recognisable. */
+.home-scroll .paper-entry,.shared-paper-entry{gap:5px}
+.paper-menu-icon{display:block;flex:none;width:20px;height:23px}
+@media(max-width:350px){.paper-menu-icon{width:17px;height:20px}.home-scroll .paper-entry{gap:3px}}
+
+/* Text-first actions keep the paper menu beside the section title. */
+.home-scroll .section-title{gap:6px}
+.home-scroll .home-actions,.shared-bar-actions{display:flex;align-items:center;flex:none;gap:0}
+.home-scroll .section-title .paper-entry,.shared-bar .shared-paper-entry{display:inline-flex;align-items:center;justify-content:center;gap:4px;width:auto;min-height:44px;margin:0;padding:0 8px;border:0;border-radius:0;background:transparent;box-shadow:none;color:#a6654e;font:600 11px var(--sans);white-space:nowrap}
+.home-scroll .section-title .paper-menu-icon,.shared-bar .paper-menu-icon{width:20px;height:23px;flex:none}
+.home-scroll .section-title .manage-entry,.shared-bar-actions .shared-text{min-height:44px;padding:0 0 0 9px;border:0;border-left:1px solid #eadccf;border-radius:0;background:transparent;color:#a6654e;font:600 11px var(--sans);white-space:nowrap}
+.home-scroll .section-title .paper-entry:focus-visible,.shared-bar .shared-paper-entry:focus-visible{outline:2px solid #ae6c54;outline-offset:2px;border-radius:4px}
+@media(max-width:350px){.home-scroll .section-title h2{font-size:18px}.home-scroll .section-title .paper-entry,.shared-bar .shared-paper-entry{padding:0 5px;font-size:10px}.home-scroll .section-title .manage-entry,.shared-bar-actions .shared-text{padding-left:6px;font-size:10px}.home-scroll .section-title .paper-menu-icon,.shared-bar .paper-menu-icon{width:17px;height:20px}.shared-bar>strong{font-size:12px}}
+.home-scroll .section-title .manage-entry,.shared-bar-actions .shared-text{position:relative;border-left:0}
+.home-scroll .section-title .manage-entry:before,.shared-bar-actions .shared-text:before{content:'';position:absolute;left:0;top:50%;width:1px;height:14px;transform:translateY(-50%);background:#eadccf}
+
+/* Let the table photograph fade into the page instead of sitting in a banner. */
+.home-screen{background-color:#fdf9f2;background-image:linear-gradient(rgba(253,249,242,.91),rgba(253,249,242,.91)),url('./public/assets/hero.jpg');background-position:center;background-size:cover;background-repeat:no-repeat}
+.home-scroll{background:transparent}
+.home-scroll .catalog-content{padding-bottom:0}
+.home-screen .bottom{background:linear-gradient(180deg,transparent,rgba(253,249,242,.82) 45%,rgba(253,249,242,.94))}
+.home-scroll .topbar{padding-bottom:10px}
+.home-welcome{position:relative;padding:24px 2px 25px;border-bottom:1px solid #eaded0}
+.home-welcome-kicker{display:flex;align-items:center;gap:8px;margin:0 0 12px;color:#a66f58;font-size:10px;font-weight:600;letter-spacing:.13em}
+.home-welcome-kicker:before{content:'';width:17px;height:1px;background:#c39278}
+.home-welcome h1{margin:0;color:#503a30;font:600 26px/1.5 var(--serif);letter-spacing:.05em}
+.home-welcome h1 em{display:block;color:#b2624c;font-style:normal}
+.home-welcome-note{margin:8px 0 0;color:#967e6d;font-size:11px;letter-spacing:.05em}
+.home-scroll .section-title{margin:15px 0 12px}
+@media(max-width:350px){.home-welcome{padding:20px 1px 22px}.home-welcome h1{font-size:22px}.home-welcome-kicker{margin-bottom:10px}}
+
 /* 家宴: a warm seal for the family table. */
 .brand-mark{background:#793e34;color:#f9f0e1;border-radius:12px}
 .top-brand .brand-mark,.beta-brand .brand-mark{border-radius:11px}
@@ -496,3 +582,115 @@ button.filter[hidden]{display:none}
 .brand-mark .brand-foot{fill:none;stroke:currentColor;stroke-width:1;stroke-linecap:round}
 .brand-mark .brand-smile{fill:none;stroke:#793e34;stroke-width:.85;stroke-linecap:round}
 .brand-mark .brand-chopsticks{fill:none;stroke:currentColor;stroke-width:1.05;stroke-linecap:round}
+
+/* The invitation reads as a small part of the masthead. */
+.home-scroll .shared-entry{display:inline-flex;align-items:center;gap:5px;min-height:44px;padding:0 2px 0 10px;border:0;border-radius:0;background:transparent;color:#9a5b48;font-size:12px;font-weight:600}
+.home-scroll .shared-entry svg{width:18px;height:18px;stroke-width:1.6}
+.home-scroll .shared-entry:focus-visible{outline:2px solid #b76b50;outline-offset:2px;border-radius:4px}
+
+/* Individual category tabs are easier to scan than one continuous panel. */
+.home-scroll .filters,.shared-catalog .filters{gap:4px;padding:2px 0;background:transparent;border-radius:0}
+.home-scroll button.filter,.shared-catalog button.filter{min-height:46px;padding:9px 8px;border-radius:10px;background:transparent;color:#806d60;line-height:1.4}
+.home-scroll button.filter.active,.shared-catalog button.filter.active{border-radius:10px;background:#f2e3d5;color:#a14d39;box-shadow:none}
+.home-scroll button.filter.active:before,.shared-catalog button.filter.active:before{display:none}
+.home-scroll button.filter:focus-visible,.shared-catalog button.filter:focus-visible{outline:2px solid #b76b50;outline-offset:-2px}
+
+/* The picture and copy open the detail; the plus remains a separate action. */
+.catalog .dish-open{display:flex;align-items:flex-start;gap:9px;flex:1;min-width:0;width:100%;padding:0;border:0;background:transparent;color:inherit;text-align:left;border-radius:9px}
+.catalog .dish-open:focus-visible{outline:2px solid #b76b50;outline-offset:2px}
+.catalog .dish-open .dish-info{display:block;flex:1;min-width:0}
+.catalog .dish-name{display:block;margin:0 0 6px;color:#49362c;font:700 14px/1.4 var(--serif);letter-spacing:.04em;overflow-wrap:anywhere}
+.catalog .dish-note{display:-webkit-box;overflow:hidden;-webkit-line-clamp:2;-webkit-box-orient:vertical;color:#9c887a;font-size:10px;line-height:1.4;overflow-wrap:anywhere}
+.catalog .dish-open .dish-tag{display:inline-block}
+.catalog .shared-dish-open{align-items:center;gap:10px}
+.catalog .shared-dish-open .dish-info{align-self:center}
+@media(max-width:350px){.catalog .dish-open{gap:7px}.catalog .dish-name{font-size:13px}}
+
+/* Dish detail keeps the photo prominent and the choice close at hand. */
+.detail-screen{background:#fdf9f2}
+.detail-screen .detail-scroll{padding:12px 20px 125px}
+.detail-nav{display:flex;align-items:center;justify-content:space-between;min-height:52px;color:#b29b8b;font-size:11px}
+.detail-nav button{min-height:44px;padding:0 10px 0 0;border:0;background:transparent;color:#a45c46;font-size:12px;font-weight:600}
+.detail-nav button:focus-visible,.detail-bottom button:focus-visible{outline:2px solid #b76b50;outline-offset:3px;border-radius:5px}
+.detail-photo{overflow:hidden;width:100%;height:clamp(190px,30vh,270px);border-radius:18px;background:#f3e8dd}
+.detail-photo img{display:block;width:100%;height:100%;object-fit:cover}
+.detail-content{padding:24px 2px 12px}
+.detail-title{display:flex;align-items:end;justify-content:space-between;gap:12px}
+.detail-overline{color:#b18870;font-size:10px;letter-spacing:.12em}
+.detail-title h1{margin:9px 0 0;color:#4f382d;font:600 27px/1.4 var(--serif);letter-spacing:.05em;overflow-wrap:anywhere}
+.detail-status{flex:none;padding:5px 9px;border-radius:8px;background:#eee9e2;color:#93877c;font-size:11px}
+.detail-note{margin:13px 0 0;color:#90786a;font-size:13px;line-height:1.8;overflow-wrap:anywhere;white-space:pre-wrap}
+.detail-facts{display:flex;flex-wrap:wrap;gap:14px 28px;margin-top:23px;padding:18px 0;border-top:1px solid #eadfd4;border-bottom:1px solid #eadfd4}
+.detail-facts div{display:flex;flex-direction:column;gap:7px;min-width:48px}
+.detail-facts span{color:#b29d8e;font-size:11px}
+.detail-facts strong{color:#634b3d;font-size:12px;font-weight:600}
+.detail-missing{padding:90px 0;text-align:center;color:#9e8879;font-size:13px}
+.detail-bottom{position:absolute;right:0;bottom:0;left:0;display:flex;align-items:center;justify-content:space-between;gap:16px;padding:12px 20px 22px;background:linear-gradient(180deg,rgba(253,249,242,.84),#fdf9f2 35%)}
+.detail-bottom span{color:#9d8474;font-size:12px}
+.detail-bottom button{min-width:136px;min-height:48px;padding:0 18px;border:0;border-radius:14px;background:#ad604b;color:#fffaf4;font-size:13px;font-weight:600}
+.detail-bottom button[aria-pressed=true],.detail-bottom button[data-detail-toggle]:not(:disabled){transition:background .15s}
+.detail-bottom button:disabled{background:#eee3da;color:#ad9b8e;cursor:not-allowed}
+@media(max-width:800px){.detail-screen .detail-scroll{padding-top:max(12px,env(safe-area-inset-top));padding-bottom:calc(110px + env(safe-area-inset-bottom))}.detail-bottom{position:fixed;padding-bottom:max(16px,env(safe-area-inset-bottom))}}
+
+.catalog .dish-detail-cue{display:inline-block;margin-top:5px;color:#ad735e;font-size:10px;line-height:1.4}
+.catalog .dish-tag + .dish-detail-cue{margin-left:8px}
+.shared-catalog .dish-detail-cue{display:block}
+
+/* A small table card layered over the photograph, with a clear choice state. */
+.detail-screen{background:#f8f3eb}
+.detail-screen .detail-scroll{padding-right:18px;padding-left:18px}
+.detail-nav{padding:0 2px;color:#ad9787}
+.detail-nav button{color:#8f5442;font-size:12px}
+.detail-photo{position:relative;height:clamp(210px,32vh,280px);border-radius:18px;background:#efe2d4}
+.detail-photo:after{content:'';position:absolute;inset:55% 0 0;background:linear-gradient(transparent,rgba(64,38,26,.32));pointer-events:none}
+.detail-photo-label{position:absolute;z-index:1;bottom:35px;left:17px;padding:6px 10px;border:1px solid rgba(255,250,241,.4);border-radius:20px;background:rgba(71,45,32,.35);color:#fffaf3;font-size:10px;letter-spacing:.06em}
+.detail-content{position:relative;margin:-20px 8px 0;padding:21px 20px 20px;border:1px solid #f0e3d6;border-radius:17px;background:#fffdf8;box-shadow:0 7px 22px #8c5e410e}
+.detail-overline{font-size:10px;color:#b48670;letter-spacing:.1em}
+.detail-title h1{margin-top:7px;font-size:26px;line-height:1.35}
+.detail-note{margin-top:11px;color:#806c60;line-height:1.8}
+.detail-facts{gap:12px 0;margin-top:18px;padding:16px 0 0;border-top:1px solid #efe4d9;border-bottom:0}
+.detail-facts div{flex:1;min-width:64px;padding:0 14px;border-right:1px solid #f0e6dc}
+.detail-facts div:first-child{padding-left:0}
+.detail-facts div:last-child{border-right:0}
+.detail-facts span{font-size:10px}
+.detail-facts strong{font-size:12px;overflow-wrap:anywhere}
+.detail-bottom{padding-top:13px;background:linear-gradient(180deg,rgba(248,243,235,0),#f8f3eb 28%)}
+.detail-choice-state{display:inline-flex;align-items:center;gap:7px}
+.detail-choice-state.is-selected:before{content:'';width:6px;height:6px;flex:none;border-radius:50%;background:#b5644a}
+.detail-bottom button[aria-pressed=true]:not(:disabled){border:1px solid #d4b5a4;background:#fffaf4;color:#a35b45}
+@media(max-width:350px){.detail-content{margin-right:5px;margin-left:5px;padding-right:16px;padding-left:16px}.detail-facts div{padding:0 10px}.detail-title h1{font-size:24px}}
+
+/* A shared table photograph and restrained typography connect these pages to home. */
+.surprise-screen,.menu-screen{background-color:#fdf9f2;background-image:linear-gradient(rgba(253,249,242,.93),rgba(253,249,242,.93)),url('./public/assets/hero.jpg');background-position:center;background-size:cover;background-repeat:no-repeat}
+.surprise-screen .bottom,.menu-screen .bottom{background:linear-gradient(180deg,transparent,rgba(253,249,242,.85) 45%,rgba(253,249,242,.96))}
+.surprise-screen .topbar{padding-bottom:10px}
+.surprise-screen .surprise-heading{margin:18px 0 20px}
+.surprise-screen .surprise-heading h2{font-size:25px;line-height:1.4}
+.surprise-screen .surprise-heading p{line-height:1.7}
+.surprise-screen .surprise-card{display:block;min-height:0;padding:0;overflow:hidden;border:1px solid #eee2d6;border-radius:17px;background:#fffcf6;box-shadow:0 5px 18px #78503b0b}
+.surprise-screen .surprise-card:before{display:none}
+.surprise-screen .surprise-placeholder,.surprise-screen .surprise-result,.surprise-screen .surprise-shaking{position:relative;display:flex;align-items:center;height:auto;min-height:190px;padding:24px 23px;overflow:hidden;text-align:left;background:transparent;color:#503a30}
+.surprise-screen .surprise-copy{width:100%;min-width:0;color:#503a30}
+.surprise-screen .surprise-copy span{display:flex;align-items:center;gap:12px;margin:0;padding:0;border:0;border-radius:0;background:transparent;color:#ae795f;font:600 10px/1.4 var(--sans);letter-spacing:.1em}
+.surprise-screen .surprise-copy span:after{content:'';flex:1;height:1px;background:#eadfd3}
+.surprise-screen .surprise-copy h3,.surprise-screen .surprise-copy strong{display:block;margin:22px 0 0;color:#503a30;font:600 23px/1.45 var(--serif);letter-spacing:.06em;overflow-wrap:anywhere}
+.surprise-screen .surprise-copy p{margin:10px 0 0;color:#927b6c;font:12px/1.8 var(--sans);overflow-wrap:anywhere}
+.surprise-screen .surprise-card-foot{margin:0 23px;padding:13px 0 15px;border:0;border-top:1px solid #eee4d9;background:transparent;text-align:left;color:#a58d7c;font-size:11px}
+.surprise-screen .surprise-actions{margin-top:15px}
+.surprise-screen .motion-toggle{border:0;background:transparent;color:#a15d49}
+.surprise-screen .surprise-reveal .surprise-result img,.surprise-screen .surprise-reveal .surprise-result span,.surprise-screen .surprise-reveal .surprise-result h3,.surprise-screen .surprise-reveal .surprise-result p{animation:none}
+.menu-screen .menu-card{border-color:#eee1d3;background:#fffcf6;box-shadow:0 7px 22px #74513d0c}
+.menu-screen .menu-card-top{padding:5px 0 20px}
+.menu-screen .menu-title-input{margin:0 auto 9px}
+.menu-screen .menu-empty{padding:45px 8px 43px}
+.menu-empty-kicker{display:block;margin-bottom:14px;color:#ad7e66;font-size:10px;letter-spacing:.14em}
+.menu-screen .menu-empty-copy strong{font-size:18px;letter-spacing:.05em}
+.menu-screen .menu-empty-copy p{margin-top:10px;line-height:1.9}
+.menu-screen .menu-empty button{min-height:44px;margin-top:22px;padding:0 22px;border-radius:12px;box-shadow:none}
+@media(max-width:350px){.surprise-screen .surprise-placeholder,.surprise-screen .surprise-result,.surprise-screen .surprise-shaking{min-height:170px;padding:21px 19px}.surprise-screen .surprise-copy h3,.surprise-screen .surprise-copy strong{font-size:21px}.surprise-screen .surprise-card-foot{margin:0 19px}.menu-screen .menu-empty{padding:34px 6px}}
+
+/* Show the selected dish as a restrained thumbnail alongside its name. */
+.surprise-screen .surprise-result{gap:16px}
+.surprise-screen .surprise-result .surprise-copy{flex:1;min-width:0}
+.surprise-screen .surprise-result img.surprise-dish-image{display:block;flex:0 0 88px;width:88px;height:104px;max-width:34%;object-fit:cover;border:0;border-radius:9px;box-shadow:none}
+@media(max-width:350px){.surprise-screen .surprise-result{gap:12px}.surprise-screen .surprise-result img.surprise-dish-image{flex-basis:76px;width:76px;height:92px}}
