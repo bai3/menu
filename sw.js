@@ -1,6 +1,6 @@
 // 家宴 Service Worker：预缓存全部静态资源，离线也能打开。
 // 更新页面内容后，把下面 VERSION 加一（如 'v2'）即可让所有客户端换用新缓存。
-const VERSION = 'v16';
+const VERSION = 'v17';
 const CACHE = `jiayan-${VERSION}`;
 const ASSETS = [
   './',
@@ -46,9 +46,10 @@ self.addEventListener('fetch', (event) => {
   const url = new URL(request.url);
   if (url.origin !== location.origin) return;
 
-  // 页面导航：网络优先，断网时回落到缓存的首页。
+  // 页面导航优先使用当前版本的预缓存首页，不必等待慢网络。
+  // 新版本由 Service Worker 更新时整体预缓存，避免首页与脚本版本不一致。
   if (request.mode === 'navigate') {
-    event.respondWith(fetch(request).catch(() => caches.match('./index.html')));
+    event.respondWith(caches.open(CACHE).then((cache) => cache.match('./index.html')).then((hit) => hit || fetch(request)));
     return;
   }
   // 其余静态资源：缓存优先，未命中时取网络并顺手入缓存。
