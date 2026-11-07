@@ -4,6 +4,7 @@ function paperFilterMode() { return sharedMeal.invite && sharedMeal.data?.joined
 let paperPage = 0;
 let paperTurning = false;
 let paperTurnTimer = null;
+let paperQueuedDirection = 0;
 let pendingPaperTap = null;
 function paperPages() {
  const field = paperFilterMode() === 'cuisine' ? 'cuisine' : 'category';
@@ -38,10 +39,13 @@ function openPaperMenu() {
 function renderPaperMenu() {
  const overlay = document.querySelector('.paper-overlay');
  if (!overlay) return;
+ const restoreFocus = overlay.contains(document.activeElement);
+ if (paperTurning) { clearTimeout(paperTurnTimer); paperTurning = false; paperQueuedDirection = 0; }
  const pages = paperPages();
  paperPage = Math.max(0, Math.min(paperPage, pages.length / 2 - 1));
  overlay.innerHTML = `<div class="paper-stage"><header class="paper-toolbar"><button type="button" data-paper-close aria-label="返回菜品列表">返回列表</button><div><strong>家宴</strong><span> · 纸质菜单</span></div><span class="paper-toolbar-spacer" aria-hidden="true"></span></header><div class="paper-book-wrap"><div class="paper-book" aria-live="polite">${paperLeaf(pages[paperPage * 2], paperPage * 2)}${paperLeaf(pages[paperPage * 2 + 1], paperPage * 2 + 1)}</div></div></div>`;
  overlay.querySelector('[data-paper-close]').onclick = closePaperMenu;
+ if (restoreFocus) overlay.querySelector('[data-paper-close]').focus({preventScroll:true});
  let touchStart = null;
  const book = overlay.querySelector('.paper-book');
  const activatePaperDish = dish => {
@@ -59,7 +63,7 @@ function renderPaperMenu() {
  };
  book.onclick = e => {
   const dish = e.target.closest('[data-paper-dish]');
-  if (dish) { activatePaperDish(dish); return; }
+  if (dish) { if (!paperTurning) activatePaperDish(dish); return; }
   const rect = book.getBoundingClientRect();
   const rotated = matchMedia('(orientation: portrait)').matches;
   const position = rotated ? (e.clientY - rect.top) / rect.height : (e.clientX - rect.left) / rect.width;
@@ -126,9 +130,10 @@ function flushPaperTap() {
  else { if (!state.selected.includes(id)) { state.selected.push(id); state.draftRestored=false; saveMenuDraft(); } showPaperFeedback(id, true); }
 }
 function turnPaperPage(direction) {
+ if (paperTurning) { paperQueuedDirection = direction; return; }
  const pages = paperPages();
  const next = paperPage + direction;
- if (paperTurning || next < 0 || next >= pages.length / 2) return;
+ if (next < 0 || next >= pages.length / 2) return;
  const book = document.querySelector('.paper-book');
  if (!book) return;
  flushPaperTap();
@@ -151,7 +156,20 @@ function turnPaperPage(direction) {
  oldLeaf.insertAdjacentHTML('beforebegin', paperLeaf(pages[underIndex], underIndex));
  oldLeaf.remove();
  book.appendChild(sheet);
- paperTurnTimer = setTimeout(() => { paperPage = next; paperTurning = false; renderPaperMenu(); }, 900);
+ const finish = event => {
+  if (event && event.target !== sheet) return;
+  if (!paperTurning) return;
+  sheet.removeEventListener('animationend', finish);
+  clearTimeout(paperTurnTimer);
+  const queued = paperQueuedDirection;
+  paperQueuedDirection = 0;
+  paperPage = next;
+  paperTurning = false;
+  renderPaperMenu();
+  if (queued) turnPaperPage(queued);
+ };
+ sheet.addEventListener('animationend', finish);
+ paperTurnTimer = setTimeout(finish, 650);
 }
 function closePaperMenu() {
  flushPaperTap();
@@ -159,6 +177,7 @@ function closePaperMenu() {
  document.body.classList.remove('paper-open');
  clearTimeout(paperTurnTimer);
  paperTurning = false;
+ paperQueuedDirection = 0;
  if (sharedMeal.invite && sharedMeal.data?.joined) { renderSharedMeal(); app.querySelector('[data-shared=paper]')?.focus(); }
  else if (state.page === 'dishes') { render(); app.querySelector('[data-action=paper-mode]')?.focus(); }
 }

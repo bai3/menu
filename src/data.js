@@ -15,6 +15,7 @@ const cacheKey = key => `${key}:${betaCode}`;
 const isValidDish = (d) => d && typeof d.id === 'string' && typeof d.name === 'string' && typeof d.category === 'string' && typeof d.note === 'string' && typeof d.image === 'string';
 const normalizeDish = d => ({...d, cuisine: typeof d.cuisine === 'string' && d.cuisine ? d.cuisine : '未分类', spice_level: Number.isInteger(d.spice_level) && d.spice_level >= 0 && d.spice_level <= 3 ? d.spice_level : 0, is_available: d.is_available !== false});
 let dishes = [];
+let offlineMode = false;
 let dbPromise = null;
 function openDB() {
  if (!dbPromise) dbPromise = new Promise((resolve, reject) => {
@@ -57,7 +58,7 @@ async function initDishes() {
  // 申请持久存储：避免浏览器在空间紧张时清理本地数据。
  try { if (navigator.storage && navigator.storage.persist) await navigator.storage.persist(); } catch (_) {}
 }
-function dishImage(d) { return d.image.startsWith('data:image/') ? d.image : './public/assets/' + d.image; }
+function dishImage(d) { return isStoredPhoto(d.image) ? displayPhoto(d.image) : d.image.startsWith('data:image/') ? d.image : './public/assets/' + d.image; }
 function saveLocalDishes(next) {
  dishes = next.map(normalizeDish);
  const previousCount = state.selected.length;
@@ -71,7 +72,7 @@ const cloudFail = () => notify('云端保存失败，请联网后重试');
 let dishChangeVersion = 0;
 async function cloudUpsertDish(d) {
  dishChangeVersion++;
- if (!sb) { cloudFail(); return false; }
+ if (offlineMode || !sb) { cloudFail(); return false; }
  try {
   const record = { user_code: betaCode, id: d.id, name: d.name, category: d.category, cuisine: d.cuisine, note: d.note, image: d.image, spice_level: d.spice_level, is_available: d.is_available };
   let { error } = await sb.from('dishes').upsert(record);
@@ -86,7 +87,7 @@ async function cloudUpsertDish(d) {
 }
 async function cloudDeleteDish(id) {
  dishChangeVersion++;
- if (!sb) { cloudFail(); return false; }
+ if (offlineMode || !sb) { cloudFail(); return false; }
  try {
   const { error } = await sb.from('dishes').delete().eq('id', id);
   if (error) throw error;
@@ -104,6 +105,7 @@ async function syncFromCloud() {
   if (!cloudDishes.every(isValidDish)) throw new Error('云端菜谱格式无效');
   if (version !== dishChangeVersion) return;
   saveLocalDishes(cloudDishes);
+  cloudDishes.forEach(d => { if (isStoredPhoto(d.image)) resolvePhoto(d.image); });
   if (state.page === 'dish-detail') {
    const detailScroll = app.querySelector('.screen-scroll')?.scrollTop || 0;
    const choiceFocused = document.activeElement === app.querySelector('[data-detail-toggle]');

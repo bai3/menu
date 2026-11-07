@@ -34,3 +34,6 @@ test('available extra categories can be configured without repeating duplicate I
  assert.ok(Array.from(a.run('planCategoryOptions(catalog)')).includes('烧烤'));
  const plan=a.run("makeMealPlan(catalog,{'烧烤':3},()=>0)");assert.equal(plan.chosen.length,2);assert.equal(new Set(plan.chosen).size,2);assert.equal(plan.shortages[0].available,2);
 });
+test('a meal photo is restored with its draft and removed when clearing',()=>{
+ const a=setup();a.run("state.selected=['a'];state.diaryPhoto='data:image/jpeg;base64,abc';saveMenuDraft()");const again=setup(Object.fromEntries(a.store));again.run('restoreMenuDraft()');assert.equal(again.context.state.diaryPhoto,'data:image/jpeg;base64,abc');again.run('clearMenuDraft()');assert.equal(again.context.state.diaryPhoto,'');assert.equal(again.store.size,0);
+});

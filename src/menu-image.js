@@ -188,7 +188,7 @@ function drawPicnicMenu(selected){
 
 // 菜单打卡：手账格子纸、贴纸卡片与红色印章，适合发朋友圈的竖版照片。
 async function drawCheckMenu(selected){
- const images=await Promise.all(selected.map(d=>loadCanvasImage(dishImage(d))));
+ const images=await Promise.all(selected.map(async d=>loadCanvasImage(isStoredPhoto(d.image) ? await resolvePhoto(d.image) : dishImage(d))));
  const width=1080, margin=56;
  const cardW=width-margin*2, cardH=212, cardGap=30;
  const headH=326, footH=158;
@@ -255,7 +255,7 @@ async function drawCheckMenu(selected){
 
 // 胶片食光：牛皮纸桌布上贴一墙拍立得，菜名用手写体落款。
 async function drawFilmMenu(selected){
- const images=await Promise.all(selected.map(d=>loadCanvasImage(dishImage(d))));
+ const images=await Promise.all(selected.map(async d=>loadCanvasImage(isStoredPhoto(d.image) ? await resolvePhoto(d.image) : dishImage(d))));
  const width=1080, gap=52;
  const padSide=24, padTop=24, padBottom=104;
  const photoW=396, photoH=340, cardW=padSide*2+photoW, cardH=padTop+photoH+padBottom;
@@ -316,7 +316,7 @@ async function drawFilmMenu(selected){
 
 // 家宴请柬：深色漆面配金线双框，中式编号，一席之邀的仪式感。
 async function drawFeastMenu(selected){
- const images=await Promise.all(selected.map(d=>loadCanvasImage(dishImage(d))));
+ const images=await Promise.all(selected.map(async d=>loadCanvasImage(isStoredPhoto(d.image) ? await resolvePhoto(d.image) : dishImage(d))));
  const width=1080;
  const headH=380, rowPitch=248, footH=216;
  const height=headH+selected.length*rowPitch+footH;

@@ -1,6 +1,6 @@
 const categories = ['全部', '家常菜', '清爽凉菜', '暖心汤羹', '主食', '饮品', '甜点', '小吃', '火锅', '烧烤', '其他'];
 const cuisines = ['未分类', '川菜', '鲁菜', '粤菜', '苏菜', '浙菜', '闽菜', '湘菜', '徽菜', '东北菜', '西北菜', '京菜', '日料', '韩料', '泰餐', '越南菜', '印度菜', '法餐', '意餐', '美式料理', '其他'];
-const state = { draftRestored: false, planPeople: 2, planCounts: {'家常菜':2,'清爽凉菜':0,'暖心汤羹':1,'主食':0}, planResult: null, detailId: null, detailScroll: 0, diaryNote: '', page: 'dishes', category: '全部', filterMode: 'category', manageFilterMode: 'category', manageFilter: '全部', query: '', selected: [], title: '今天的菜单', editingId: null, draftImage: null, surpriseId: null };
+const state = { draftRestored: false, planPeople: 2, planCounts: {'家常菜':2,'清爽凉菜':0,'暖心汤羹':1,'主食':0}, planResult: null, detailId: null, detailScroll: 0, diaryNote: '', diaryPhoto: '', diaryPhotoVersion: 0, diaryPhotoProcessing: false, diarySaving: false, page: 'dishes', category: '全部', filterMode: 'category', manageFilterMode: 'category', manageFilter: '全部', query: '', selected: [], title: '今天的菜单', editingId: null, draftImage: null, surpriseId: null };
 const app = document.querySelector('#app');
 const icon = (name) => {
  const paths = {
@@ -99,7 +99,7 @@ function renderDishes(){
  app.className='phone-screen home-screen';
  app.innerHTML=`<div class="screen-scroll home-scroll">${''}<header class="topbar"><div class="top-brand">${logo}<div><strong>家宴</strong><small>把喜欢的菜端上桌</small></div></div><div class="home-top-actions"><button class="shared-entry" data-action="shared-create">${icon('people')}<span>邀请一起点</span></button><button class="appearance-entry" type="button" data-action="appearance" aria-label="外观设置" title="外观设置"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="7.5"/><path d="M12 4.5a7.5 7.5 0 0 0 0 15Z" fill="currentColor" stroke="none"/></svg></button></div></header>
  <section class="home-welcome"><p class="home-welcome-kicker">为每一顿家常饭</p><h1>把喜欢的菜，<em>端上家的餐桌。</em></h1><p class="home-welcome-note">今天，一起好好吃饭。</p></section>
- ${state.draftRestored || state.draftUnavailable ? `<div class="draft-resume" role="status"><span>${state.draftRestored && state.selected.length ? `已恢复上次菜单 · ${state.selected.length} 道菜` : '菜单已更新'}${state.draftUnavailable ? `，${state.draftUnavailable} 道菜已下架或删除` : ''}</span>${state.selected.length ? '<button type="button" data-page="menu">查看菜单</button><button type="button" data-action="clear-draft">清空</button>' : '<button type="button" data-action="dismiss-draft">知道了</button>'}</div>` : ''}
+ ${state.draftRestored || state.draftUnavailable ? `<div class="draft-resume"><div class="draft-resume-copy" role="status"><strong>${state.draftRestored && state.selected.length ? '已保留上次点的菜' : '菜单已更新'}</strong><span>${state.selected.length ? `已选 ${state.selected.length} 道菜，可以继续点菜` : '暂无已选菜品'}${state.draftUnavailable ? ` · ${state.draftUnavailable} 道菜已下架或删除` : ''}</span></div><div class="draft-resume-actions">${state.selected.length ? '<button type="button" data-page="menu">查看菜单</button><button type="button" data-action="clear-draft">清空</button>' : '<button type="button" data-action="dismiss-draft">知道了</button>'}</div></div>` : ''}
  <div class="section-title"><h2>今天吃什么？</h2><div class="home-actions"><button class="paper-entry" data-action="paper-mode">${paperMenuIcon}纸质菜单</button><button class="manage-entry" data-page="manage">编辑菜单</button></div></div>
  <div class="home-discovery"><label class="search">${icon('search')}<input type="search" placeholder="搜索想吃的菜" value="${escapeText(state.query)}" aria-label="搜索想吃的菜"></label>
  <div class="filter-switch" role="group" aria-label="筛选方式"><button data-filter-mode="category" aria-pressed="${state.filterMode==='category'}">分类</button><button data-filter-mode="cuisine" aria-pressed="${state.filterMode==='cuisine'}">菜系</button></div></div>
@@ -120,6 +120,7 @@ function renderDishDetail() {
  app.className='phone-screen detail-screen';
  app.innerHTML=detailMarkup(dish, {selected: !!dish && state.selected.includes(dish.id)});
  bind();
+ mountDetailBackdrop();
 }
 let motionEnabled = false;
 let lastShake = 0;
@@ -233,7 +234,7 @@ function renderMenu(){
  app.className='phone-screen menu-screen';
  const selected=selectedDishes();
  app.innerHTML=`<div class="screen-scroll">${''}<div class="page-heading"><button data-page="dishes" aria-label="返回点菜">${icon('back')}</button><span>家的味道</span></div><div class="menu-heading"><div><h2>今天的菜单</h2></div><div class="menu-heading-actions">${selected.length ? '<button class="new-meal-entry" type="button" data-action="new-meal">开始新一餐</button>' : ''}<button class="history-entry" data-page="history">吃饭日记</button></div></div>
- <section class="menu-card"><div class="menu-card-top"><input class="menu-title-input" aria-label="菜单标题，可编辑" maxlength="16" value="${escapeText(state.title)}"><div class="menu-meta"><span>${new Date().toLocaleDateString('zh-CN',{year:'numeric',month:'long',day:'numeric'})}</span><span>点击标题可修改</span></div></div>${selected.length ? `<div class="menu-rows">${selected.map((d,i)=>`<div class="menu-row"><span class="number">${String(i+1).padStart(2,'0')}</span><img class="menu-dish-img" src="${escapeText(dishImage(d))}" alt=""><span class="name">${escapeText(d.name)}</span><button data-remove="${escapeText(d.id)}" aria-label="从菜单移除${escapeText(d.name)}">${icon('close')}</button></div>`).join('')}</div>` : `<div class="menu-empty"><div class="menu-empty-copy"><span class="menu-empty-kicker">今天的餐桌</span><strong>还没有选菜</strong><p>挑几道喜欢的菜，<br>为这一餐添一点期待。</p></div><button data-page="dishes">去挑选菜品</button></div>`}<div class="menu-card-foot"><span></span>好好吃饭，慢慢生活<span></span></div></section>${selected.length ? `<div class="diary-compose"><label for="diary-note">写下这一餐 <span>选填</span></label><textarea id="diary-note" maxlength="200" placeholder="今天的饭，有什么想记下的？">${escapeText(state.diaryNote)}</textarea><p class="diary-finish-hint">完成后保存到吃饭日记，并清空当前菜单。</p><button data-action="save-diary">完成并保存这餐</button></div>` : ''}</div>
+ <section class="menu-card"><div class="menu-card-top"><input class="menu-title-input" aria-label="菜单标题，可编辑" maxlength="16" value="${escapeText(state.title)}"><div class="menu-meta"><span>${new Date().toLocaleDateString('zh-CN',{year:'numeric',month:'long',day:'numeric'})}</span><span>点击标题可修改</span></div></div>${selected.length ? `<div class="menu-rows">${selected.map((d,i)=>`<div class="menu-row"><span class="number">${String(i+1).padStart(2,'0')}</span><img class="menu-dish-img" src="${escapeText(dishImage(d))}" alt=""><span class="name">${escapeText(d.name)}</span><button data-remove="${escapeText(d.id)}" aria-label="从菜单移除${escapeText(d.name)}">${icon('close')}</button></div>`).join('')}</div>` : `<div class="menu-empty"><div class="menu-empty-copy"><span class="menu-empty-kicker">今天的餐桌</span><strong>还没有选菜</strong><p>挑几道喜欢的菜，<br>为这一餐添一点期待。</p></div><button data-page="dishes">去挑选菜品</button></div>`}<div class="menu-card-foot"><span></span>好好吃饭，慢慢生活<span></span></div></section>${selected.length ? `<div class="diary-compose"><label for="diary-note">写下这一餐 <span>选填</span></label><textarea id="diary-note" maxlength="200" placeholder="今天的饭，有什么想记下的？">${escapeText(state.diaryNote)}</textarea><div class="diary-photo-field">${state.diaryPhoto ? `<div class="diary-photo-preview"><img src="${escapeText(state.diaryPhoto)}" alt="这一餐的照片预览"><button type="button" class="diary-photo-remove" data-action="remove-diary-photo" aria-label="移除照片">${icon('close')}</button></div>` : `<label class="diary-photo-upload">${icon('camera')}<span>添加照片</span><input type="file" accept="image/*" aria-label="添加餐桌照片"></label>`}${state.diaryPhotoProcessing ? '<p class="diary-photo-status" role="status">正在处理照片…</p>' : ''}</div><p class="diary-finish-hint">完成后保存到吃饭日记，并清空当前菜单。</p><button data-action="save-diary" ${state.diaryPhotoProcessing || state.diarySaving ? 'disabled' : ''}>完成并保存这餐</button></div>` : ''}</div>
  <div class="bottom"><div class="order-dock">${nav()}<button class="dock-action dock-save" data-action="save" ${selected.length?'':'disabled'}>保存菜单图片</button></div></div>`;
  bind();
 }
@@ -244,7 +245,7 @@ function renderManage(){
  const filters = ['全部', ...options.filter(value => present.has(value)), ...[...present].filter(value => value && !options.includes(value))];
  const filtered = dishes.filter(d => state.manageFilter === '全部' || d[field] === state.manageFilter);
  app.className='phone-screen manage-screen';
- app.innerHTML=`<div class="screen-scroll manage-scroll">${''}<div class="page-heading"><button data-page="dishes" aria-label="返回点菜">${icon('back')}</button><span>家的味道</span></div><div class="manage-heading"><div><h2>编辑菜单</h2><p>${dishes.length} 道菜</p></div><button class="beta-switch" data-action="switch-user">切换内测用户</button></div><div class="filter-switch manage-filter-switch" role="group" aria-label="编辑菜单筛选方式"><button data-manage-mode="category" aria-pressed="${state.manageFilterMode==='category'}">菜品分类</button><button data-manage-mode="cuisine" aria-pressed="${state.manageFilterMode==='cuisine'}">菜系</button></div><nav class="manage-filters" aria-label="${state.manageFilterMode==='category'?'菜品分类':'菜系'}筛选">${filters.map(value=>`<button data-manage-filter="${escapeText(value)}" aria-pressed="${state.manageFilter===value}">${escapeText(value)}</button>`).join('')}</nav><div class="manage-list" aria-label="筛选后的菜品">${filtered.length ? filtered.map(d=>`<article class="manage-dish"><img src="${escapeText(dishImage(d))}" alt=""><div class="manage-dish-copy"><strong>${escapeText(d.name)}</strong><span>${escapeText(d.category)}${d.cuisine !== '未分类' ? ' · ' + escapeText(d.cuisine) : ''}</span>${spiceBadge(d)}${d.is_available?'':'<span class="manage-unavailable">已下架</span>'}</div><button data-edit="${escapeText(d.id)}" aria-label="编辑${escapeText(d.name)}">编辑</button><button class="delete-dish" data-delete="${escapeText(d.id)}" aria-label="删除${escapeText(d.name)}">删除</button></article>`).join('') : `<div class="manage-empty">${dishes.length ? '这个分类暂时没有菜品' : '菜单还没有菜，先添加一道吧'}</div>`}</div></div><div class="manage-bottom"><button class="manage-add" data-action="new-dish">${icon('plus')} 添加菜品</button></div>`;
+ app.innerHTML=`<div class="screen-scroll manage-scroll">${''}<div class="page-heading"><button data-page="dishes" aria-label="返回点菜">${icon('back')}</button><span>家的味道</span></div><div class="manage-heading"><div><h2>编辑菜单</h2><p>${dishes.length} 道菜</p></div><button class="beta-switch" data-action="switch-user">切换内测用户</button></div><button class="beta-switch" data-action="migrate-photos">迁移旧照片</button><div class="filter-switch manage-filter-switch" role="group" aria-label="编辑菜单筛选方式"><button data-manage-mode="category" aria-pressed="${state.manageFilterMode==='category'}">菜品分类</button><button data-manage-mode="cuisine" aria-pressed="${state.manageFilterMode==='cuisine'}">菜系</button></div><nav class="manage-filters" aria-label="${state.manageFilterMode==='category'?'菜品分类':'菜系'}筛选">${filters.map(value=>`<button data-manage-filter="${escapeText(value)}" aria-pressed="${state.manageFilter===value}">${escapeText(value)}</button>`).join('')}</nav><div class="manage-list" aria-label="筛选后的菜品">${filtered.length ? filtered.map(d=>`<article class="manage-dish"><img src="${escapeText(dishImage(d))}" alt=""><div class="manage-dish-copy"><strong>${escapeText(d.name)}</strong><span>${escapeText(d.category)}${d.cuisine !== '未分类' ? ' · ' + escapeText(d.cuisine) : ''}</span>${spiceBadge(d)}${d.is_available?'':'<span class="manage-unavailable">已下架</span>'}</div><button data-edit="${escapeText(d.id)}" aria-label="编辑${escapeText(d.name)}">编辑</button><button class="delete-dish" data-delete="${escapeText(d.id)}" aria-label="删除${escapeText(d.name)}">删除</button></article>`).join('') : `<div class="manage-empty">${dishes.length ? '这个分类暂时没有菜品' : '菜单还没有菜，先添加一道吧'}</div>`}</div></div><div class="manage-bottom"><button class="manage-add" data-action="new-dish">${icon('plus')} 添加菜品</button></div>`;
  bind();
 }
 function renderDishForm(){
@@ -264,7 +265,7 @@ function renderHistory() {
  app.className='phone-screen history-screen';
  const items = historyEntries.map(entry => {
   const parts=entry.meal_date.split('-');
-  return `<article class="diary-card"><div class="diary-date"><strong>${escapeText(parts[2])}</strong><span>${escapeText(parts[0])}.${escapeText(parts[1])}</span></div><div class="diary-content"><div class="diary-card-title"><h3>${escapeText(entry.title)}</h3><span>${entry.dishes.length} 道菜</span></div><p class="diary-dishes">${entry.dishes.map(d=>escapeText(d.name)).join(' · ')}</p>${entry.note ? `<p class="diary-note">${escapeText(entry.note)}</p>` : ''}</div></article>`;
+  return `<article class="diary-card"><div class="diary-date"><strong>${escapeText(parts[2])}</strong><span>${escapeText(parts[0])}.${escapeText(parts[1])}</span></div><div class="diary-content"><div class="diary-card-title"><h3>${escapeText(entry.title)}</h3><span>${entry.dishes.length} 道菜</span></div><p class="diary-dishes">${entry.dishes.map(d=>escapeText(d.name)).join(' · ')}</p>${entry.note ? `<p class="diary-note">${escapeText(entry.note)}</p>` : ''}${typeof entry.photo === 'string' && (entry.photo.startsWith('data:image/jpeg;base64,') || isStoredPhoto(entry.photo)) ? `<img class="diary-photo" src="${escapeText(displayPhoto(entry.photo))}" alt="${escapeText(entry.title)}的餐桌照片" loading="lazy">` : ''}</div></article>`;
  }).join('');
  app.innerHTML=`<div class="screen-scroll"><div class="page-heading"><button data-page="menu" aria-label="返回菜单">${icon('back')}</button><span>一餐一饭，慢慢珍藏</span></div><div class="history-heading"><span class="menu-kicker">THE FAMILY TABLE</span><h2>吃饭日记</h2><p>把平常的每一餐，留成家的记忆。</p></div>${historyError ? '<div class="history-status">云端暂不可达，显示本机已有的日记 <button data-action="retry-history">重试</button></div>' : ''}${historyLoading && !historyEntries.length ? '<div class="history-empty">正在翻开日记…</div>' : items || (historyError ? '<div class="history-empty">暂时无法读取日记，请检查网络后重试。</div>' : '<div class="history-empty"><strong>日记的第一页，等你来写</strong><p>点好菜后，保存这一餐的菜单吧。</p><button data-page="dishes">去挑选菜品</button></div>')}</div>`;
  bind();
@@ -275,33 +276,37 @@ async function loadHistory() {
  historyLoading=true; historyError=false;
  try { const cached=await idbGet(cacheKey('meal_history')); if(request===historyRequest && Array.isArray(cached)) { historyEntries=cached; if(state.page==='history')render(); } } catch (_) {}
  try {
-  if(!sb) throw new Error('云端不可用');
+  if(offlineMode || !sb) throw new Error('云端不可用');
   const {data,error}=await sb.from('meal_history').select('*').order('meal_date',{ascending:false}).order('created_at',{ascending:false});
   if(error) throw error;
   if(request!==historyRequest)return;
   historyEntries=data.filter(e=>typeof e.meal_date==='string' && typeof e.title==='string' && Array.isArray(e.dishes) && e.dishes.every(d=>d && typeof d.name==='string'));
   idbSet(cacheKey('meal_history'),historyEntries).catch(()=>{});
+  historyEntries.forEach(e => { if (isStoredPhoto(e.photo)) resolvePhoto(e.photo); });
  } catch (_) { if(request===historyRequest)historyError=true; }
  finally { if(request===historyRequest){historyLoading=false;if(state.page==='history')render();} }
 }
 async function saveHistory() {
- const selected=selectedDishes(); if(!selected.length)return;
- const snapshot={selected:[...state.selected],title:state.title,diaryNote:state.diaryNote};
+ const selected=selectedDishes(); if(!selected.length || state.diaryPhotoProcessing || state.diarySaving)return;
+ const snapshot={selected:[...state.selected],title:state.title,diaryNote:state.diaryNote,diaryPhoto:state.diaryPhoto,diaryPhotoVersion:state.diaryPhotoVersion};
  const entry={user_code:betaCode,id: typeof crypto.randomUUID==='function' ? crypto.randomUUID() : `meal-${Date.now()}-${Math.random().toString(36).slice(2)}`,meal_date:localDate(),title:state.title.trim() || '今天的菜单',note:state.diaryNote.trim(),dishes:selected.map(d=>({id:d.id,name:d.name}))};
+
+ state.diarySaving=true;
  const button=app.querySelector('[data-action=save-diary]');button.disabled=true;button.textContent='保存中…';
  try {
-  if(!sb)throw new Error('云端不可用');
+  if(offlineMode || !sb)throw new Error('云端不可用');
+  if(snapshot.diaryPhoto)entry.photo=await uploadPhoto(snapshot.diaryPhoto,'diary');
   const {data,error}=await sb.from('meal_history').insert(entry).select().single();
   if(error)throw error;
   ++historyRequest;
   historyEntries=[data,...historyEntries.filter(e=>e.id!==data.id)];
   idbSet(cacheKey('meal_history'),historyEntries).catch(()=>{});
-  const unchanged=state.title===snapshot.title && state.diaryNote===snapshot.diaryNote && state.selected.length===snapshot.selected.length && state.selected.every((id,index)=>id===snapshot.selected[index]);
+  const unchanged=state.title===snapshot.title && state.diaryNote===snapshot.diaryNote && state.diaryPhoto===snapshot.diaryPhoto && state.diaryPhotoVersion===snapshot.diaryPhotoVersion && state.selected.length===snapshot.selected.length && state.selected.every((id,index)=>id===snapshot.selected[index]);
   if (unchanged) { const cleared=clearMenuDraft(); render(); notify(cleared?'这餐已保存，可以开始新一餐':'日记已保存，但本机草稿未能清除'); }
   else notify('这餐已保存；当前菜单有新改动，已保留');
- } catch (_) { notify('日记保存失败，请检查网络或数据库'); }
- finally { if(button.isConnected){button.disabled=false;button.textContent='完成并保存这餐';} }
+ } catch (error) { notify(state.diaryPhoto && (error.code==='PGRST204' || error.code==='42703') ? '请先更新云端数据库，再保存照片' : '日记保存失败，请检查网络或数据库'); }
+ finally { state.diarySaving=false; const current=app.querySelector('[data-action=save-diary]'); if(current){current.disabled=Boolean(state.diaryPhotoProcessing);current.textContent='完成并保存这餐';} }
 }
 
-function render(){if(state.page==='dish-detail')renderDishDetail();else if(state.page==='shared-create')renderSharedCreate();else if(state.page==='history')renderHistory();else if(state.page==='menu')renderMenu();else if(state.page==='surprise')renderSurprise();else if(state.page==='meal-plan')renderMealPlan();else if(state.page==='manage')renderManage();else if(state.page==='dish-form')renderDishForm();else renderDishes()}
+function render(){if(state.page==='dish-detail')renderDishDetail();else if(state.page==='shared-create')renderSharedCreate();else if(state.page==='history')renderHistory();else if(state.page==='menu')renderMenu();else if(state.page==='surprise')renderSurprise();else if(state.page==='meal-plan')renderMealPlan();else if(state.page==='manage')renderManage();else if(state.page==='dish-form')renderDishForm();else renderDishes();if(offlineMode){const scroll=app.querySelector('.screen-scroll');if(scroll){const notice=document.createElement('div');notice.className='offline-notice';notice.setAttribute('role','status');notice.textContent='当前查看本机缓存，云端保存需要联网后重新打开应用';scroll.prepend(notice)}}}
 function notify(message){const old=app.querySelector('.toast');if(old)old.remove();const el=document.createElement('div');el.className='toast';el.textContent=message;app.appendChild(el);setTimeout(()=>el.remove(),2400)}

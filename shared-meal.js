@@ -4,7 +4,7 @@ const sharedRandom = () => Array.from(crypto.getRandomValues(new Uint8Array(32))
 const sharedKey = token => `jiayan.shared-person:${token}`;
 function sharedUrl(token) { const u = new URL(location.href); u.search = ''; u.hash = `meal=${token}`; return u.href; }
 function sharedInviteFromUrl() { const token = new URLSearchParams(location.hash.slice(1)).get('meal'); return /^[a-f0-9]{64}$/.test(token || '') ? token : ''; }
-async function sharedRpc(name, args) { if (!sb) throw new Error('网络不可用'); const {data,error} = await sb.rpc(name,args); if(error) throw error; return data; }
+async function sharedRpc(name, args) { if (offlineMode || !sb) throw new Error('网络不可用'); const {data,error} = await sb.rpc(name,args); if(error) throw error; return data; }
 function sharedStorageGet(key) { try { return localStorage.getItem(key) || ''; } catch (_) { return ''; } }
 function sharedStorageSet(key,value) { try { localStorage.setItem(key,value); return true; } catch (_) { return false; } }
 function sharedStart(invite) {
@@ -20,6 +20,7 @@ async function sharedLoad(quiet=false) {
   if(version!==sharedMeal.requestVersion || invite!==sharedMeal.invite || (quiet && sharedMeal.busy))return;
   const changed=sharedMeal.offline || JSON.stringify(d)!==JSON.stringify(sharedMeal.data);
   sharedMeal.offline=false; sharedMeal.data=d;
+  if(d.joined) d.catalog.forEach(item => { if (isStoredPhoto(item.image)) resolvePhoto(item.image).then(url => { if (!url) return; document.querySelectorAll('img').forEach(img => { if (img.getAttribute('src') === photoPlaceholder(item.image)) { img.src=url; img.style.visibility=''; } }); }); });
   if(d.joined && sharedMeal.page==='join')sharedMeal.page='order';
   if(!quiet || changed){const scroll=app.querySelector('.screen-scroll')?.scrollTop || 0;const searchFocused=document.activeElement?.id==='shared-search';const cursor=searchFocused ? document.activeElement.selectionStart : null;renderSharedMeal();const scroller=app.querySelector('.screen-scroll');if(scroller)scroller.scrollTop=scroll;if(searchFocused){const input=app.querySelector('#shared-search');if(input){input.focus({preventScroll:true});if(cursor!==null)input.setSelectionRange(cursor,cursor);}}}
  } catch (_) {

@@ -33,8 +33,23 @@ function bindDetailSwipe(scroll, onBack){
   if(dragging){if(e.cancelable)e.preventDefault();dragging=false;settle(dx>=80 && dx>Math.abs(dy)*1.5)}
  },{passive:false});
 }
+let detailBackdrop = null;
+function captureDetailBackdrop() {
+ const scroll = app.querySelector('.screen-scroll');
+ detailBackdrop = {node:app.cloneNode(true), top:scroll?.scrollTop || 0};
+ detailBackdrop.node.removeAttribute('id');
+ detailBackdrop.node.classList.add('detail-backdrop');
+ detailBackdrop.node.setAttribute('aria-hidden','true');
+ detailBackdrop.node.setAttribute('inert','');
+}
+function mountDetailBackdrop() {
+ if (!detailBackdrop) return;
+ const node=detailBackdrop.node.cloneNode(true);
+ app.appendChild(node);
+ const scroll=node.querySelector('.screen-scroll');if(scroll)scroll.scrollTop=detailBackdrop.top;
+}
 function bindDishButtons(){
- app.querySelectorAll('[data-detail-id]').forEach(b=>b.onclick=()=>{state.detailId=b.dataset.detailId;state.detailScroll=app.querySelector('.screen-scroll')?.scrollTop || 0;state.page='dish-detail';render()});
+ app.querySelectorAll('[data-detail-id]').forEach(b=>b.onclick=()=>{state.detailId=b.dataset.detailId;state.detailScroll=app.querySelector('.screen-scroll')?.scrollTop || 0;captureDetailBackdrop();state.page='dish-detail';render()});
  app.querySelectorAll('[data-dish]').forEach(b=>b.onclick=()=>{const id=b.dataset.dish;if(!dishes.some(d=>d.id===id && d.is_available))return;state.selected=state.selected.includes(id)?state.selected.filter(x=>x!==id):[...state.selected,id];state.draftRestored=false;saveMenuDraft();const scroll=app.querySelector('.screen-scroll').scrollTop;render();app.querySelector('.screen-scroll').scrollTop=scroll});
 }
 
@@ -46,25 +61,35 @@ function bind(){
  bindCatalog();
  bindDishButtons();
  const detailBack=app.querySelector('[data-detail-back]');if(detailBack){const back=(restoreFocus=false)=>{const id=state.detailId;state.page='dishes';render();const scroll=app.querySelector('.screen-scroll');if(scroll)scroll.scrollTop=state.detailScroll;updateCatalogNavigation();if(restoreFocus)app.querySelectorAll('[data-detail-id]').forEach(b=>{if(b.dataset.detailId===id)b.focus({preventScroll:true})})};detailBack.onclick=e=>back(e.detail===0);bindDetailSwipe(app.querySelector('.detail-scroll'),()=>back(false))}
- const detailToggle=app.querySelector('[data-detail-toggle]');if(detailToggle)detailToggle.onclick=()=>{const dish=dishes.find(d=>d.id===state.detailId);if(!dish || !dish.is_available){render();return}state.selected=state.selected.includes(dish.id)?state.selected.filter(id=>id!==dish.id):[...state.selected,dish.id];state.draftRestored=false;saveMenuDraft();const top=app.querySelector('.screen-scroll')?.scrollTop || 0;render();app.querySelector('.screen-scroll').scrollTop=top;app.querySelector('[data-detail-toggle]')?.focus({preventScroll:true})};
+ const detailToggle=app.querySelector('[data-detail-toggle]');if(detailToggle)detailToggle.onclick=()=>{const dish=dishes.find(d=>d.id===state.detailId);if(!dish || !dish.is_available){render();return}state.selected=state.selected.includes(dish.id)?state.selected.filter(id=>id!==dish.id):[...state.selected,dish.id];state.draftRestored=false;saveMenuDraft();const top=app.querySelector('.detail-scroll')?.scrollTop || 0;state.page='dishes';render();app.querySelector('.home-scroll').scrollTop=state.detailScroll;updateCatalogNavigation();captureDetailBackdrop();state.page='dish-detail';render();app.querySelector('.detail-scroll').scrollTop=top;app.querySelector('[data-detail-toggle]')?.focus({preventScroll:true})};
  app.querySelectorAll('[data-remove]').forEach(b=>b.onclick=()=>{state.selected=state.selected.filter(x=>x!==b.dataset.remove);state.draftRestored=false;saveMenuDraft();render()});
  app.querySelectorAll('[data-edit]').forEach(b=>b.onclick=()=>{state.editingId=b.dataset.edit;state.draftImage=null;state.page='dish-form';render()});
  app.querySelectorAll('[data-delete]').forEach(b=>b.onclick=async()=>{const dish=dishes.find(d=>d.id===b.dataset.delete);if(!dish || !window.confirm(`确定删除“${dish.name}”吗？`))return;b.disabled=true;if(!await cloudDeleteDish(dish.id)){b.disabled=false;return}saveLocalDishes(dishes.filter(d=>d.id!==dish.id));state.selected=state.selected.filter(id=>id!==dish.id);render();notify('菜品已删除');});
  const sharedCreate=app.querySelector('[data-action=shared-create]');if(sharedCreate)sharedCreate.onclick=()=>{state.page='shared-create';render()};
  const switchUser=app.querySelector('[data-action=switch-user]');if(switchUser)switchUser.onclick=()=>{state.page='beta-entry';renderBetaEntry({ canCancel: true });};
  const paperEntry=app.querySelector('[data-action=paper-mode]');if(paperEntry)paperEntry.onclick=openPaperMenu;
+ const migratePhotos=app.querySelector('[data-action=migrate-photos]');if(migratePhotos)migratePhotos.onclick=async()=>{if(!confirm('请先确保所有设备都已更新到新版。迁移会将当前用户的旧照片转存到云端存储，是否继续？'))return;migratePhotos.disabled=true;migratePhotos.textContent='迁移中…';try{const result=await migrateLegacyPhotos();notify(`已迁移 ${result.moved} 张${result.failed?`，${result.failed} 张未完成，请重试`:''}`)}catch(_){notify('迁移失败，请检查网络和云端配置')}finally{if(migratePhotos.isConnected){migratePhotos.disabled=false;migratePhotos.textContent='迁移旧照片'}}};
  const addDish=app.querySelector('[data-action=new-dish]');if(addDish)addDish.onclick=()=>{state.editingId=null;state.draftImage=null;state.page='dish-form';render()};
  app.querySelectorAll('.cover-upload input').forEach(file=>file.onchange=()=>{const item=file.files?.[0];if(!item)return;if(!item.type.startsWith('image/')){notify('请选择图片文件');file.value='';return}const reader=new FileReader();reader.onerror=()=>notify('图片读取失败');reader.onload=()=>{const image=new Image();image.onerror=()=>notify('图片格式不支持');image.onload=()=>{const scale=Math.min(1,800/Math.max(image.width,image.height));const canvas=document.createElement('canvas');canvas.width=Math.max(1,Math.round(image.width*scale));canvas.height=Math.max(1,Math.round(image.height*scale));const context=canvas.getContext('2d');context.fillStyle='#fff';context.fillRect(0,0,canvas.width,canvas.height);context.drawImage(image,0,0,canvas.width,canvas.height);state.draftImage=canvas.toDataURL('image/jpeg',.82);app.querySelector('#cover-preview').src=state.draftImage};image.src=reader.result};reader.readAsDataURL(item)});
- const form=app.querySelector('#dish-form');if(form)form.onsubmit=async e=>{e.preventDefault();const name=form.elements.name.value.trim();if(!name){form.elements.name.focus();return}const existing=dishes.find(d=>d.id===state.editingId);const dish={id:existing?.id || `dish-${Date.now()}-${Math.random().toString(36).slice(2,8)}`,name,category:form.elements.category.value,cuisine:form.elements.cuisine.value,note:form.elements.note.value.trim(),image:state.draftImage || existing?.image || 'tomato.jpg',spice_level:Number(form.elements.spice_level.value),is_available:form.elements.is_available.value==='true'};const saveButton=form.querySelector('[type=submit]');saveButton.disabled=true;if(!await cloudUpsertDish(dish)){saveButton.disabled=false;return}const latest=dishes.find(d=>d.id===dish.id);saveLocalDishes(latest?dishes.map(d=>d.id===dish.id?dish:d):[...dishes,dish]);state.editingId=null;state.draftImage=null;state.page='manage';render();notify(existing?'菜品已更新':'菜品已添加');};
+ const form=app.querySelector('#dish-form');if(form)form.onsubmit=async e=>{e.preventDefault();const name=form.elements.name.value.trim();if(!name){form.elements.name.focus();return}const existing=dishes.find(d=>d.id===state.editingId);const dish={id:existing?.id || `dish-${Date.now()}-${Math.random().toString(36).slice(2,8)}`,name,category:form.elements.category.value,cuisine:form.elements.cuisine.value,note:form.elements.note.value.trim(),image:state.draftImage || existing?.image || 'tomato.jpg',spice_level:Number(form.elements.spice_level.value),is_available:form.elements.is_available.value==='true'};const saveButton=form.querySelector('[type=submit]');saveButton.disabled=true;if(state.draftImage){try{dish.image=await uploadPhoto(state.draftImage,'dishes')}catch(_){saveButton.disabled=false;notify('照片上传失败，请检查网络或存储配置');return}}if(!await cloudUpsertDish(dish)){saveButton.disabled=false;return}const latest=dishes.find(d=>d.id===dish.id);saveLocalDishes(latest?dishes.map(d=>d.id===dish.id?dish:d):[...dishes,dish]);state.editingId=null;state.draftImage=null;state.page='manage';render();notify(existing?'菜品已更新':'菜品已添加');};
 
  const search=app.querySelector('input[type=search]');if(search)search.oninput=e=>{state.query=e.target.value;const catalog=app.querySelector('.catalog-content');catalog.innerHTML=catalogContent(filteredDishes());bindDishButtons();updateCatalogNavigation()};
  const diary=app.querySelector('#diary-note');if(diary)diary.oninput=e=>{state.diaryNote=e.target.value;saveMenuDraft()};
+ const refreshDiaryPhoto=()=>{if(state.page!=='menu')return;const scroll=app.querySelector('.screen-scroll')?.scrollTop||0;render();const scroller=app.querySelector('.screen-scroll');if(scroller)scroller.scrollTop=scroll};
+ app.querySelectorAll('.diary-photo-upload input').forEach(input=>input.onchange=()=>{
+  const file=input.files?.[0];if(!file)return;
+  if(!file.type.startsWith('image/')){notify('请选择图片文件');input.value='';return}
+  const version=++state.diaryPhotoVersion;state.diaryPhotoProcessing=true;refreshDiaryPhoto();
+  const failed=()=>{if(version!==state.diaryPhotoVersion)return;state.diaryPhotoProcessing=false;refreshDiaryPhoto();notify('照片读取失败，请换一张重试')};
+  const reader=new FileReader();reader.onerror=failed;reader.onload=()=>{const image=new Image();image.onerror=failed;image.onload=()=>{if(version!==state.diaryPhotoVersion)return;try{const scale=Math.min(1,1200/Math.max(image.width,image.height));const canvas=document.createElement('canvas');canvas.width=Math.max(1,Math.round(image.width*scale));canvas.height=Math.max(1,Math.round(image.height*scale));const context=canvas.getContext('2d');if(!context)throw new Error('canvas unavailable');context.fillStyle='#fff';context.fillRect(0,0,canvas.width,canvas.height);context.drawImage(image,0,0,canvas.width,canvas.height);state.diaryPhoto=canvas.toDataURL('image/jpeg',.8);state.diaryPhotoProcessing=false;saveMenuDraft();refreshDiaryPhoto()}catch(_){failed()}};image.src=reader.result};reader.readAsDataURL(file);
+ });
+ const removeDiaryPhoto=app.querySelector('[data-action=remove-diary-photo]');if(removeDiaryPhoto)removeDiaryPhoto.onclick=()=>{state.diaryPhotoVersion++;state.diaryPhotoProcessing=false;state.diaryPhoto='';saveMenuDraft();refreshDiaryPhoto()};
  const saveDiary=app.querySelector('[data-action=save-diary]');if(saveDiary)saveDiary.onclick=saveHistory;
  const title=app.querySelector('.menu-title-input');if(title)title.oninput=e=>{state.title=e.target.value;saveMenuDraft()};
  const surprise=app.querySelector('[data-action=surprise]');if(surprise)surprise.onclick=drawSurprise;
  const addSurprise=app.querySelector('[data-action=add-surprise]');if(addSurprise)addSurprise.onclick=()=>{const dish=dishes.find(d=>d.id===state.surpriseId && d.is_available);if(!dish || state.selected.includes(dish.id))return;state.selected.push(dish.id);state.draftRestored=false;saveMenuDraft();render();notify('已加入菜单')};
  const motion=app.querySelector('[data-action=enable-motion]');if(motion)motion.onclick=enableMotion;
- const newMeal=app.querySelector('[data-action=new-meal]');if(newMeal)newMeal.onclick=()=>{if(!window.confirm('开始新一餐将清空当前已选菜品、标题和备注。已保存的吃饭日记不会受影响。'))return;const cleared=clearMenuDraft();state.page='dishes';render();notify(cleared?'已开始新一餐':'本机无法清除草稿，请检查浏览器存储')};
+ const newMeal=app.querySelector('[data-action=new-meal]');if(newMeal)newMeal.onclick=()=>{if(!window.confirm('开始新一餐将清空当前已选菜品、标题、备注和照片。已保存的吃饭日记不会受影响。'))return;const cleared=clearMenuDraft();state.page='dishes';render();notify(cleared?'已开始新一餐':'本机无法清除草稿，请检查浏览器存储')};
  const dismissDraft=app.querySelector('[data-action=dismiss-draft]');if(dismissDraft)dismissDraft.onclick=()=>{state.draftRestored=false;state.draftUnavailable=0;render()};
  const clearDraft=app.querySelector('[data-action=clear-draft]');if(clearDraft)clearDraft.onclick=()=>{if(!window.confirm('清空上次未完成的菜单？'))return;clearMenuDraft();render()};
  function updatePlanControl(button, update) { const scroll=app.querySelector('.screen-scroll')?.scrollTop||0, focusLabel=button.getAttribute('aria-label'); update();state.planResult=null;render();const scroller=app.querySelector('.screen-scroll');if(scroller)scroller.scrollTop=scroll;const next=[...app.querySelectorAll('.plan-stepper button')].find(item=>item.getAttribute('aria-label')===focusLabel);if(next && !next.disabled)next.focus({preventScroll:true});else next?.parentElement.querySelector('button:not(:disabled)')?.focus({preventScroll:true}); }
@@ -116,12 +141,14 @@ function renderBetaEntry({ message = '', canCancel = false } = {}) {
 }
 async function startApp() {
  const invite = sharedInviteFromUrl(); if (invite) { sharedStart(invite); return; }
- if (!/^[a-f0-9]{32}$/.test(betaCode) || !sb) {
+ if (!/^[a-f0-9]{32}$/.test(betaCode)) {
   renderBetaEntry({ message: betaCode ? '内测码格式不正确，请重新输入' : '', canCancel: Boolean(urlBetaCode !== null && savedBetaCode) });
   return;
  }
  try {
-  const { data, error } = await sb.rpc('validate_beta_code');
+  if (!sb) throw new Error('网络不可用');
+  let timer;
+  const { data, error } = await Promise.race([sb.rpc('validate_beta_code'), new Promise((_, reject) => { timer = setTimeout(() => reject(new Error('验证超时')), 8000); })]).finally(() => clearTimeout(timer));
   if (error) throw error;
   if (!data) { renderBetaEntry({ message: '内测码不正确，请检查后重试', canCancel: Boolean(urlBetaCode !== null && savedBetaCode) }); return; }
   try { localStorage.setItem(betaStorageKey, betaCode); } catch (_) { renderBetaEntry({ message: '本机无法保存内测码，请检查浏览器存储设置' }); return; }
@@ -129,7 +156,22 @@ async function startApp() {
   restoreMenuDraft();
   render();
   await initDishes();
- } catch (_) { renderBetaEntry({ message: '验证失败，请检查网络后重试', canCancel: Boolean(urlBetaCode !== null && savedBetaCode) }); }
+ } catch (_) {
+  if (betaCode === savedBetaCode.trim().toLowerCase()) {
+   try {
+    const cached = await idbGet(cacheKey('dishes'));
+    if (Array.isArray(cached) && cached.every(isValidDish)) {
+     offlineMode = true;
+     dishes = cached.map(normalizeDish);
+     removeCodeFromAddress();
+     restoreMenuDraft();
+     render();
+     return;
+    }
+   } catch (_) { /* No usable local cache. */ }
+  }
+  renderBetaEntry({ message: '验证失败，请检查网络后重试', canCancel: Boolean(urlBetaCode !== null && savedBetaCode) });
+ }
 }
 if (document.documentElement.classList.contains('is-standalone')) {
  setTimeout(() => document.getElementById('launch')?.classList.add('is-finished'), 900);
