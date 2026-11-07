@@ -580,8 +580,8 @@ button.filter[hidden]{display:none}
 .brand-mark svg,.top-brand .brand-mark svg{width:100%;height:100%;stroke:none}
 .brand-mark .brand-bowl{fill:currentColor}
 .brand-mark .brand-foot{fill:none;stroke:currentColor;stroke-width:1;stroke-linecap:round}
-.brand-mark .brand-smile{fill:none;stroke:#793e34;stroke-width:.85;stroke-linecap:round}
-.brand-mark .brand-chopsticks{fill:none;stroke:currentColor;stroke-width:1.05;stroke-linecap:round}
+.brand-mark .brand-smile{fill:none;stroke:#793e34;stroke-width:.6;stroke-linecap:round}
+.brand-mark .brand-chopsticks{fill:none;stroke:currentColor;stroke-width:.85;stroke-linecap:round}
 
 /* The invitation reads as a small part of the masthead. */
 .home-scroll .shared-entry{display:inline-flex;align-items:center;gap:5px;min-height:44px;padding:0 2px 0 10px;border:0;border-radius:0;background:transparent;color:#9a5b48;font-size:12px;font-weight:600}
