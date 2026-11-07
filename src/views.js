@@ -97,7 +97,7 @@ function renderDishes(){
  const filters = ['全部', ...options.filter(value => present.has(value)), ...[...present].filter(value => value && !options.includes(value))];
  const filtered = filteredDishes();
  app.className='phone-screen home-screen';
- app.innerHTML=`<div class="screen-scroll home-scroll">${''}<header class="topbar"><div class="top-brand">${logo}<div><strong>家宴</strong><small>把喜欢的菜端上桌</small></div></div><button class="shared-entry" data-action="shared-create">${icon('people')}<span>邀请一起点</span></button></header>
+ app.innerHTML=`<div class="screen-scroll home-scroll">${''}<header class="topbar"><div class="top-brand">${logo}<div><strong>家宴</strong><small>把喜欢的菜端上桌</small></div></div><div class="home-top-actions"><button class="shared-entry" data-action="shared-create">${icon('people')}<span>邀请一起点</span></button><button class="appearance-entry" type="button" data-action="appearance" aria-label="外观设置" title="外观设置"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="7.5"/><path d="M12 4.5a7.5 7.5 0 0 0 0 15Z" fill="currentColor" stroke="none"/></svg></button></div></header>
  <section class="home-welcome"><p class="home-welcome-kicker">为每一顿家常饭</p><h1>把喜欢的菜，<em>端上家的餐桌。</em></h1><p class="home-welcome-note">今天，一起好好吃饭。</p></section>
  <div class="section-title"><h2>今天吃什么？</h2><div class="home-actions"><button class="paper-entry" data-action="paper-mode">${paperMenuIcon}纸质菜单</button><button class="manage-entry" data-page="manage">编辑菜单</button></div></div>
  <div class="home-discovery"><label class="search">${icon('search')}<input type="search" placeholder="搜索想吃的菜" value="${escapeText(state.query)}" aria-label="搜索想吃的菜"></label>
