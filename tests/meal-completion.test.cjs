@@ -7,7 +7,7 @@ const saveSource=source.slice(source.indexOf('async function saveHistory()'),sou
 function setup(result){
  const button={disabled:false,textContent:'',isConnected:true};let cleared=0,renders=0;
  const messages=[];
- const ctx=vm.createContext({offlineMode:false,state:{selected:['a'],title:'午餐',diaryNote:'好吃'},betaCode:'test',crypto:{randomUUID:()=> 'id'},localDate:()=> '2026-11-07',uploadPhoto:async()=> 'storage://test/diary/photo.jpg',selectedDishes:()=>[{id:'a',name:'番茄'}],app:{querySelector:()=>button},sb:{from:()=>({insert:()=>({select:()=>({single:()=>result})})})},historyEntries:[],historyRequest:0,idbSet:async()=>{},cacheKey:key=>key,clearMenuDraft:()=>{cleared++;ctx.state.selected=[];ctx.state.title='今天的菜单';ctx.state.diaryNote='';return true},render:()=>{renders++},notify:message=>messages.push(message)});
+ const ctx=vm.createContext({offlineMode:false,state:{selected:['a'],title:'午餐',diaryNote:'好吃'},betaCode:'test',crypto:{randomUUID:()=> 'id'},localDate:()=> '2026-11-07',uploadPhoto:async()=> 'storage://test/diary/photo.jpg',selectedDishes:()=>[{id:'a',name:'番茄'}],app:{querySelector:()=>button},sb:{from:()=>({insert:()=>({select:()=>({single:()=>result})})})},historyEntries:[],historyRequest:0,recommendationHasData:false,recommendationMeals:[],loadRecommendations:()=>{},idbSet:async()=>{},cacheKey:key=>key,clearMenuDraft:()=>{cleared++;ctx.state.selected=[];ctx.state.title='今天的菜单';ctx.state.diaryNote='';return true},render:()=>{renders++},notify:message=>messages.push(message)});
  vm.runInContext(saveSource,ctx);
  return {ctx,button,messages,get cleared(){return cleared},get renders(){return renders}};
 }
@@ -29,4 +29,8 @@ test('a photo is saved with the meal and a failed migration keeps the draft',asy
 });
 test('a photo being changed while saving is preserved',async()=>{
  let finish;const h=setup(new Promise(resolve=>{finish=resolve}));h.ctx.state.diaryPhoto='data:image/jpeg;base64,old';h.ctx.state.diaryPhotoVersion=1;const saving=h.ctx.saveHistory();h.ctx.state.diaryPhotoVersion++;h.ctx.state.diaryPhotoProcessing=true;finish({data:{id:'id'},error:null});await saving;assert.equal(h.cleared,0);assert.match(h.messages[0],/已保留/);
+});
+
+test('saving a meal immediately adds its dishes to cached recommendation records',async()=>{
+ const h=setup(Promise.resolve({data:{id:'new',dishes:[{id:'a',name:'番茄'}]},error:null}));h.ctx.recommendationHasData=true;h.ctx.recommendationMeals=[{id:'old',dishes:[{id:'a'}]}];await h.ctx.saveHistory();assert.deepEqual(Array.from(h.ctx.recommendationMeals,x=>x.id),['new','old']);
 });

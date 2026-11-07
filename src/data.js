@@ -75,13 +75,14 @@ async function cloudUpsertDish(d) {
  if (offlineMode || !sb) { cloudFail(); return false; }
  try {
   const record = { user_code: betaCode, id: d.id, name: d.name, category: d.category, cuisine: d.cuisine, note: d.note, image: d.image, spice_level: d.spice_level, is_available: d.is_available };
-  let { error } = await sb.from('dishes').upsert(record);
+  let { data, error } = await sb.from('dishes').upsert(record).select().single();
   if (error && (error.code === 'PGRST204' || error.code === '42703') && /cuisine/i.test(error.message || '')) {
    if (d.cuisine !== '未分类') { notify('请先更新云端数据库，才能保存菜系'); return false; }
    const { cuisine, ...legacyRecord } = record;
-   ({ error } = await sb.from('dishes').upsert(legacyRecord));
+   ({ data, error } = await sb.from('dishes').upsert(legacyRecord).select().single());
   }
   if (error) throw error;
+  Object.assign(d, data);
   return true;
  } catch (_) { cloudFail(); return false; }
 }

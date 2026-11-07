@@ -57,7 +57,7 @@ function bind(){
  app.querySelectorAll('[data-page]').forEach(b=>b.onclick=()=>{state.page=b.dataset.page;render();if(state.page==='history')loadHistory()});
  app.querySelectorAll('[data-manage-mode]').forEach(b=>b.onclick=()=>{state.manageFilterMode=b.dataset.manageMode;state.manageFilter='全部';render()});
  app.querySelectorAll('[data-manage-filter]').forEach(b=>b.onclick=()=>{state.manageFilter=b.dataset.manageFilter;render();app.querySelector('[data-manage-filter][aria-pressed=true]')?.focus({preventScroll:true})});
- app.querySelectorAll('[data-filter-mode]').forEach(b=>b.onclick=()=>{const scroll=app.querySelector('.screen-scroll').scrollTop;state.filterMode=b.dataset.filterMode;state.category='全部';render();app.querySelector('.screen-scroll').scrollTop=scroll});
+ app.querySelectorAll('[data-filter-mode]').forEach(b=>b.onclick=()=>{const scroll=app.querySelector('.screen-scroll').scrollTop;state.filterMode=b.dataset.filterMode;state.category='全部';render();app.querySelector('.screen-scroll').scrollTop=scroll;if(state.filterMode==='recommend')loadRecommendations()});
  bindCatalog();
  bindDishButtons();
  const detailBack=app.querySelector('[data-detail-back]');if(detailBack){const back=(restoreFocus=false)=>{const id=state.detailId;state.page='dishes';render();const scroll=app.querySelector('.screen-scroll');if(scroll)scroll.scrollTop=state.detailScroll;updateCatalogNavigation();if(restoreFocus)app.querySelectorAll('[data-detail-id]').forEach(b=>{if(b.dataset.detailId===id)b.focus({preventScroll:true})})};detailBack.onclick=e=>back(e.detail===0);bindDetailSwipe(app.querySelector('.detail-scroll'),()=>back(false))}

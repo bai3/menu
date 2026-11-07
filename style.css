@@ -738,3 +738,7 @@ button.filter[hidden]{display:none}
 .diary-photo-remove svg{width:16px;height:16px}
 .diary-photo-status{margin:8px 0 0}
 .diary-photo{display:block;width:100%;max-height:240px;margin-top:12px;border-radius:10px;object-fit:cover;background:var(--theme-border,#efdfd2)}
+/* The recommendation view keeps the familiar dish cards without a category rail. */
+.home-scroll .catalog-recommend{grid-template-columns:minmax(0,1fr)}
+.recommend-count{display:block;margin-top:5px;font-size:10px;line-height:1.4;color:var(--theme-accent)}
+@media(max-width:350px){.home-discovery .filter-switch button{padding-left:7px;padding-right:7px}}

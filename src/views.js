@@ -36,7 +36,25 @@ function selectedDishes(){return state.selected.map(id=>dishes.find(d=>d.id===id
 function filteredDishes() {
  return dishes.filter(d => `${d.name}${d.category}${d.cuisine}${d.note}`.includes(state.query.trim()));
 }
+let recommendationMeals = [];
+let recommendationLoading = false;
+let recommendationError = false;
+let recommendationHasData = false;
+let recommendationRequest = 0;
+function dishCard(d, count=null) {
+ return `<article class="dish ${d.is_available?'':'dish-unavailable'}"><button class="dish-open" data-detail-id="${escapeText(d.id)}" aria-label="查看${escapeText(d.name)}详情"><img class="dish-img" src="${escapeText(dishImage(d))}" alt="" onerror="this.style.visibility='hidden'"><span class="dish-info"><span class="dish-name">${escapeText(d.name)} ${spiceBadge(d)}</span>${d.note ? `<span class="dish-note">${escapeText(d.note)}</span>` : ''}${count!==null ? `<span class="recommend-count">做过 ${count} 次</span>` : ''}${state.filterMode === 'cuisine' ? `<span class="dish-tag">${escapeText(d.category)}</span>` : d.cuisine !== '未分类' ? `<span class="dish-tag">${escapeText(d.cuisine)}</span>` : ''}${d.is_available?'':'<span class="unavailable-label">已下架</span>'}<span class="dish-detail-cue">查看详情</span></span></button><button class="add ${state.selected.includes(d.id)?'selected':''}" data-dish="${escapeText(d.id)}" aria-label="${state.selected.includes(d.id)?'移除':'选择'}${escapeText(d.name)}" aria-pressed="${state.selected.includes(d.id)}" ${d.is_available?'':'disabled'}>${icon(state.selected.includes(d.id)?'check':'plus')}</button></article>`;
+}
 function catalogContent(filtered){
+ if(state.filterMode==='recommend') {
+  const ranked=rankMealDishes(dishes,recommendationMeals);
+  const visible=new Set(filtered.map(d=>d.id));
+  const list=ranked.filter(item=>visible.has(item.dish.id));
+  if(!recommendationHasData && recommendationLoading)return '<div class="empty">正在整理推荐…</div>';
+  if(!recommendationHasData && recommendationError)return '<div class="empty">暂时无法读取吃饭日记<br>联网后再试试</div>';
+  if(!ranked.length)return '<div class="empty">暂无可推荐的菜<br>添加菜品后再来看看吧</div>';
+  if(!list.length)return '<div class="empty">推荐菜里没有找到<br>换个关键词试试吧</div>';
+  return `<div class="catalog-heading"><h3>推荐菜</h3><span>${recommendationError ? '本机记录 · ' : ''}按次数与编辑时间排序</span></div><div class="dish-list">${list.map(item=>dishCard(item.dish,item.count)).join('')}</div>`;
+ }
  const field = state.filterMode === 'category' ? 'category' : 'cuisine';
  const options = state.filterMode === 'category' ? categories.slice(1) : cuisines;
  const present = [...new Set(filtered.map(d => d[field]))];
@@ -44,9 +62,37 @@ function catalogContent(filtered){
  if (!groups.length) return '<div class="empty">没有找到这道菜<br>换个关键词试试吧</div>';
  return groups.map(value => {
   const group = filtered.filter(d => d[field] === value);
-  return `<section class="catalog-group" data-group="${escapeText(value)}"><div class="catalog-heading"><h3>${escapeText(value)}</h3><span>${group.length} 道菜</span></div><div class="dish-list">${group.map(d=>`<article class="dish ${d.is_available?'':'dish-unavailable'}"><button class="dish-open" data-detail-id="${escapeText(d.id)}" aria-label="查看${escapeText(d.name)}详情"><img class="dish-img" src="${escapeText(dishImage(d))}" alt="" onerror="this.style.visibility='hidden'"><span class="dish-info"><span class="dish-name">${escapeText(d.name)} ${spiceBadge(d)}</span>${d.note ? `<span class="dish-note">${escapeText(d.note)}</span>` : ''}${state.filterMode === 'cuisine' ? `<span class="dish-tag">${escapeText(d.category)}</span>` : d.cuisine !== '未分类' ? `<span class="dish-tag">${escapeText(d.cuisine)}</span>` : ''}${d.is_available?'':'<span class="unavailable-label">已下架</span>'}<span class="dish-detail-cue">查看详情</span></span></button><button class="add ${state.selected.includes(d.id)?'selected':''}" data-dish="${escapeText(d.id)}" aria-label="${state.selected.includes(d.id)?'移除':'选择'}${escapeText(d.name)}" aria-pressed="${state.selected.includes(d.id)}" ${d.is_available?'':'disabled'}>${icon(state.selected.includes(d.id)?'check':'plus')}</button></article>`).join('')}</div></section>`;
+  return `<section class="catalog-group" data-group="${escapeText(value)}"><div class="catalog-heading"><h3>${escapeText(value)}</h3><span>${group.length} 道菜</span></div><div class="dish-list">${group.map(d=>dishCard(d)).join('')}</div></section>`;
  }).join('');
 }
+function refreshRecommendationView() {
+ if(state.page!=='dishes' || state.filterMode!=='recommend')return;
+ const content=app.querySelector('.catalog-content');if(!content)return;
+ content.innerHTML=catalogContent(filteredDishes());bindDishButtons();
+}
+async function loadRecommendations() {
+ const request=++recommendationRequest;recommendationLoading=true;recommendationError=false;refreshRecommendationView();
+ try {
+  const cached=recommendationHasData ? null : await idbGet(cacheKey('recommendation_meals'));
+  if(request!==recommendationRequest)return;
+  if(Array.isArray(cached)){recommendationMeals=cached;recommendationHasData=true;refreshRecommendationView()}
+ } catch (_) {}
+ try {
+  if(offlineMode || !sb)throw new Error('云端不可用');
+  const meals=[];const pageSize=1000;
+  for(let from=0;;from+=pageSize){
+   const {data,error}=await sb.from('meal_history').select('id,dishes').order('created_at',{ascending:false}).order('id',{ascending:false}).range(from,from+pageSize-1);
+   if(error)throw error;
+   if(request!==recommendationRequest)return;
+   meals.push(...data);if(data.length<pageSize)break;
+  }
+  if(request!==recommendationRequest)return;
+  recommendationMeals=meals;recommendationHasData=true;
+  idbSet(cacheKey('recommendation_meals'),meals).catch(()=>{});
+ } catch (_) {if(request===recommendationRequest)recommendationError=true}
+ finally {if(request===recommendationRequest){recommendationLoading=false;refreshRecommendationView()}}
+}
+
 function updateCatalogNavigation(shared = false, preferredCategory = null) {
  const scroll = app.querySelector('.screen-scroll'), nav = app.querySelector('.filters');
  if (!scroll || !nav) return;
@@ -102,8 +148,8 @@ function renderDishes(){
  ${state.draftRestored || state.draftUnavailable ? `<div class="draft-resume"><div class="draft-resume-copy" role="status"><strong>${state.draftRestored && state.selected.length ? '已保留上次点的菜' : '菜单已更新'}</strong><span>${state.selected.length ? `已选 ${state.selected.length} 道菜，可以继续点菜` : '暂无已选菜品'}${state.draftUnavailable ? ` · ${state.draftUnavailable} 道菜已下架或删除` : ''}</span></div><div class="draft-resume-actions">${state.selected.length ? '<button type="button" data-page="menu">查看菜单</button><button type="button" data-action="clear-draft">清空</button>' : '<button type="button" data-action="dismiss-draft">知道了</button>'}</div></div>` : ''}
  <div class="section-title"><h2>今天吃什么？</h2><div class="home-actions"><button class="paper-entry" data-action="paper-mode">${paperMenuIcon}纸质菜单</button><button class="manage-entry" data-page="manage">编辑菜单</button></div></div>
  <div class="home-discovery"><label class="search">${icon('search')}<input type="search" placeholder="搜索想吃的菜" value="${escapeText(state.query)}" aria-label="搜索想吃的菜"></label>
- <div class="filter-switch" role="group" aria-label="筛选方式"><button data-filter-mode="category" aria-pressed="${state.filterMode==='category'}">分类</button><button data-filter-mode="cuisine" aria-pressed="${state.filterMode==='cuisine'}">菜系</button></div></div>
- <div class="catalog"><nav class="filters" aria-label="${state.filterMode==='category'?'菜品分类':'菜系'}">${filters.map(c=>{const selectedCount=selectedDishes().filter(d=>c==='全部'||d[field]===c).length;return `<button class="filter ${state.category===c?'active':''}" data-category="${escapeText(c)}" aria-pressed="${state.category===c}"><span class="filter-name">${escapeText(c)}</span>${selectedCount ? `<span class="filter-count">${selectedCount}</span>` : ''}</button>`}).join('')}</nav>
+ <div class="filter-switch" role="group" aria-label="筛选方式"><button data-filter-mode="category" aria-pressed="${state.filterMode==='category'}">分类</button><button data-filter-mode="cuisine" aria-pressed="${state.filterMode==='cuisine'}">菜系</button><button data-filter-mode="recommend" aria-pressed="${state.filterMode==='recommend'}">推荐</button></div></div>
+ <div class="catalog ${state.filterMode==='recommend' ? 'catalog-recommend' : ''}">${state.filterMode!=='recommend' ? `<nav class="filters" aria-label="${state.filterMode==='category'?'菜品分类':'菜系'}">${filters.map(c=>{const selectedCount=selectedDishes().filter(d=>c==='全部'||d[field]===c).length;return `<button class="filter ${state.category===c?'active':''}" data-category="${escapeText(c)}" aria-pressed="${state.category===c}"><span class="filter-name">${escapeText(c)}</span>${selectedCount ? `<span class="filter-count">${selectedCount}</span>` : ''}</button>`}).join('')}</nav>` : ''}
  <section class="catalog-content" aria-label="菜品列表">${catalogContent(filtered)}</section></div></div>
  <div class="bottom"><div class="order-dock">${nav()}<button class="dock-action" data-action="make-menu" aria-label="${state.selected.length ? `已选${state.selected.length}道菜，下单` : '请先选择菜品'}" ${state.selected.length?'':'disabled'}><strong>下单</strong>${state.selected.length ? `<span class="order-count">${state.selected.length}</span>` : ''}</button></div></div>`;
  bind();
@@ -301,6 +347,8 @@ async function saveHistory() {
   ++historyRequest;
   historyEntries=[data,...historyEntries.filter(e=>e.id!==data.id)];
   idbSet(cacheKey('meal_history'),historyEntries).catch(()=>{});
+  if(recommendationHasData) { recommendationMeals=[{id:data.id,dishes:data.dishes},...recommendationMeals.filter(meal=>meal.id!==data.id)];idbSet(cacheKey('recommendation_meals'),recommendationMeals).catch(()=>{}); }
+  loadRecommendations();
   const unchanged=state.title===snapshot.title && state.diaryNote===snapshot.diaryNote && state.diaryPhoto===snapshot.diaryPhoto && state.diaryPhotoVersion===snapshot.diaryPhotoVersion && state.selected.length===snapshot.selected.length && state.selected.every((id,index)=>id===snapshot.selected[index]);
   if (unchanged) { const cleared=clearMenuDraft(); render(); notify(cleared?'这餐已保存，可以开始新一餐':'日记已保存，但本机草稿未能清除'); }
   else notify('这餐已保存；当前菜单有新改动，已保留');

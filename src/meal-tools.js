@@ -57,3 +57,18 @@ function replacePlanDish(catalog, ids, id, random=Math.random) {
  const pool=catalog.filter(d=>d.is_available && d.category===old.category && !ids.includes(d.id));
  return pool.length ? pool[Math.floor(random()*pool.length)].id : null;
 }
+
+// Each saved meal contributes at most one count per dish ID.
+function rankMealDishes(catalog, meals) {
+ const counts=new Map();
+ for(const meal of meals) {
+  if(!Array.isArray(meal?.dishes))continue;
+  const ids=new Set(meal.dishes.map(d=>d?.id).filter(id=>typeof id==='string' && id));
+  for(const id of ids)counts.set(id,(counts.get(id)||0)+1);
+ }
+ const edited=d=>{const time=Date.parse(d.edited_at || d.created_at || '');return Number.isFinite(time) ? time : 0};
+ return catalog.filter(d=>d.is_available)
+  .map(d=>({dish:d,count:counts.get(d.id)||0}))
+  .sort((a,b)=>b.count-a.count || edited(b.dish)-edited(a.dish) || a.dish.name.localeCompare(b.dish.name,'zh-CN') || a.dish.id.localeCompare(b.dish.id))
+  .slice(0,10);
+}
