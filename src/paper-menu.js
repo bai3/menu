@@ -51,7 +51,7 @@ function renderPaperMenu() {
    clearTimeout(pendingPaperTap.timer);
    pendingPaperTap = null;
    if (sharedMeal.invite) sharedChoose(id, false, true);
-   else { state.selected = state.selected.filter(selectedId => selectedId !== id); showPaperFeedback(id, false); }
+   else { state.selected = state.selected.filter(selectedId => selectedId !== id); state.draftRestored=false; saveMenuDraft(); showPaperFeedback(id, false); }
    return;
   }
   flushPaperTap();
@@ -123,7 +123,7 @@ function flushPaperTap() {
  pendingPaperTap = null;
  if (!paperDishes().some(d => d.id === id && d.is_available)) return;
  if (sharedMeal.invite) sharedChoose(id, true, true);
- else { if (!state.selected.includes(id)) state.selected.push(id); showPaperFeedback(id, true); }
+ else { if (!state.selected.includes(id)) { state.selected.push(id); state.draftRestored=false; saveMenuDraft(); } showPaperFeedback(id, true); }
 }
 function turnPaperPage(direction) {
  const pages = paperPages();

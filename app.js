@@ -35,7 +35,7 @@ function bindDetailSwipe(scroll, onBack){
 }
 function bindDishButtons(){
  app.querySelectorAll('[data-detail-id]').forEach(b=>b.onclick=()=>{state.detailId=b.dataset.detailId;state.detailScroll=app.querySelector('.screen-scroll')?.scrollTop || 0;state.page='dish-detail';render()});
- app.querySelectorAll('[data-dish]').forEach(b=>b.onclick=()=>{const id=b.dataset.dish;if(!dishes.some(d=>d.id===id && d.is_available))return;state.selected=state.selected.includes(id)?state.selected.filter(x=>x!==id):[...state.selected,id];const scroll=app.querySelector('.screen-scroll').scrollTop;render();app.querySelector('.screen-scroll').scrollTop=scroll});
+ app.querySelectorAll('[data-dish]').forEach(b=>b.onclick=()=>{const id=b.dataset.dish;if(!dishes.some(d=>d.id===id && d.is_available))return;state.selected=state.selected.includes(id)?state.selected.filter(x=>x!==id):[...state.selected,id];state.draftRestored=false;saveMenuDraft();const scroll=app.querySelector('.screen-scroll').scrollTop;render();app.querySelector('.screen-scroll').scrollTop=scroll});
 }
 
 function bind(){
@@ -46,8 +46,8 @@ function bind(){
  bindCatalog();
  bindDishButtons();
  const detailBack=app.querySelector('[data-detail-back]');if(detailBack){const back=(restoreFocus=false)=>{const id=state.detailId;state.page='dishes';render();const scroll=app.querySelector('.screen-scroll');if(scroll)scroll.scrollTop=state.detailScroll;updateCatalogNavigation();if(restoreFocus)app.querySelectorAll('[data-detail-id]').forEach(b=>{if(b.dataset.detailId===id)b.focus({preventScroll:true})})};detailBack.onclick=e=>back(e.detail===0);bindDetailSwipe(app.querySelector('.detail-scroll'),()=>back(false))}
- const detailToggle=app.querySelector('[data-detail-toggle]');if(detailToggle)detailToggle.onclick=()=>{const dish=dishes.find(d=>d.id===state.detailId);if(!dish || !dish.is_available){render();return}state.selected=state.selected.includes(dish.id)?state.selected.filter(id=>id!==dish.id):[...state.selected,dish.id];const top=app.querySelector('.screen-scroll')?.scrollTop || 0;render();app.querySelector('.screen-scroll').scrollTop=top;app.querySelector('[data-detail-toggle]')?.focus({preventScroll:true})};
- app.querySelectorAll('[data-remove]').forEach(b=>b.onclick=()=>{state.selected=state.selected.filter(x=>x!==b.dataset.remove);render()});
+ const detailToggle=app.querySelector('[data-detail-toggle]');if(detailToggle)detailToggle.onclick=()=>{const dish=dishes.find(d=>d.id===state.detailId);if(!dish || !dish.is_available){render();return}state.selected=state.selected.includes(dish.id)?state.selected.filter(id=>id!==dish.id):[...state.selected,dish.id];state.draftRestored=false;saveMenuDraft();const top=app.querySelector('.screen-scroll')?.scrollTop || 0;render();app.querySelector('.screen-scroll').scrollTop=top;app.querySelector('[data-detail-toggle]')?.focus({preventScroll:true})};
+ app.querySelectorAll('[data-remove]').forEach(b=>b.onclick=()=>{state.selected=state.selected.filter(x=>x!==b.dataset.remove);state.draftRestored=false;saveMenuDraft();render()});
  app.querySelectorAll('[data-edit]').forEach(b=>b.onclick=()=>{state.editingId=b.dataset.edit;state.draftImage=null;state.page='dish-form';render()});
  app.querySelectorAll('[data-delete]').forEach(b=>b.onclick=async()=>{const dish=dishes.find(d=>d.id===b.dataset.delete);if(!dish || !window.confirm(`确定删除“${dish.name}”吗？`))return;b.disabled=true;if(!await cloudDeleteDish(dish.id)){b.disabled=false;return}saveLocalDishes(dishes.filter(d=>d.id!==dish.id));state.selected=state.selected.filter(id=>id!==dish.id);render();notify('菜品已删除');});
  const sharedCreate=app.querySelector('[data-action=shared-create]');if(sharedCreate)sharedCreate.onclick=()=>{state.page='shared-create';render()};
@@ -58,12 +58,21 @@ function bind(){
  const form=app.querySelector('#dish-form');if(form)form.onsubmit=async e=>{e.preventDefault();const name=form.elements.name.value.trim();if(!name){form.elements.name.focus();return}const existing=dishes.find(d=>d.id===state.editingId);const dish={id:existing?.id || `dish-${Date.now()}-${Math.random().toString(36).slice(2,8)}`,name,category:form.elements.category.value,cuisine:form.elements.cuisine.value,note:form.elements.note.value.trim(),image:state.draftImage || existing?.image || 'tomato.jpg',spice_level:Number(form.elements.spice_level.value),is_available:form.elements.is_available.value==='true'};const saveButton=form.querySelector('[type=submit]');saveButton.disabled=true;if(!await cloudUpsertDish(dish)){saveButton.disabled=false;return}const latest=dishes.find(d=>d.id===dish.id);saveLocalDishes(latest?dishes.map(d=>d.id===dish.id?dish:d):[...dishes,dish]);state.editingId=null;state.draftImage=null;state.page='manage';render();notify(existing?'菜品已更新':'菜品已添加');};
 
  const search=app.querySelector('input[type=search]');if(search)search.oninput=e=>{state.query=e.target.value;const catalog=app.querySelector('.catalog-content');catalog.innerHTML=catalogContent(filteredDishes());bindDishButtons();updateCatalogNavigation()};
- const diary=app.querySelector('#diary-note');if(diary)diary.oninput=e=>{state.diaryNote=e.target.value};
+ const diary=app.querySelector('#diary-note');if(diary)diary.oninput=e=>{state.diaryNote=e.target.value;saveMenuDraft()};
  const saveDiary=app.querySelector('[data-action=save-diary]');if(saveDiary)saveDiary.onclick=saveHistory;
- const title=app.querySelector('.menu-title-input');if(title)title.oninput=e=>{state.title=e.target.value};
+ const title=app.querySelector('.menu-title-input');if(title)title.oninput=e=>{state.title=e.target.value;saveMenuDraft()};
  const surprise=app.querySelector('[data-action=surprise]');if(surprise)surprise.onclick=drawSurprise;
- const addSurprise=app.querySelector('[data-action=add-surprise]');if(addSurprise)addSurprise.onclick=()=>{const dish=dishes.find(d=>d.id===state.surpriseId && d.is_available);if(!dish || state.selected.includes(dish.id))return;state.selected.push(dish.id);render();notify('已加入菜单')};
+ const addSurprise=app.querySelector('[data-action=add-surprise]');if(addSurprise)addSurprise.onclick=()=>{const dish=dishes.find(d=>d.id===state.surpriseId && d.is_available);if(!dish || state.selected.includes(dish.id))return;state.selected.push(dish.id);state.draftRestored=false;saveMenuDraft();render();notify('已加入菜单')};
  const motion=app.querySelector('[data-action=enable-motion]');if(motion)motion.onclick=enableMotion;
+ const newMeal=app.querySelector('[data-action=new-meal]');if(newMeal)newMeal.onclick=()=>{if(!window.confirm('开始新一餐将清空当前已选菜品、标题和备注。已保存的吃饭日记不会受影响。'))return;const cleared=clearMenuDraft();state.page='dishes';render();notify(cleared?'已开始新一餐':'本机无法清除草稿，请检查浏览器存储')};
+ const dismissDraft=app.querySelector('[data-action=dismiss-draft]');if(dismissDraft)dismissDraft.onclick=()=>{state.draftRestored=false;state.draftUnavailable=0;render()};
+ const clearDraft=app.querySelector('[data-action=clear-draft]');if(clearDraft)clearDraft.onclick=()=>{if(!window.confirm('清空上次未完成的菜单？'))return;clearMenuDraft();render()};
+ function updatePlanControl(button, update) { const scroll=app.querySelector('.screen-scroll')?.scrollTop||0, focusLabel=button.getAttribute('aria-label'); update();state.planResult=null;render();const scroller=app.querySelector('.screen-scroll');if(scroller)scroller.scrollTop=scroll;const next=[...app.querySelectorAll('.plan-stepper button')].find(item=>item.getAttribute('aria-label')===focusLabel);if(next && !next.disabled)next.focus({preventScroll:true});else next?.parentElement.querySelector('button:not(:disabled)')?.focus({preventScroll:true}); }
+ app.querySelectorAll('[data-plan-people-step]').forEach(button=>button.onclick=()=>updatePlanControl(button,()=>{state.planPeople=Math.max(1,Math.min(8,state.planPeople+Number(button.dataset.planPeopleStep)));state.planCounts=defaultPlanCounts(state.planPeople)}));
+ app.querySelectorAll('[data-plan-step]').forEach(button=>button.onclick=()=>updatePlanControl(button,()=>{const category=button.dataset.planCategory;state.planCounts[category]=Math.max(0,Math.min(9,(state.planCounts[category]||0)+Number(button.dataset.planStep)))}));
+ const generate=app.querySelector('[data-action=plan-generate]');if(generate)generate.onclick=()=>{if(!Object.values(state.planCounts).some(count=>count>0)){notify('请至少选择一道菜');return}state.planResult=makeMealPlan(dishes,state.planCounts);render();app.querySelector('.plan-results')?.scrollIntoView({block:'nearest',behavior:'smooth'})};
+ app.querySelectorAll('[data-plan-replace]').forEach(button=>button.onclick=()=>{const id=button.dataset.planReplace,next=replacePlanDish(dishes,state.planResult.chosen,id);if(!next){notify('这个分类没有其他可替换的菜');return}state.planResult.chosen=state.planResult.chosen.map(x=>x===id?next:x);const scroll=app.querySelector('.screen-scroll')?.scrollTop||0;render();app.querySelector('.screen-scroll').scrollTop=scroll});
+ const planApply=app.querySelector('[data-action=plan-apply]');if(planApply)planApply.onclick=()=>{const valid=state.planResult.chosen.filter(id=>dishes.some(d=>d.id===id&&d.is_available));if(!valid.length){notify('推荐菜品已不可用，请重新搭配');return}const added=valid.filter(id=>!state.selected.includes(id));state.selected=[...state.selected,...added];state.draftRestored=false;saveMenuDraft();state.page='menu';render();notify(added.length?`已加入 ${added.length} 道菜`:'这些菜都已在菜单中')};
  const make=app.querySelector('[data-action=make-menu]');if(make)make.onclick=()=>{state.page='menu';render()};
  const save=app.querySelector('[data-action=save]');if(save)save.onclick=saveMenuImage;
 }
@@ -117,6 +126,7 @@ async function startApp() {
   if (!data) { renderBetaEntry({ message: '内测码不正确，请检查后重试', canCancel: Boolean(urlBetaCode !== null && savedBetaCode) }); return; }
   try { localStorage.setItem(betaStorageKey, betaCode); } catch (_) { renderBetaEntry({ message: '本机无法保存内测码，请检查浏览器存储设置' }); return; }
   removeCodeFromAddress();
+  restoreMenuDraft();
   render();
   await initDishes();
  } catch (_) { renderBetaEntry({ message: '验证失败，请检查网络后重试', canCancel: Boolean(urlBetaCode !== null && savedBetaCode) }); }

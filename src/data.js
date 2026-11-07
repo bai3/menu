@@ -60,7 +60,9 @@ async function initDishes() {
 function dishImage(d) { return d.image.startsWith('data:image/') ? d.image : './public/assets/' + d.image; }
 function saveLocalDishes(next) {
  dishes = next.map(normalizeDish);
+ const previousCount = state.selected.length;
  state.selected = state.selected.filter(id => dishes.some(d => d.id === id && d.is_available));
+ if (state.selected.length !== previousCount) { state.draftUnavailable = (state.draftUnavailable || 0) + previousCount - state.selected.length; saveMenuDraft(); }
  idbSet(cacheKey('dishes'), dishes).catch(() => notify('保存失败，浏览器存储不可用'));
 }
 // 菜谱以云端为准；缓存仅供启动和离线查看。
