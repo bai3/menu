@@ -37,11 +37,24 @@ function photoClient() {
  }
  return photoStorageClient;
 }
-async function rememberPhoto(value, blob) {
+function rememberPhoto(value, blob, {persist=true}={}) {
  const url = URL.createObjectURL(blob);
  photoUrls.set(value, url);
- try { await idbSet(`photo:${value}`, blob); } catch (_) { /* Display still works until the page closes. */ }
+ // Showing the photo must not depend on a slow or blocked IndexedDB write.
+ // A cache hit is already persisted and must never be written back again.
+ if (persist) {
+  try { Promise.resolve(idbSet(`photo:${value}`, blob)).catch(()=>{}); } catch (_) {}
+ }
  return url;
+}
+async function readCachedPhoto(value) {
+ let timer;
+ try {
+  return await Promise.race([
+   idbGet(`photo:${value}`),
+   new Promise(resolve=>{timer=setTimeout(()=>resolve(null),4000)})
+  ]);
+ } finally { clearTimeout(timer); }
 }
 // Visible images enter the front of the queue; background caching uses spare capacity.
 const photoQueue = [];
@@ -82,7 +95,7 @@ async function resolvePhoto(value, options={}) {
  const pending={job:null,promise:null,priority:options.priority ? 1 : 0};
  photoPending.set(value,pending);
  pending.promise=(async()=>{
-  try { const cached=await idbGet(`photo:${value}`); if(cached instanceof Blob) return await rememberPhoto(value,cached); } catch (_) {}
+  try { const cached=await readCachedPhoto(value); if(cached instanceof Blob) return rememberPhoto(value,cached,{persist:false}); } catch (_) {}
   if (offlineMode) return '';
   for (let attempt=0;attempt<3;attempt++) {
    if (attempt) await photoDelay(attempt===1 ? 800 : 2000);

@@ -90,3 +90,23 @@ test('background cache completion displays the photo even before an intersection
  await new Promise(resolve=>setTimeout(resolve,30));
  assert.equal(img.src,'blob:local');assert.equal(img.style.visibility,'');
 });
+
+test('cache hits show immediately without rewriting the cached photo',async()=>{
+ const h=setup(),value='storage://folder/dishes/already-cached.jpg';let writes=0;
+ h.blobs.set('photo:'+value,new Blob(['cached'],{type:'image/jpeg'}));
+ h.ctx.idbSet=()=>{writes++;return new Promise(()=>{});};
+ const result=await Promise.race([h.ctx.resolvePhoto(value),new Promise(resolve=>setTimeout(()=>resolve('timed out'),100))]);
+ assert.equal(result,'blob:local');assert.equal(writes,0);assert.deepEqual(h.calls,[]);
+});
+test('downloaded photos display even if the local cache write hangs',async()=>{
+ const h=setup(),value='storage://folder/dishes/download.jpg';let writes=0;
+ h.ctx.idbSet=()=>{writes++;return new Promise(()=>{});};
+ const result=await Promise.race([h.ctx.resolvePhoto(value),new Promise(resolve=>setTimeout(()=>resolve('timed out'),150))]);
+ assert.equal(result,'blob:local');assert.equal(writes,1);assert.equal(h.calls.filter(c=>c[0]==='sign').length,1);
+});
+test('a stuck cache read eventually falls back to the network',async()=>{
+ const h=setup({setTimeout:(fn,ms)=>ms===4000?setTimeout(fn,0):setTimeout(fn,ms)}),value='storage://folder/dishes/stuck.jpg';
+ h.ctx.idbGet=()=>new Promise(()=>{});
+ assert.equal(await h.ctx.resolvePhoto(value),'blob:local');
+ assert.equal(h.calls.filter(c=>c[0]==='sign').length,1);
+});
