@@ -43,6 +43,8 @@ async function idbSet(key, value) {
   rq.onerror = () => reject(rq.error);
  });
 }
+let dishFocusAttached = false;
+function attachDishFocusSync() { if(!dishFocusAttached){dishFocusAttached=true;window.addEventListener('focus',syncFromCloud);} }
 async function initDishes() {
  try {
   const stored = await idbGet(cacheKey('dishes'));
@@ -54,7 +56,7 @@ async function initDishes() {
  } catch (_) { /* 读不到已存数据时保留内置菜单。 */ }
  await syncFromCloud();
  // Realtime cannot carry the per-user request header; refresh on return instead.
- window.addEventListener('focus', syncFromCloud);
+ attachDishFocusSync();
  // 申请持久存储：避免浏览器在空间紧张时清理本地数据。
  try { if (navigator.storage && navigator.storage.persist) await navigator.storage.persist(); } catch (_) {}
 }
@@ -106,14 +108,14 @@ async function syncFromCloud() {
   if (!cloudDishes.every(isValidDish)) throw new Error('云端菜谱格式无效');
   if (version !== dishChangeVersion) return;
   saveLocalDishes(cloudDishes);
-  cloudDishes.forEach(d => { if (isStoredPhoto(d.image)) resolvePhoto(d.image); });
+  prefetchPhotos(cloudDishes.map(d=>d.image));
   if (state.page === 'dish-detail') {
    const detailScroll = app.querySelector('.screen-scroll')?.scrollTop || 0;
    const choiceFocused = document.activeElement === app.querySelector('[data-detail-toggle]');
    render();
    const scroll = app.querySelector('.screen-scroll'); if (scroll) scroll.scrollTop = detailScroll;
    if (choiceFocused) app.querySelector('[data-detail-toggle]')?.focus({preventScroll:true});
-  } else if (state.page === 'dishes' || state.page === 'manage' || state.page === 'surprise') render();
+  } else if (state.page === 'dishes' || state.page === 'manage' || state.page === 'surprise') { const top=app.querySelector('.screen-scroll')?.scrollTop || 0; render(); const scroll=app.querySelector('.screen-scroll'); if(scroll)scroll.scrollTop=top; }
   if (document.querySelector('.paper-overlay')) renderPaperMenu();
  } catch (_) { notify('云端暂不可达，当前显示本机菜谱'); }
 }

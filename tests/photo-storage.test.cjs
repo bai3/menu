@@ -8,10 +8,10 @@ function setup(options={}) {
  const blobs=new Map(),calls=[];
  const bucket={
   upload:async(path,blob)=>{calls.push(['upload',path]);return {error:options.uploadError||null}},
-  createSignedUrl:async(path)=>{calls.push(['sign',path]);return {data:{signedUrl:'https://example.test/photo'},error:null}}
+  createSignedUrl:async(path)=>{calls.push(['sign',path]);if(options.sign)return options.sign(path);return {data:{signedUrl:'https://example.test/photo'},error:null}}
  };
  const db={storage:{from:()=>bucket},from:table=>({select:()=>({order:()=>({range:async()=>({data:table==='dishes'?(options.rows||[]):[],error:null})})})}),rpc:async(name,args)=>{calls.push(['rpc',args]);return {data:options.updated!==false,error:null}}};
- const ctx=vm.createContext({Blob,URL:{createObjectURL:()=> 'blob:local'},TextEncoder,Uint8Array,crypto:webcrypto,betaCode:'test-code',offlineMode:false,sb:db,idbGet:async key=>blobs.get(key),idbSet:async(key,value)=>blobs.set(key,value),document:{querySelectorAll:()=>[]},fetch:async url=>url.startsWith('data:')?new Response(new Blob(['photo'],{type:'image/jpeg'})):new Response(new Blob([options.download||'photo'],{type:'image/jpeg'})),Response,syncFromCloud:async()=>{}});
+ const ctx=vm.createContext({Blob,AbortController,setTimeout:options.setTimeout||setTimeout,clearTimeout,URL:{createObjectURL:()=> 'blob:local'},TextEncoder,Uint8Array,crypto:webcrypto,betaCode:'test-code',offlineMode:false,sb:db,idbGet:async key=>blobs.get(key),idbSet:async(key,value)=>blobs.set(key,value),document:{querySelectorAll:()=>[]},fetch:async url=>url.startsWith('data:')?new Response(new Blob(['photo'],{type:'image/jpeg'})):new Response(new Blob([options.download||'photo'],{type:'image/jpeg'})),Response,syncFromCloud:async()=>{}});
  vm.runInContext(source,ctx);
  return {ctx,calls,blobs};
 }
@@ -34,4 +34,27 @@ test('migration checks downloaded bytes before updating the row',async()=>{
 test('migration treats a concurrent row change as a failure',async()=>{
  const h=setup({rows:[{id:'1',image:'data:image/jpeg;base64,cGhvdG8='}],updated:false});
  const result=await h.ctx.migrateLegacyPhotos();assert.equal(result.failed,1);assert.equal(result.moved,0);assert.equal(h.calls.filter(c=>c[0]==='rpc').length,1);
+});
+
+test('a transient signing failure is retried and the successful image is cached',async()=>{
+ let attempts=0;const h=setup({setTimeout:(fn,ms)=>ms===12000?setTimeout(fn,ms):setTimeout(fn,0),sign:async()=>++attempts===1?{error:new Error('temporary')}:{data:{signedUrl:'https://example.test/photo'}}});
+ const value='storage://folder/dishes/one.jpg';assert.equal(await h.ctx.resolvePhoto(value),'blob:local');assert.equal(attempts,2);assert.ok(h.blobs.has('photo:'+value));
+});
+test('photo downloads limit concurrent signing and prioritize a newly visible image',async()=>{
+ let active=0,peak=0;const waiters=[];const h=setup({sign:async path=>{active++;peak=Math.max(peak,active);await new Promise(r=>waiters.push(r));active--;return {data:{signedUrl:'https://example.test/photo'}}}});
+ const jobs=Array.from({length:6},(_,i)=>h.ctx.resolvePhoto('storage://folder/dishes/'+i+'.jpg'));
+ await new Promise(r=>setImmediate(r));assert.equal(peak,4);assert.equal(waiters.length,4);
+ h.ctx.resolvePhoto('storage://folder/dishes/5.jpg',{priority:true});waiters.shift()();await new Promise(r=>setImmediate(r));
+ assert.match(h.calls.filter(c=>c[0]==='sign')[4][1],/5\.jpg$/);
+ while(waiters.length)waiters.shift()();await new Promise(r=>setImmediate(r));while(waiters.length)waiters.shift()();await Promise.all(jobs);assert.equal(peak,4);
+});
+test('repeated failures stop after three attempts and do not cache a bad image',async()=>{
+ let attempts=0;const h=setup({setTimeout:(fn,ms)=>ms===12000?setTimeout(fn,ms):setTimeout(fn,0),sign:async()=>{attempts++;return {error:new Error('unavailable')}}});
+ const value='storage://folder/dishes/fail.jpg';assert.equal(await h.ctx.resolvePhoto(value),'');assert.equal(attempts,3);assert.equal(h.blobs.has('photo:'+value),false);
+});
+
+test('a stalled request is aborted after its deadline',async()=>{
+ const h=setup({setTimeout:(fn,ms)=>setTimeout(fn,0)});
+ h.ctx.fetch=(_input,options)=>new Promise((resolve,reject)=>options.signal.addEventListener('abort',()=>reject(new Error('aborted'))));
+ await assert.rejects(h.ctx.photoTimedFetch('https://example.test/hang'),/aborted/);
 });

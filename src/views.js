@@ -331,7 +331,7 @@ async function loadHistory() {
   if(request!==historyRequest)return;
   historyEntries=data.filter(e=>typeof e.meal_date==='string' && typeof e.title==='string' && Array.isArray(e.dishes) && e.dishes.every(d=>d && typeof d.name==='string'));
   idbSet(cacheKey('meal_history'),historyEntries).catch(()=>{});
-  historyEntries.forEach(e => { if (isStoredPhoto(e.photo)) resolvePhoto(e.photo); });
+  prefetchPhotos(historyEntries.map(e=>e.photo));
  } catch (_) { if(request===historyRequest)historyError=true; }
  finally { if(request===historyRequest){historyLoading=false;if(state.page==='history')render();} }
 }
@@ -359,5 +359,5 @@ async function saveHistory() {
  finally { state.diarySaving=false; const current=app.querySelector('[data-action=save-diary]'); if(current){current.disabled=Boolean(state.diaryPhotoProcessing);current.textContent='完成并保存这餐';} }
 }
 
-function render(){if(state.page==='shopping')renderShopping();else if(state.page==='dish-detail')renderDishDetail();else if(state.page==='shared-create')renderSharedCreate();else if(state.page==='history')renderHistory();else if(state.page==='menu')renderMenu();else if(state.page==='surprise')renderSurprise();else if(state.page==='meal-plan')renderMealPlan();else if(state.page==='manage')renderManage();else if(state.page==='dish-form')renderDishForm();else renderDishes();if(offlineMode){const scroll=app.querySelector('.screen-scroll');if(scroll){const notice=document.createElement('div');notice.className='offline-notice';notice.setAttribute('role','status');notice.textContent='当前查看本机缓存，云端保存需要联网后重新打开应用';scroll.prepend(notice)}}}
+function render(){if(state.page==='shopping')renderShopping();else if(state.page==='dish-detail')renderDishDetail();else if(state.page==='shared-create')renderSharedCreate();else if(state.page==='history')renderHistory();else if(state.page==='menu')renderMenu();else if(state.page==='surprise')renderSurprise();else if(state.page==='meal-plan')renderMealPlan();else if(state.page==='manage')renderManage();else if(state.page==='dish-form')renderDishForm();else renderDishes();if(offlineMode){const scroll=app.querySelector('.screen-scroll');if(scroll){const notice=document.createElement('div');notice.className='offline-notice';notice.setAttribute('role','status');notice.textContent='当前查看本机缓存，联网后将自动恢复';scroll.prepend(notice)}}}
 function notify(message){const old=app.querySelector('.toast');if(old)old.remove();const el=document.createElement('div');el.className='toast';el.textContent=message;app.appendChild(el);setTimeout(()=>el.remove(),2400)}

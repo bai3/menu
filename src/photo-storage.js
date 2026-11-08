@@ -10,13 +10,33 @@ async function photoOwnerFolder() {
  const hash = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(betaCode));
  return Array.from(new Uint8Array(hash), n => n.toString(16).padStart(2, '0')).join('');
 }
+// Abort stalled signing and download requests so a weak connection cannot occupy
+// a queue slot indefinitely. A fresh controller is used for every request.
+function photoTimedFetch(input, init={}) {
+ const controller=new AbortController();
+ const timer=setTimeout(()=>controller.abort(),12000);
+ return fetch(input,{...init,signal:controller.signal}).then(response=>{
+  // Keep the deadline until the response body has been read, not just headers.
+  for(const method of ['json','text','blob','arrayBuffer']) {
+   const read=response[method].bind(response);
+   response[method]=()=>read().finally(()=>clearTimeout(timer));
+  }
+  return response;
+ },error=>{clearTimeout(timer);throw error;});
+}
+let photoClientKey='', photoStorageClient=null;
 function photoClient() {
- if (typeof sharedMeal !== 'undefined' && sharedMeal.invite && sharedMeal.person && sharedMeal.data?.joined) {
-  return window.supabase.createClient(window.JIAYAN_SUPABASE.url, window.JIAYAN_SUPABASE.publishableKey, {
-   global: {headers:{'x-meal-invite':sharedMeal.invite,'x-meal-person':sharedMeal.person}}, auth:{persistSession:false,autoRefreshToken:false}
+ if(typeof window==='undefined' || !window.supabase || !window.JIAYAN_SUPABASE)return sb;
+ const shared=typeof sharedMeal!=='undefined' && sharedMeal.invite && sharedMeal.person && sharedMeal.data?.joined;
+ const key=shared ? `shared:${sharedMeal.invite}:${sharedMeal.person}` : `owner:${betaCode}`;
+ if(key!==photoClientKey) {
+  const headers=shared ? {'x-meal-invite':sharedMeal.invite,'x-meal-person':sharedMeal.person} : {'x-beta-code':betaCode};
+  photoStorageClient=window.supabase.createClient(window.JIAYAN_SUPABASE.url,window.JIAYAN_SUPABASE.publishableKey,{
+   global:{headers,fetch:photoTimedFetch},auth:{persistSession:false,autoRefreshToken:false}
   });
+  photoClientKey=key;
  }
- return sb;
+ return photoStorageClient;
 }
 async function rememberPhoto(value, blob) {
  const url = URL.createObjectURL(blob);
@@ -24,32 +44,110 @@ async function rememberPhoto(value, blob) {
  try { await idbSet(`photo:${value}`, blob); } catch (_) { /* Display still works until the page closes. */ }
  return url;
 }
-async function resolvePhoto(value) {
+// Visible images enter the front of the queue; background caching uses spare capacity.
+const photoQueue = [];
+const photoFailures = new Set();
+let photoActive = 0;
+const photoConcurrency = 4;
+function pumpPhotoQueue() {
+ while (photoActive < photoConcurrency && photoQueue.length) {
+  photoQueue.sort((a,b) => b.priority-a.priority);
+  const job=photoQueue.shift(); photoActive++;
+  job.run().finally(() => { photoActive--; pumpPhotoQueue(); });
+ }
+}
+function queuePhotoNetwork(value, priority) {
+ return new Promise(resolve => {
+  const job={priority, run:async()=>{
+   try {
+    if (offlineMode || !photoClient()) return resolve('');
+    const {data,error} = await photoClient().storage.from(photoBucket).createSignedUrl(photoPath(value), 60);
+    if (error || !data?.signedUrl) throw error || new Error('图片授权失败');
+    const response = await photoTimedFetch(data.signedUrl);
+    if (!response.ok) { await response.text().catch(()=>{}); throw new Error('图片下载失败'); }
+    const blob=await response.blob();
+    if (!blob.size || !blob.type.startsWith('image/')) throw new Error('图片内容无效');
+    resolve(await rememberPhoto(value,blob));
+   } catch (_) { resolve(''); }
+  }};
+  const pending=photoPending.get(value); if(pending) pending.job=job;
+  photoQueue.push(job); pumpPhotoQueue();
+ });
+}
+const photoDelay = ms => new Promise(resolve => setTimeout(resolve,ms));
+async function resolvePhoto(value, options={}) {
  if (!isStoredPhoto(value)) return value;
  if (photoUrls.has(value)) return photoUrls.get(value);
- if (photoPending.has(value)) return photoPending.get(value);
- const pending = (async () => {
-  try { const cached = await idbGet(`photo:${value}`); if (cached instanceof Blob) return await rememberPhoto(value, cached); } catch (_) {}
+ const current=photoPending.get(value);
+ if (current) { if(options.priority) { current.priority=1; if(current.job) current.job.priority=1; } return current.promise; }
+ const pending={job:null,promise:null,priority:options.priority ? 1 : 0};
+ photoPending.set(value,pending);
+ pending.promise=(async()=>{
+  try { const cached=await idbGet(`photo:${value}`); if(cached instanceof Blob) return await rememberPhoto(value,cached); } catch (_) {}
   if (offlineMode) return '';
-  const client = photoClient(); if (!client) return '';
-  // Signing uses an authenticated POST. Fetching the resulting short-lived URL avoids
-  // Storage versions that do not forward custom headers to authenticated GET policies.
-  const {data,error} = await client.storage.from(photoBucket).createSignedUrl(photoPath(value), 60);
-  if (error || !data?.signedUrl) throw error || new Error('图片授权失败');
-  const response = await fetch(data.signedUrl); if (!response.ok) throw new Error('图片下载失败');
-  return rememberPhoto(value, await response.blob());
- })().catch(() => '').finally(() => photoPending.delete(value));
- photoPending.set(value, pending); return pending;
+  for (let attempt=0;attempt<3;attempt++) {
+   if (attempt) await photoDelay(attempt===1 ? 800 : 2000);
+   if (offlineMode) break;
+   const url=await queuePhotoNetwork(value,pending.priority);
+   if(url) { photoFailures.delete(value); return url; }
+  }
+  photoFailures.add(value); return '';
+ })().finally(()=>photoPending.delete(value));
+ return pending.promise;
 }
 function displayPhoto(value) {
  if (!isStoredPhoto(value)) return value;
- if (photoUrls.has(value)) return photoUrls.get(value);
- const placeholder = photoPlaceholder(value);
- resolvePhoto(value).then(url => {
-  if (!url) return;
-  document.querySelectorAll('img').forEach(img => { if (img.getAttribute('src') === placeholder) { img.src = url; img.style.visibility = ''; } });
+ return photoUrls.get(value) || photoPlaceholder(value);
+}
+function storedPhotoFromElement(img) {
+ const src=img.getAttribute('src') || '', marker='#photo=';
+ if (!src.startsWith('data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=') || !src.includes(marker)) return '';
+ try { const value=decodeURIComponent(src.slice(src.indexOf(marker)+marker.length)); return isStoredPhoto(value) ? value : ''; } catch (_) { return ''; }
+}
+function showPhotoResult(value, url) {
+ document.querySelectorAll('img').forEach(img => {
+  if(storedPhotoFromElement(img)!==value)return;
+  const parent=img.closest('.dish');
+  let retry=parent?.querySelector('.photo-retry');
+  if(url) {
+   img.src=url; img.style.visibility='';
+   if(retry)retry.remove();
+  } else if(parent && !retry) {
+   retry=document.createElement('button'); retry.type='button'; retry.className='photo-retry';
+   retry.textContent='图片重试'; retry.setAttribute('aria-label','图片加载失败，点击重试');
+   retry.addEventListener('click',event=>{event.stopPropagation();retry.disabled=true;retry.textContent='加载中';photoFailures.delete(value);loadVisiblePhoto(value);});
+   parent.appendChild(retry);
+  } else if(retry) { retry.disabled=false; retry.textContent='图片重试'; }
  });
- return placeholder;
+}
+function loadVisiblePhoto(value) {
+ resolvePhoto(value,{priority:true}).then(url=>showPhotoResult(value,url));
+}
+let photoObserver;
+function watchPhotoElement(img) {
+ const value=storedPhotoFromElement(img); if(!value)return;
+ if(photoUrls.has(value)) { img.src=photoUrls.get(value); return; }
+ if(photoFailures.has(value)) { showPhotoResult(value,''); return; }
+ if(photoObserver) photoObserver.observe(img); else loadVisiblePhoto(value);
+}
+function watchPhotoTree(node) {
+ if(node.nodeType!==1)return;
+ if(node.matches('img'))watchPhotoElement(node);
+ node.querySelectorAll('img').forEach(watchPhotoElement);
+}
+function retryVisiblePhotos() {
+ photoFailures.clear();
+ document.querySelectorAll('img').forEach(img=>{const value=storedPhotoFromElement(img);if(value){const retry=img.closest('.dish')?.querySelector('.photo-retry');if(retry)retry.remove();watchPhotoElement(img);}});
+}
+if(typeof MutationObserver!=='undefined' && typeof document!=='undefined') {
+ if(typeof IntersectionObserver!=='undefined') photoObserver=new IntersectionObserver(entries=>entries.forEach(entry=>{if(entry.isIntersecting){photoObserver.unobserve(entry.target);const value=storedPhotoFromElement(entry.target);if(value)loadVisiblePhoto(value);}}),{rootMargin:'300px'});
+ new MutationObserver(records=>records.forEach(record=>record.addedNodes.forEach(watchPhotoTree))).observe(document.body,{childList:true,subtree:true});
+}
+// Cache all photos opportunistically after the visible images have started loading.
+let photoPrefetchTimer;
+function prefetchPhotos(values) {
+ clearTimeout(photoPrefetchTimer);
+ photoPrefetchTimer=setTimeout(()=>values.forEach(value=>{if(isStoredPhoto(value)&&!photoFailures.has(value))resolvePhoto(value);}),1500);
 }
 async function uploadPhoto(dataUrl, kind) {
  if (offlineMode || !sb) throw new Error('云端不可用');

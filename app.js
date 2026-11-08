@@ -174,6 +174,32 @@ async function startApp() {
   renderBetaEntry({ message: '验证失败，请检查网络后重试', canCancel: Boolean(urlBetaCode !== null && savedBetaCode) });
  }
 }
+// An offline launch must revalidate before it starts writing or downloading again.
+let reconnecting=false;
+async function recoverOnlineSession() {
+ if(!offlineMode || reconnecting || !sb || (typeof navigator!=='undefined' && navigator.onLine===false))return;
+ reconnecting=true;
+ try {
+  let timer;
+  const {data,error}=await Promise.race([sb.rpc('validate_beta_code'),new Promise((_,reject)=>{timer=setTimeout(()=>reject(new Error('验证超时')),8000)})]).finally(()=>clearTimeout(timer));
+  if(error || !data)return;
+  offlineMode=false;
+  document.querySelectorAll('.offline-notice').forEach(el=>el.remove());
+  attachDishFocusSync();
+  retryVisiblePhotos();
+  await syncFromCloud();
+ } catch (_) { /* Keep cached data and try again on the next online/focus event. */ }
+ finally { reconnecting=false; }
+}
+function restorePhotoConnection() {
+ if(offlineMode) recoverOnlineSession();
+ else retryVisiblePhotos();
+}
+window.addEventListener('online',restorePhotoConnection);
+window.addEventListener('focus',restorePhotoConnection);
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)restorePhotoConnection()});
+// Server reachability can return without an 'online' event (for example after a timeout).
+setInterval(()=>{if(offlineMode && !document.hidden)recoverOnlineSession()},15000);
 if (document.documentElement.classList.contains('is-standalone')) {
  setTimeout(() => document.getElementById('launch')?.classList.add('is-finished'), 900);
 }
