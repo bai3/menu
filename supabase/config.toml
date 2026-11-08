@@ -1,0 +1,2 @@
+[functions.shopping-list]
+verify_jwt = false

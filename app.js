@@ -84,6 +84,7 @@ function bind(){
   const reader=new FileReader();reader.onerror=failed;reader.onload=()=>{const image=new Image();image.onerror=failed;image.onload=()=>{if(version!==state.diaryPhotoVersion)return;try{const scale=Math.min(1,1200/Math.max(image.width,image.height));const canvas=document.createElement('canvas');canvas.width=Math.max(1,Math.round(image.width*scale));canvas.height=Math.max(1,Math.round(image.height*scale));const context=canvas.getContext('2d');if(!context)throw new Error('canvas unavailable');context.fillStyle='#fff';context.fillRect(0,0,canvas.width,canvas.height);context.drawImage(image,0,0,canvas.width,canvas.height);state.diaryPhoto=canvas.toDataURL('image/jpeg',.8);state.diaryPhotoProcessing=false;saveMenuDraft();refreshDiaryPhoto()}catch(_){failed()}};image.src=reader.result};reader.readAsDataURL(file);
  });
  const removeDiaryPhoto=app.querySelector('[data-action=remove-diary-photo]');if(removeDiaryPhoto)removeDiaryPhoto.onclick=()=>{state.diaryPhotoVersion++;state.diaryPhotoProcessing=false;state.diaryPhoto='';saveMenuDraft();refreshDiaryPhoto()};
+ const shoppingOpen=app.querySelector('[data-action=shopping-open]');if(shoppingOpen)shoppingOpen.onclick=openShopping;
  const saveDiary=app.querySelector('[data-action=save-diary]');if(saveDiary)saveDiary.onclick=saveHistory;
  const title=app.querySelector('.menu-title-input');if(title)title.oninput=e=>{state.title=e.target.value;saveMenuDraft()};
  const surprise=app.querySelector('[data-action=surprise]');if(surprise)surprise.onclick=drawSurprise;

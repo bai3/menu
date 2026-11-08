@@ -76,3 +76,6 @@
 :root[data-appearance="dark"] .diary-card-title h3{color:var(--theme-ink)}
 :root[data-appearance="dark"] :is(.diary-dishes,.diary-note,.diary-date span,.diary-card-title span){color:var(--theme-muted)}
 :root[data-appearance="dark"] :is(.diary-date,.diary-note){border-color:var(--theme-border)}
+:root[data-appearance="dark"] .shopping-export button:last-child{background:var(--theme-action);border-color:var(--theme-action);color:#fffaf3}
+:root[data-appearance="dark"] .shopping-image-dialog .image-dialog-head strong{color:var(--theme-ink)}
+:root[data-appearance="dark"] .shopping-image-dialog .image-dialog-head span{color:var(--theme-muted)}
