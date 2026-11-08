@@ -5,7 +5,6 @@ const photoUrls = new Map();
 const photoPending = new Map();
 const isStoredPhoto = value => typeof value === 'string' && value.startsWith(photoPrefix);
 const photoPath = value => value.slice(photoPrefix.length);
-const photoPlaceholder = value => `data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=#photo=${encodeURIComponent(value)}`;
 async function photoOwnerFolder() {
  const hash = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(betaCode));
  return Array.from(new Uint8Array(hash), n => n.toString(16).padStart(2, '0')).join('');
@@ -95,14 +94,20 @@ async function resolvePhoto(value, options={}) {
  })().finally(()=>photoPending.delete(value));
  return pending.promise;
 }
-function displayPhoto(value) {
- if (!isStoredPhoto(value)) return value;
- return photoUrls.get(value) || photoPlaceholder(value);
+// Storage images have no src until the real photo is available.
+function photoImageAttributes(value, fallback) {
+ if (!isStoredPhoto(value)) return `src="${escapeText(fallback)}"`;
+ const url=photoUrls.get(value);
+ return `data-photo-key="${encodeURIComponent(value)}"${url ? ` src="${escapeText(url)}"` : ''}`;
 }
 function storedPhotoFromElement(img) {
- const src=img.getAttribute('src') || '', marker='#photo=';
- if (!src.startsWith('data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=') || !src.includes(marker)) return '';
- try { const value=decodeURIComponent(src.slice(src.indexOf(marker)+marker.length)); return isStoredPhoto(value) ? value : ''; } catch (_) { return ''; }
+ if (img.getAttribute('src')) return '';
+ const key=img.getAttribute('data-photo-key'); if(!key)return '';
+ try { const value=decodeURIComponent(key); return isStoredPhoto(value) ? value : ''; } catch (_) { return ''; }
+}
+function applyPhoto(img, url) {
+ img.style.visibility='';
+ img.src=url;
 }
 function showPhotoResult(value, url) {
  document.querySelectorAll('img').forEach(img => {
@@ -110,7 +115,7 @@ function showPhotoResult(value, url) {
   const parent=img.closest('.dish');
   let retry=parent?.querySelector('.photo-retry');
   if(url) {
-   img.src=url; img.style.visibility='';
+   applyPhoto(img,url);
    if(retry)retry.remove();
   } else if(parent && !retry) {
    retry=document.createElement('button'); retry.type='button'; retry.className='photo-retry';
@@ -126,7 +131,7 @@ function loadVisiblePhoto(value) {
 let photoObserver;
 function watchPhotoElement(img) {
  const value=storedPhotoFromElement(img); if(!value)return;
- if(photoUrls.has(value)) { img.src=photoUrls.get(value); return; }
+ if(photoUrls.has(value)) { applyPhoto(img,photoUrls.get(value)); img.closest('.dish')?.querySelector('.photo-retry')?.remove(); return; }
  if(photoFailures.has(value)) { showPhotoResult(value,''); return; }
  if(photoObserver) photoObserver.observe(img); else loadVisiblePhoto(value);
 }
@@ -147,7 +152,7 @@ if(typeof MutationObserver!=='undefined' && typeof document!=='undefined') {
 let photoPrefetchTimer;
 function prefetchPhotos(values) {
  clearTimeout(photoPrefetchTimer);
- photoPrefetchTimer=setTimeout(()=>values.forEach(value=>{if(isStoredPhoto(value)&&!photoFailures.has(value))resolvePhoto(value);}),1500);
+ photoPrefetchTimer=setTimeout(()=>values.forEach(value=>{if(isStoredPhoto(value)&&!photoFailures.has(value))resolvePhoto(value).then(url=>{if(url)showPhotoResult(value,url)});}),1500);
 }
 async function uploadPhoto(dataUrl, kind) {
  if (offlineMode || !sb) throw new Error('云端不可用');

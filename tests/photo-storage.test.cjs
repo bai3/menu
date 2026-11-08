@@ -11,7 +11,7 @@ function setup(options={}) {
   createSignedUrl:async(path)=>{calls.push(['sign',path]);if(options.sign)return options.sign(path);return {data:{signedUrl:'https://example.test/photo'},error:null}}
  };
  const db={storage:{from:()=>bucket},from:table=>({select:()=>({order:()=>({range:async()=>({data:table==='dishes'?(options.rows||[]):[],error:null})})})}),rpc:async(name,args)=>{calls.push(['rpc',args]);return {data:options.updated!==false,error:null}}};
- const ctx=vm.createContext({Blob,AbortController,setTimeout:options.setTimeout||setTimeout,clearTimeout,URL:{createObjectURL:()=> 'blob:local'},TextEncoder,Uint8Array,crypto:webcrypto,betaCode:'test-code',offlineMode:false,sb:db,idbGet:async key=>blobs.get(key),idbSet:async(key,value)=>blobs.set(key,value),document:{querySelectorAll:()=>[]},fetch:async url=>url.startsWith('data:')?new Response(new Blob(['photo'],{type:'image/jpeg'})):new Response(new Blob([options.download||'photo'],{type:'image/jpeg'})),Response,syncFromCloud:async()=>{}});
+ const ctx=vm.createContext({escapeText:value=>String(value).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])),Blob,AbortController,setTimeout:options.setTimeout||setTimeout,clearTimeout,URL:{createObjectURL:()=> 'blob:local'},TextEncoder,Uint8Array,crypto:webcrypto,betaCode:'test-code',offlineMode:false,sb:db,idbGet:async key=>blobs.get(key),idbSet:async(key,value)=>blobs.set(key,value),document:{querySelectorAll:()=>[]},fetch:async url=>url.startsWith('data:')?new Response(new Blob(['photo'],{type:'image/jpeg'})):new Response(new Blob([options.download||'photo'],{type:'image/jpeg'})),Response,syncFromCloud:async()=>{}});
  vm.runInContext(source,ctx);
  return {ctx,calls,blobs};
 }
@@ -57,4 +57,36 @@ test('a stalled request is aborted after its deadline',async()=>{
  const h=setup({setTimeout:(fn,ms)=>setTimeout(fn,0)});
  h.ctx.fetch=(_input,options)=>new Promise((resolve,reject)=>options.signal.addEventListener('abort',()=>reject(new Error('aborted'))));
  await assert.rejects(h.ctx.photoTimedFetch('https://example.test/hang'),/aborted/);
+});
+
+test('a previously hidden image becomes visible when the memory cache is hit',()=>{
+ const h=setup(),value='storage://folder/dishes/cached.jpg';
+ let removed=false;
+ const img={src:'',style:{visibility:'hidden'},getAttribute(name){return name==='src'?this.src:name==='data-photo-key'?encodeURIComponent(value):null},closest(){return {querySelector:()=>({remove:()=>{removed=true}})}}};
+ h.ctx.imageUnderTest=img;h.ctx.cachedValue=value;
+ vm.runInContext("photoUrls.set(cachedValue,'blob:cached')",h.ctx);
+ h.ctx.watchPhotoElement(img);
+ assert.equal(img.src,'blob:cached');assert.equal(img.style.visibility,'');assert.equal(removed,true);
+});
+test('an asynchronously resolved image is made visible and its retry control removed',()=>{
+ const h=setup(),value='storage://folder/dishes/delayed.jpg';let removed=false;
+ const img={src:'',style:{visibility:'hidden'},getAttribute(name){return name==='src'?this.src:name==='data-photo-key'?encodeURIComponent(value):null},closest(){return {querySelector:()=>({remove:()=>{removed=true}})}}};
+ h.ctx.document.querySelectorAll=()=>[img];h.ctx.showPhotoResult(value,'blob:resolved');
+ assert.equal(img.src,'blob:resolved');assert.equal(img.style.visibility,'');assert.equal(removed,true);
+});
+test('uncached photos have no placeholder source and stored paths round-trip safely',()=>{
+ const h=setup(),value='storage://folder/dishes/a b.jpg';
+ const attrs=h.ctx.photoImageAttributes(value,'');
+ assert.match(attrs,/^data-photo-key=/);assert.doesNotMatch(attrs,/\ssrc=/);
+ assert.equal(h.ctx.storedPhotoFromElement({getAttribute:name=>name==='data-photo-key'?encodeURIComponent(value):null}),value);
+ assert.equal(h.ctx.storedPhotoFromElement({getAttribute:name=>name==='src'?'data:image/jpeg;base64,abc':null}),'');
+});
+
+test('background cache completion displays the photo even before an intersection callback',async()=>{
+ const h=setup({setTimeout:(fn,ms)=>ms===12000?setTimeout(fn,ms):setTimeout(fn,0)});
+ const value='storage://folder/dishes/background.jpg';h.blobs.set('photo:'+value,new Blob(['image']));
+ const img={src:'',style:{visibility:'hidden'},getAttribute(name){return name==='src'?this.src:name==='data-photo-key'?encodeURIComponent(value):null},closest(){return null}};
+ h.ctx.document.querySelectorAll=()=>[img];h.ctx.prefetchPhotos([value]);
+ await new Promise(resolve=>setTimeout(resolve,30));
+ assert.equal(img.src,'blob:local');assert.equal(img.style.visibility,'');
 });

@@ -60,7 +60,8 @@ async function initDishes() {
  // 申请持久存储：避免浏览器在空间紧张时清理本地数据。
  try { if (navigator.storage && navigator.storage.persist) await navigator.storage.persist(); } catch (_) {}
 }
-function dishImage(d) { return isStoredPhoto(d.image) ? displayPhoto(d.image) : d.image.startsWith('data:image/') ? d.image : './public/assets/' + d.image; }
+function dishImage(d) { return isStoredPhoto(d.image) ? (photoUrls.get(d.image) || '') : d.image.startsWith('data:image/') ? d.image : './public/assets/' + d.image; }
+function dishPhotoAttributes(d) { return photoImageAttributes(d.image,dishImage(d)); }
 function saveLocalDishes(next) {
  dishes = next.map(normalizeDish);
  const previousCount = state.selected.length;
