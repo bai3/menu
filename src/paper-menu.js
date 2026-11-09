@@ -6,6 +6,26 @@ let paperTurning = false;
 let paperTurnTimer = null;
 let paperQueuedDirection = 0;
 let pendingPaperTap = null;
+const paperPhotoRatios = new Map();
+const paperPhotoMeasurements = new Map();
+let paperLayoutRatios = new Map();
+function measurePaperPhoto(dish) {
+ const key = dish.image;
+ if (!key || paperPhotoRatios.has(key)) return Promise.resolve();
+ if (paperPhotoMeasurements.has(key)) return paperPhotoMeasurements.get(key);
+ const pending = (async () => {
+  const url = isStoredPhoto(key) ? await resolvePhoto(key) : dishImage(dish);
+  if (!url) return;
+  await new Promise(resolve => {
+   const image = new Image();
+   image.onload = () => { if (image.naturalWidth && image.naturalHeight) paperPhotoRatios.set(key, image.naturalWidth / image.naturalHeight); resolve(); };
+   image.onerror = resolve;
+   image.src = url;
+  });
+ })().catch(() => {}).finally(() => paperPhotoMeasurements.delete(key));
+ paperPhotoMeasurements.set(key, pending);
+ return pending;
+}
 function paperPages() {
  const field = paperFilterMode() === 'cuisine' ? 'cuisine' : 'category';
  const options = field === 'cuisine' ? cuisines : categories.slice(1);
@@ -13,7 +33,16 @@ function paperPages() {
  const pages = [];
  groups.forEach(group => {
   const items = paperDishes().filter(d => d[field] === group && d.is_available);
-  for (let i = 0; i < items.length; i += 2) pages.push(items.slice(i, i + 2));
+  let pair = [];
+  const flush = () => { if (pair.length) { pages.push(pair); pair = []; } };
+  items.forEach(item => {
+   const ratio = paperLayoutRatios.get(item.image);
+   // Unknown and unusually tall or wide photos get a leaf of their own.
+   if (!ratio || ratio < .82 || ratio > 1.8) { flush(); pages.push([item]); return; }
+   pair.push(item);
+   if (pair.length === 2) flush();
+  });
+  flush();
  });
  if (!pages.length) pages.push([]);
  if (pages.length % 2) pages.push([]);
@@ -21,9 +50,9 @@ function paperPages() {
 }
 function paperLeaf(items, pageNumber) {
  const field = paperFilterMode() === 'cuisine' ? 'cuisine' : 'category';
- return `<section class="paper-leaf ${pageNumber % 2 ? 'paper-leaf-right' : 'paper-leaf-left'}"><div class="paper-leaf-inner"><header class="paper-leaf-head"><span>家宴</span><span>THE FAMILY MENU</span></header><div class="paper-leaf-title"><span>THE TASTE OF HOME</span><h2>${items.length ? escapeText(items[0][field]) : '家的味道'}</h2><i></i></div><div class="paper-dishes">${items.length ? items.map((d, index) => `<article class="paper-dish paper-dish-${index + 1}" role="button" tabindex="0" data-paper-dish="${escapeText(d.id)}" aria-label="${escapeText(d.name)}，单击加入菜单，双击取消"><img ${dishPhotoAttributes(d)} alt="" onerror="this.style.visibility='hidden'"><div class="paper-dish-copy"><span>${escapeText(d[field])}</span><h3>${escapeText(d.name)} ${spiceBadge(d)}</h3><p>${escapeText(d.note || '用心烹调，与你分享')}</p></div></article>`).join('') : '<div class="paper-blank">好好吃饭<br><span>慢慢生活</span></div>'}</div><footer class="paper-leaf-foot"><span>一餐一饭，皆是欢喜</span></footer></div></section>`;
+ return `<section class="paper-leaf ${pageNumber % 2 ? 'paper-leaf-right' : 'paper-leaf-left'} ${items.length === 2 ? 'paper-leaf-pair' : 'paper-leaf-single'}"><div class="paper-leaf-inner"><header class="paper-leaf-head"><span>家宴</span><span>THE FAMILY MENU</span></header><div class="paper-leaf-title"><span>THE TASTE OF HOME</span><h2>${items.length ? escapeText(items[0][field]) : '家的味道'}</h2><i></i></div><div class="paper-dishes">${items.length ? items.map((d, index) => `<article class="paper-dish paper-dish-${index + 1}" role="button" tabindex="0" data-paper-dish="${escapeText(d.id)}" aria-label="${escapeText(d.name)}，单击加入菜单，双击取消"><div class="paper-dish-photo"><img ${dishPhotoAttributes(d)} alt="" onerror="this.style.visibility='hidden'"></div><div class="paper-dish-copy"><span>${escapeText(d[field])}</span><h3>${escapeText(d.name)} ${spiceBadge(d)}</h3><p>${escapeText(d.note || '用心烹调，与你分享')}</p></div></article>`).join('') : '<div class="paper-blank">好好吃饭<br><span>慢慢生活</span></div>'}</div><footer class="paper-leaf-foot"><span>一餐一饭，皆是欢喜</span></footer></div></section>`;
 }
-function openPaperMenu() {
+async function openPaperMenu() {
  paperPage = 0;
  document.body.classList.add('paper-open');
  const overlay = document.createElement('div');
@@ -33,8 +62,14 @@ function openPaperMenu() {
  overlay.setAttribute('aria-label', '纸质菜单，滑动或点击页面边缘翻页');
  overlay.onkeydown = e => { if (e.key === 'ArrowLeft') turnPaperPage(-1); else if (e.key === 'ArrowRight') turnPaperPage(1); else if (e.key === 'Escape') closePaperMenu(); };
  document.body.appendChild(overlay);
- renderPaperMenu();
+ overlay.innerHTML = '<div class="paper-stage"><header class="paper-toolbar"><button type="button" data-paper-close aria-label="返回菜品列表">返回列表</button></header><div class="paper-preparing" role="status">正在翻开菜单…</div></div>';
+ overlay.querySelector('[data-paper-close]').onclick = closePaperMenu;
  overlay.querySelector('[data-paper-close]').focus();
+ // Wait briefly for dimensions, then keep pagination stable while this book is open.
+ await Promise.race([Promise.all(paperDishes().filter(d => d.is_available).map(measurePaperPhoto)), new Promise(resolve => setTimeout(resolve, 1500))]);
+ if (!overlay.isConnected) return;
+ paperLayoutRatios = new Map(paperPhotoRatios);
+ renderPaperMenu();
 }
 function renderPaperMenu() {
  const overlay = document.querySelector('.paper-overlay');

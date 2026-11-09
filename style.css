@@ -810,3 +810,30 @@ button.filter[hidden]{display:none}
 .nutrition-menu-context{padding:16px 18px;border:1px solid var(--theme-border);border-radius:14px;background:var(--theme-surface)}
 .nutrition-menu-context strong{font-size:12px;color:var(--theme-ink)}
 .nutrition-screen .nutrition-card{margin-top:14px}
+
+/* A restrained printed menu: generous solo plates and compact paired entries. */
+.paper-leaf-right .paper-leaf-title{margin-left:0}
+.paper-dishes{justify-content:stretch;gap:0}
+.paper-dish,.paper-dish-1,.paper-dish-2,.paper-leaf-right .paper-dish-1,.paper-leaf-right .paper-dish-2{display:flex;flex:1;min-height:0;flex-direction:column;align-items:stretch;gap:clamp(5px,1.5cqh,14px);margin:0}
+.paper-dish-photo{flex:1;min-height:0;display:flex;align-items:center;justify-content:flex-start;padding:clamp(4px,1cqh,10px) 0}
+.paper-dish .paper-dish-photo img,.paper-leaf-right .paper-dish-photo img{display:block;width:min(82%,320px);height:82%;max-height:none;aspect-ratio:auto;object-fit:contain;object-position:left center;border:0;border-radius:0;box-shadow:none}
+.paper-dish-copy,.paper-dish-2 .paper-dish-copy{flex:none;align-self:stretch;padding-bottom:clamp(5px,1.5cqh,14px);text-align:left}
+.paper-dish-copy>span{font-family:var(--sans)}
+.paper-dish h3{margin:3px 0;line-height:1.2}
+.paper-dish p{line-height:1.4}
+.paper-leaf-pair .paper-dishes{gap:0}
+.paper-leaf-pair .paper-dish,.paper-leaf-right.paper-leaf-pair .paper-dish{flex:1 1 0;flex-direction:row;align-items:center;gap:clamp(12px,2vw,24px);min-height:0}
+.paper-leaf-pair .paper-dish+.paper-dish{border-top:1px solid #d9cbb8}
+.paper-leaf-pair .paper-dish-photo{flex:0 0 42%;height:82%;padding:0}
+.paper-leaf-pair .paper-dish-photo img,.paper-leaf-right.paper-leaf-pair .paper-dish-photo img{width:100%;height:100%;max-width:200px;object-position:left center}
+.paper-leaf-pair .paper-dish-copy,.paper-leaf-pair .paper-dish-2 .paper-dish-copy{flex:1;align-self:center;min-width:0;padding:0}
+.paper-leaf-pair .paper-dish-2 .paper-dish-photo{order:2}
+.paper-leaf-pair .paper-dish-2 .paper-dish-photo img{object-position:right center}
+.paper-preparing{margin:auto;color:#927b5f;font:14px var(--serif);letter-spacing:.15em}
+@media(max-height:500px) and (orientation:landscape),(max-width:500px) and (orientation:portrait){.paper-dish,.paper-dish-1,.paper-dish-2,.paper-leaf-right .paper-dish-1,.paper-leaf-right .paper-dish-2{gap:3px}.paper-dish-photo{padding:3px 0}.paper-dish-copy,.paper-dish-2 .paper-dish-copy{padding-bottom:5px}}
+
+/* A single dish reads across the page, with the photo leading the description. */
+.paper-leaf-single .paper-dish,.paper-leaf-right.paper-leaf-single .paper-dish{flex-direction:row;align-items:center;gap:clamp(12px,2vw,28px)}
+.paper-leaf-single .paper-dish-photo{flex:0 0 55%;height:78%;padding:0}
+.paper-leaf-single .paper-dish-photo img,.paper-leaf-right.paper-leaf-single .paper-dish-photo img{width:100%;height:100%;max-width:320px}
+.paper-leaf-single .paper-dish-copy{flex:1;align-self:center;min-width:0;padding:0}
