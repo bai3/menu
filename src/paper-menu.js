@@ -9,6 +9,7 @@ let pendingPaperTap = null;
 const paperPhotoRatios = new Map();
 const paperPhotoMeasurements = new Map();
 let paperLayoutRatios = new Map();
+let paperCommittedPages = [];
 function measurePaperPhoto(dish) {
  const key = dish.image;
  if (!key || paperPhotoRatios.has(key)) return Promise.resolve();
@@ -29,16 +30,19 @@ function measurePaperPhoto(dish) {
 function paperPages() {
  const field = paperFilterMode() === 'cuisine' ? 'cuisine' : 'category';
  const options = field === 'cuisine' ? cuisines : categories.slice(1);
- const groups = [...options, ...new Set(paperDishes().map(d => d[field]).filter(value => value && !options.includes(value)))];
- const pages = [];
+ const allDishes = paperDishes();
+ const byId = new Map(allDishes.filter(d => d.is_available).map(d => [d.id, d]));
+ const pages = paperCommittedPages.map(page => page.map(id => byId.get(id)).filter(Boolean));
+ const committed = new Set(paperCommittedPages.flat());
+ const groups = [...options, ...new Set(allDishes.map(d => d[field]).filter(value => value && !options.includes(value)))];
  groups.forEach(group => {
-  const items = paperDishes().filter(d => d[field] === group && d.is_available);
+  const items = allDishes.filter(d => d[field] === group && d.is_available && !committed.has(d.id));
   let pair = [];
   const flush = () => { if (pair.length) { pages.push(pair); pair = []; } };
   items.forEach(item => {
    const ratio = paperLayoutRatios.get(item.image);
    // Unknown and unusually tall or wide photos get a leaf of their own.
-   if (!ratio || ratio < .82 || ratio > 1.8) { flush(); pages.push([item]); return; }
+   if (!ratio || ratio < .65 || ratio > 2.2) { flush(); pages.push([item]); return; }
    pair.push(item);
    if (pair.length === 2) flush();
   });
@@ -54,6 +58,7 @@ function paperLeaf(items, pageNumber) {
 }
 async function openPaperMenu() {
  paperPage = 0;
+ paperCommittedPages = [];
  document.body.classList.add('paper-open');
  const overlay = document.createElement('div');
  overlay.className = 'paper-overlay';
@@ -166,11 +171,20 @@ function flushPaperTap() {
 }
 function turnPaperPage(direction) {
  if (paperTurning) { paperQueuedDirection = direction; return; }
- const pages = paperPages();
+ let pages = paperPages();
  const next = paperPage + direction;
  if (next < 0 || next >= pages.length / 2) return;
  const book = document.querySelector('.paper-book');
  if (!book) return;
+ if (direction > 0) {
+  // Keep every spread already visited intact, but use newly measured photos
+  // when laying out the pages the reader has not reached yet.
+  const committedCount = Math.max(paperCommittedPages.length, (paperPage + 1) * 2);
+  paperCommittedPages = pages.slice(0, committedCount).map(page => page.map(d => d.id));
+  paperLayoutRatios = new Map(paperPhotoRatios);
+  pages = paperPages();
+  if (next >= pages.length / 2) return;
+ }
  flushPaperTap();
  if (matchMedia('(prefers-reduced-motion: reduce)').matches) { paperPage = next; renderPaperMenu(); return; }
  paperTurning = true;
