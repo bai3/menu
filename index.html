@@ -16,8 +16,14 @@
   <style>
     html,body{margin:0;background:#f8f0e4}
     .launch{display:none}
-    .is-pwa .launch{position:fixed;inset:0;z-index:9999;display:grid;place-items:center;background:#f8f0e4}
-    .launch img{width:96px;height:96px}
+    .is-pwa .launch{position:fixed;inset:0;z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;overflow:hidden;background:#f8f0e4;color:#654537}
+    .launch::before{content:"";position:absolute;inset:0;opacity:.28;background-image:radial-gradient(#d7bba1 .6px,transparent .6px);background-size:5px 5px}
+    .launch-inner{position:relative;display:flex;flex-direction:column;align-items:center;transform:translateY(-2vh)}
+    .launch-mark{width:108px;height:108px;border-radius:32px;box-shadow:0 14px 32px #a65d4230}
+    .launch-name{margin:27px 0 0;font:600 27px/1.3 "Songti SC","STSong",serif;letter-spacing:.2em;text-indent:.2em}
+    .launch-subtitle{margin:12px 0 0;color:#ad8b76;font:11px/1.5 "PingFang SC",sans-serif;letter-spacing:.28em;text-indent:.28em}
+    .launch-footer{position:absolute;bottom:max(42px,env(safe-area-inset-bottom));display:flex;align-items:center;gap:12px;color:#bca28e;font:10px/1.5 "PingFang SC",sans-serif;letter-spacing:.15em}
+    .launch-footer::before,.launch-footer::after{content:"";width:22px;height:1px;background:#d7c2af}
     .launch[hidden]{display:none}
     .startup-retry{display:none;position:fixed;bottom:48px;left:50%;transform:translateX(-50%);z-index:10000;border:1px solid #dfc3b0;border-radius:20px;padding:10px 18px;background:#fff9f1;color:#9d604a}
     .startup-failed .startup-retry{display:block}
@@ -32,7 +38,10 @@
   <link rel="stylesheet" href="./theme.css" />
 </head>
 <body>
-  <div class="launch" id="launch" aria-label="家宴启动页"><img src="./public/assets/icon-192.png" alt="家宴" /></div>
+  <div class="launch" id="launch" aria-label="家宴启动页">
+    <div class="launch-inner"><img class="launch-mark" src="./public/assets/icon-192.png" alt="" /><p class="launch-name">家宴</p><p class="launch-subtitle">家的味道，日日有新意</p></div>
+    <div class="launch-footer">为每一顿家常饭</div>
+  </div>
   <button class="startup-retry" type="button" onclick="location.reload()">暂时无法打开，点击重试</button>
   <main class="presentation">
     <aside class="intro" aria-label="设计说明">

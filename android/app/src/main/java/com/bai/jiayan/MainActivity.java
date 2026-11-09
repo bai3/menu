@@ -35,7 +35,6 @@ public class MainActivity extends Activity {
     private byte[] pendingImage;
     private boolean pageFailed;
     private boolean pageReady;
-    private android.window.SplashScreenView startupView;
     private long lastBack;
 
     private boolean trusted(Uri uri) {
@@ -48,14 +47,12 @@ public class MainActivity extends Activity {
     @Override public void onCreate(Bundle state) {
         super.onCreate(state);
         if (android.os.Build.VERSION.SDK_INT >= 31) {
-            getSplashScreen().setOnExitAnimationListener(view -> {
-                startupView = view;
-                if (pageReady || pageFailed) releaseStartup();
-            });
+            // Hand off immediately to the matching native brand layout, not a second H5 splash.
+            getSplashScreen().setOnExitAnimationListener(view -> view.remove());
         }
         LinearLayout root = new LinearLayout(this);
         root.setOrientation(LinearLayout.VERTICAL);
-        root.setBackgroundResource(com.bai.jiayan.R.drawable.startup_background);
+        root.setBackground(new StartupBackground(this));
         // Apply the system bars as padding, including on edge-to-edge Android versions.
         root.setOnApplyWindowInsetsListener((v, insets) -> {
             if (android.os.Build.VERSION.SDK_INT >= 30) {
@@ -155,15 +152,8 @@ public class MainActivity extends Activity {
         root.postDelayed(() -> { if (!pageReady && !pageFailed) showError(); }, 20000);
     }
 
-    private void releaseStartup() {
-        if (android.os.Build.VERSION.SDK_INT >= 31 && startupView != null) {
-            startupView.remove();
-            startupView = null;
-        }
-    }
     private void showError() {
         pageFailed = true;
-        releaseStartup();
         progress.setVisibility(View.GONE);
         errorPanel.setVisibility(View.VISIBLE);
     }
@@ -175,8 +165,7 @@ public class MainActivity extends Activity {
                 if (isFinishing() || pageFailed || !trusted(Uri.parse(web.getUrl() == null ? "" : web.getUrl()))) return;
                 pageReady = true;
                 web.setVisibility(View.VISIBLE);
-                releaseStartup();
-            });
+                    });
         }
         @JavascriptInterface public void save(String dataUrl) {
             if (dataUrl == null || dataUrl.length() > 28 * 1024 * 1024) return;
