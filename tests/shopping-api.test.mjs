@@ -85,3 +85,16 @@ test('rejects seeded dishes outside the account without spending quota',async()=
  assert.equal(h.calls.length,3);
  assert.equal(new URL(h.calls[2][0]).searchParams.get('owner_key'),'eq.owner-1');
 });
+
+test('nutrition uses the same identity, ownership and quota checks and validates ranges',async()=>{
+ const nutrition={summary:'荤素搭配',assumption:'每道菜一份家庭共享盘',totals:Object.fromEntries(['energyKcal','proteinG','carbsG','fatG'].map(key=>[key,{min:10,max:20}])),strengths:['含蛋白质'],suggestions:['增加蔬菜']};
+ const h=backend({'/v1/chat/completions':()=>Response.json({choices:[{finish_reason:'stop',message:{content:JSON.stringify(nutrition)}}]})});
+ const response=await handleShoppingRequest(post({dishIds:['a'],task:'nutrition'}),config,h.fetcher);
+ assert.equal(response.status,200);assert.deepEqual((await response.json()).nutrition,nutrition);
+ assert.equal(h.calls.length,5);assert.match(JSON.parse(h.calls[4][1].body).messages[1].content,/不是每人/);
+ nutrition.totals.fatG={min:20,max:10};
+ assert.equal((await handleShoppingRequest(post({dishIds:['a'],task:'nutrition'}),config,h.fetcher)).status,502);
+});
+test('rejects unknown AI tasks before accessing downstream services',async()=>{
+ const h=backend();assert.equal((await handleShoppingRequest(post({dishIds:['a'],task:'other'}),config,h.fetcher)).status,400);assert.equal(h.calls.length,0);
+});

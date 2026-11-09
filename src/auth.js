@@ -47,6 +47,7 @@ function clearAccountView() {
  historyEntries=[];historyRequest++;recommendationMeals=[];recommendationHasData=false;
  state.selected=[];state.diaryNote='';state.diaryPhoto='';state.draftImage=null;state.editingId=null;state.planResult=null;state.title='今天的菜单';state.page='dishes';
  resetShopping();
+ resetNutrition();
  document.querySelectorAll('.paper-overlay,.image-dialog,.detail-backdrop').forEach(node=>node.remove());
  for(const url of photoUrls.values())URL.revokeObjectURL(url);
  photoUrls.clear();

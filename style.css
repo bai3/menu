@@ -772,3 +772,41 @@ button.filter[hidden]{display:none}
 .menu-screen .menu-utilities button span{color:inherit;font:inherit}.menu-screen .menu-utilities button svg{width:17px;height:17px;flex:none}.menu-utilities-divider{width:1px;height:16px;background:var(--theme-border)}
 .menu-screen .menu-utilities button:focus-visible{outline:2px solid var(--theme-accent);outline-offset:2px}.menu-screen .menu-utilities button:active{background:var(--theme-soft)}
 @media(hover:hover){.menu-screen .menu-utilities button:hover{background:var(--theme-soft)}}
+
+/* AI nutrition on the menu page. */
+.nutrition-card{margin:20px 0;padding:20px;border:1px solid var(--theme-border);border-radius:18px;background:var(--theme-surface);color:var(--theme-ink)}
+.nutrition-head{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.nutrition-label{font-size:10px;letter-spacing:1.5px;color:var(--theme-muted)}
+.nutrition-head h3{font-size:18px;margin:7px 0;font-weight:600}
+.nutrition-head button{flex-shrink:0;border:1px solid var(--theme-border);border-radius:20px;background:transparent;color:inherit;padding:9px 14px;font:inherit;font-size:12px;cursor:pointer;min-height:40px}
+.nutrition-head button:disabled{opacity:.55;cursor:wait}
+.nutrition-head button:focus-visible,.nutrition-assumption summary:focus-visible{outline:2px solid var(--theme-accent);outline-offset:3px}
+.nutrition-hint,.nutrition-status,.nutrition-summary{font-size:13px;line-height:1.8;margin:12px 0}
+.nutrition-status{display:flex;align-items:center;gap:10px}
+.nutrition-error{font-size:13px;color:var(--theme-accent);line-height:1.7}
+.nutrition-scope{font-size:11px;color:var(--theme-muted);margin:18px 0 10px}
+.nutrition-metrics{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:0}
+.nutrition-metrics>div{padding:13px 10px;border-radius:12px;background:var(--theme-soft);min-width:0}
+.nutrition-metrics dt{font-size:11px;color:var(--theme-muted)}
+.nutrition-metrics dd{margin:6px 0 0;font-size:16px;font-weight:600;overflow-wrap:anywhere;font-variant-numeric:tabular-nums}
+.nutrition-metrics small{font-size:10px;font-weight:400;margin-left:5px}
+.nutrition-advice h4{font-size:12px;margin:18px 0 7px}
+.nutrition-advice ul{padding-left:17px;margin:0;font-size:12px;line-height:1.9}
+.nutrition-assumption{font-size:11px;line-height:1.8;margin-top:16px;color:var(--theme-muted)}
+.nutrition-assumption summary{cursor:pointer}
+.nutrition-disclaimer{font-size:10px;line-height:1.8;color:var(--theme-muted);margin:14px 0 0}
+
+/* Secondary menu tools and nutrition detail page. */
+.menu-card-foot-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px 10px}
+.menu-card-foot-actions p{grid-column:1/-1;text-align:center;margin-bottom:5px}
+.menu-card-foot-actions .shopping-entry{min-width:0;min-height:44px}
+.menu-card-foot-actions .nutrition-entry{border-left:1px solid var(--theme-border)}
+.shopping-entry:focus-visible{outline:2px solid var(--theme-accent);outline-offset:2px;border-radius:8px}
+.nutrition-screen{background:var(--theme-page)}
+.nutrition-scroll{padding-bottom:max(40px,env(safe-area-inset-bottom))}
+.nutrition-page-heading{margin:22px 0}
+.nutrition-page-heading h2{margin:9px 0;font:600 27px var(--serif);color:var(--theme-ink)}
+.nutrition-page-heading p,.nutrition-menu-context p{font-size:12px;line-height:1.8;color:var(--theme-muted);margin:8px 0 0}
+.nutrition-menu-context{padding:16px 18px;border:1px solid var(--theme-border);border-radius:14px;background:var(--theme-surface)}
+.nutrition-menu-context strong{font-size:12px;color:var(--theme-ink)}
+.nutrition-screen .nutrition-card{margin-top:14px}

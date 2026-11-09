@@ -28,6 +28,7 @@ function saveMenuDraft() {
 }
 function clearMenuDraft() {
  if(typeof resetShopping==='function')resetShopping();
+ if(typeof resetNutrition==='function')resetNutrition();
  state.selected=[]; state.title='今天的菜单'; state.diaryNote=''; state.diaryPhoto=''; state.diaryPhotoVersion=(state.diaryPhotoVersion||0)+1; state.diaryPhotoProcessing=false; state.draftRestored=false; state.draftUnavailable=0; state.planResult=null; state.surpriseId=null;
  return saveMenuDraft();
 }
