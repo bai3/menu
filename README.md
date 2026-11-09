@@ -33,4 +33,4 @@ python3 -m http.server 8000
 
 菜单页可根据所选菜品生成食材和调料建议；生成后可调整、复制文字或生成图片，清单随未完成菜单保存在本机，完成这餐或开始新一餐后清除。
 
-该功能使用 Supabase Edge Function `shopping-list`，部署前需先执行 `supabase/migrations/20261108_shopping_list_limits.sql`，再设置 Edge Function Secret `SILICONFLOW_API_KEY` 并部署该函数。函数使用内测码确认用户及菜品归属、每位用户每天最多请求 30 次，并将菜名发送给硅基流动的免费模型；免费政策和服务可用性以平台当前规则为准。不要把 AI 密钥放进网页配置或 Git 仓库。
+该功能使用 Supabase Edge Function `shopping-list`，部署前需先执行 `supabase/migrations/20261108_shopping_list_limits.sql`，再设置 Edge Function Secret `SILICONFLOW_API_KEY` 并部署该函数。切换邮箱登录后，需要先执行 `supabase/migrations/20261109_email_auth.sql`，并重新部署 `shopping-list`（同时上传 `index.ts` 和 `core.mjs`）。函数使用 Supabase Auth 用户令牌确认身份，通过 `current_owner_key()` 校验菜品归属、每位用户每天最多请求 30 次，并将菜名发送给硅基流动的免费模型；免费政策和服务可用性以平台当前规则为准。不要把 AI 密钥放进网页配置或 Git 仓库。
