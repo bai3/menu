@@ -5,7 +5,7 @@ const vm=require('node:vm');
 const source=fs.readFileSync('src/meal-tools.js','utf8');
 function setup(initial={}, user='user-a'){
  const store=new Map(Object.entries(initial));
- const context=vm.createContext({betaCode:user,state:{selected:[],title:'今天的菜单',diaryNote:'',draftRestored:false},localStorage:{getItem:k=>store.get(k)||null,setItem:(k,v)=>store.set(k,v),removeItem:k=>store.delete(k)},notify:()=>{}});
+ const context=vm.createContext({authUser:{id:user},state:{selected:[],title:'今天的菜单',diaryNote:'',draftRestored:false},localStorage:{getItem:k=>store.get(k)||null,setItem:(k,v)=>store.set(k,v),removeItem:k=>store.delete(k)},notify:()=>{}});
  vm.runInContext(source,context);
  return {store,context,run:code=>vm.runInContext(code,context)};
 }
@@ -16,7 +16,7 @@ test('drafts restore selected dishes, title and note only for the same user',()=
  again.run('clearMenuDraft()');assert.equal(again.store.size,0);
 });
 test('invalid drafts and unavailable storage do not prevent startup',()=>{
- const a=setup({'jiayan.menu-draft.v1:user-a':'not-json'}); assert.doesNotThrow(()=>a.run('restoreMenuDraft()'));
+ const a=setup({'jiayan.menu-draft.v1:auth:user-a':'not-json'}); assert.doesNotThrow(()=>a.run('restoreMenuDraft()'));
  const b=setup(); b.context.localStorage.getItem=()=>{throw Error('denied')}; b.context.localStorage.setItem=()=>{throw Error('denied')}; assert.doesNotThrow(()=>b.run("restoreMenuDraft();state.selected=['a'];saveMenuDraft()"));
 });
 test('a table plan respects categories, availability, shortages and avoids duplicates',()=>{

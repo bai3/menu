@@ -7,7 +7,7 @@ const saveSource=source.slice(source.indexOf('async function saveHistory()'),sou
 function setup(result){
  const button={disabled:false,textContent:'',isConnected:true};let cleared=0,renders=0;
  const messages=[];
- const ctx=vm.createContext({offlineMode:false,state:{selected:['a'],title:'午餐',diaryNote:'好吃'},betaCode:'test',crypto:{randomUUID:()=> 'id'},localDate:()=> '2026-11-07',uploadPhoto:async()=> 'storage://test/diary/photo.jpg',selectedDishes:()=>[{id:'a',name:'番茄'}],app:{querySelector:()=>button},sb:{from:()=>({insert:()=>({select:()=>({single:()=>result})})})},historyEntries:[],historyRequest:0,recommendationHasData:false,recommendationMeals:[],loadRecommendations:()=>{},idbSet:async()=>{},cacheKey:key=>key,clearMenuDraft:()=>{cleared++;ctx.state.selected=[];ctx.state.title='今天的菜单';ctx.state.diaryNote='';return true},render:()=>{renders++},notify:message=>messages.push(message)});
+ const ctx=vm.createContext({offlineMode:false,state:{selected:['a'],title:'午餐',diaryNote:'好吃'},ownerKey:'test',crypto:{randomUUID:()=> 'id'},localDate:()=> '2026-11-07',uploadPhoto:async()=> 'storage://test/diary/photo.jpg',selectedDishes:()=>[{id:'a',name:'番茄'}],app:{querySelector:()=>button},sb:{from:()=>({insert:()=>({select:()=>({single:()=>result})})})},historyEntries:[],historyRequest:0,recommendationHasData:false,recommendationMeals:[],loadRecommendations:()=>{},idbSet:async()=>{},cacheKey:key=>key,clearMenuDraft:()=>{cleared++;ctx.state.selected=[];ctx.state.title='今天的菜单';ctx.state.diaryNote='';return true},render:()=>{renders++},notify:message=>messages.push(message)});
  vm.runInContext(saveSource,ctx);
  return {ctx,button,messages,get cleared(){return cleared},get renders(){return renders}};
 }

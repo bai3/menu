@@ -66,9 +66,8 @@ function bind(){
  app.querySelectorAll('[data-edit]').forEach(b=>b.onclick=()=>{state.editingId=b.dataset.edit;state.draftImage=null;state.page='dish-form';render()});
  app.querySelectorAll('[data-delete]').forEach(b=>b.onclick=async()=>{const dish=dishes.find(d=>d.id===b.dataset.delete);if(!dish || !window.confirm(`确定删除“${dish.name}”吗？`))return;b.disabled=true;if(!await cloudDeleteDish(dish.id)){b.disabled=false;return}saveLocalDishes(dishes.filter(d=>d.id!==dish.id));state.selected=state.selected.filter(id=>id!==dish.id);render();notify('菜品已删除');});
  const sharedCreate=app.querySelector('[data-action=shared-create]');if(sharedCreate)sharedCreate.onclick=()=>{state.page='shared-create';render()};
- const switchUser=app.querySelector('[data-action=switch-user]');if(switchUser)switchUser.onclick=()=>{state.page='beta-entry';renderBetaEntry({ canCancel: true });};
+ const signOut=app.querySelector('[data-action=sign-out]');if(signOut)signOut.onclick=signOutAccount;
  const paperEntry=app.querySelector('[data-action=paper-mode]');if(paperEntry)paperEntry.onclick=openPaperMenu;
- const migratePhotos=app.querySelector('[data-action=migrate-photos]');if(migratePhotos)migratePhotos.onclick=async()=>{if(!confirm('请先确保所有设备都已更新到新版。迁移会将当前用户的旧照片转存到云端存储，是否继续？'))return;migratePhotos.disabled=true;migratePhotos.textContent='迁移中…';try{const result=await migrateLegacyPhotos();notify(`已迁移 ${result.moved} 张${result.failed?`，${result.failed} 张未完成，请重试`:''}`)}catch(_){notify('迁移失败，请检查网络和云端配置')}finally{if(migratePhotos.isConnected){migratePhotos.disabled=false;migratePhotos.textContent='迁移旧照片'}}};
  const addDish=app.querySelector('[data-action=new-dish]');if(addDish)addDish.onclick=()=>{state.editingId=null;state.draftImage=null;state.page='dish-form';render()};
  app.querySelectorAll('.cover-upload input').forEach(file=>file.onchange=()=>{const item=file.files?.[0];if(!item)return;if(!item.type.startsWith('image/')){notify('请选择图片文件');file.value='';return}const reader=new FileReader();reader.onerror=()=>notify('图片读取失败');reader.onload=()=>{const image=new Image();image.onerror=()=>notify('图片格式不支持');image.onload=()=>{const scale=Math.min(1,800/Math.max(image.width,image.height));const canvas=document.createElement('canvas');canvas.width=Math.max(1,Math.round(image.width*scale));canvas.height=Math.max(1,Math.round(image.height*scale));const context=canvas.getContext('2d');context.fillStyle='#fff';context.fillRect(0,0,canvas.width,canvas.height);context.drawImage(image,0,0,canvas.width,canvas.height);state.draftImage=canvas.toDataURL('image/jpeg',.82);app.querySelector('#cover-preview').src=state.draftImage};image.src=reader.result};reader.readAsDataURL(item)});
  const form=app.querySelector('#dish-form');if(form)form.onsubmit=async e=>{e.preventDefault();const name=form.elements.name.value.trim();if(!name){form.elements.name.focus();return}const existing=dishes.find(d=>d.id===state.editingId);const dish={id:existing?.id || `dish-${Date.now()}-${Math.random().toString(36).slice(2,8)}`,name,category:form.elements.category.value,cuisine:form.elements.cuisine.value,note:form.elements.note.value.trim(),image:state.draftImage || existing?.image || 'tomato.jpg',spice_level:Number(form.elements.spice_level.value),is_available:form.elements.is_available.value==='true'};const saveButton=form.querySelector('[type=submit]');saveButton.disabled=true;if(state.draftImage){try{dish.image=await uploadPhoto(state.draftImage,'dishes')}catch(_){saveButton.disabled=false;notify('照片上传失败，请检查网络或存储配置');return}}if(!await cloudUpsertDish(dish)){saveButton.disabled=false;return}const latest=dishes.find(d=>d.id===dish.id);saveLocalDishes(latest?dishes.map(d=>d.id===dish.id?dish:d):[...dishes,dish]);state.editingId=null;state.draftImage=null;state.page='manage';render();notify(existing?'菜品已更新':'菜品已添加');};
@@ -102,78 +101,6 @@ function bind(){
  const make=app.querySelector('[data-action=make-menu]');if(make)make.onclick=()=>{state.page='menu';render()};
  const save=app.querySelector('[data-action=save]');if(save)save.onclick=saveMenuImage;
 }
-function removeCodeFromAddress() {
- const url = new URL(location.href);
- if (url.searchParams.has('code')) {
-  url.searchParams.delete('code');
-  history.replaceState(history.state, '', url.pathname + url.search + url.hash);
- }
-}
-function renderBetaEntry({ message = '', canCancel = false } = {}) {
- app.className = 'phone-screen beta-screen';
- app.innerHTML = `<div class="beta-scroll"><div class="beta-top"><div class="beta-brand">${logo}<span>家宴<small>家的味道</small></span></div><button class="appearance-entry" type="button" data-action="appearance" aria-label="外观设置" title="外观设置">${icon('appearance')}</button></div><div class="beta-intro"><span class="beta-kicker">A SEAT AT THE TABLE</span><h1>欢迎来到<br>家的餐桌</h1><p>输入你的专属内测码，<br>把每一餐的好味道留在这里。</p></div><form class="beta-form" novalidate><label for="beta-code">内测码</label><input id="beta-code" name="code" type="text" autocomplete="off" autocapitalize="none" spellcheck="false" maxlength="32" placeholder="请输入 32 位内测码" aria-describedby="beta-help beta-error"><p id="beta-help">验证后会保存在本机，下次打开无需再输入。</p><p id="beta-error" class="beta-error" role="status" aria-live="polite">${escapeText(message)}</p><button class="beta-submit" type="submit">进入家宴</button>${canCancel ? '<button class="beta-cancel" type="button">返回当前菜单</button>' : ''}</form><div class="beta-foot"><span></span>好好吃饭，慢慢生活<span></span></div></div>`;
- const form = app.querySelector('.beta-form');
- const errorEl = app.querySelector('#beta-error');
- form.onsubmit = async event => {
-  event.preventDefault();
-  const code = form.elements.code.value.trim().toLowerCase();
-  if (!/^[a-f0-9]{32}$/.test(code)) { errorEl.textContent = '请输入完整的 32 位内测码'; return; }
-  const button = form.querySelector('.beta-submit');
-  button.disabled = true;
-  button.textContent = '正在验证…';
-  errorEl.textContent = '';
-  try {
-   if (!window.JIAYAN_SUPABASE || !window.supabase) throw new Error('network');
-   const client = window.supabase.createClient(window.JIAYAN_SUPABASE.url, window.JIAYAN_SUPABASE.publishableKey, { global: { headers: { 'x-beta-code': code } } });
-   const { data, error } = await client.rpc('validate_beta_code');
-   if (error) throw error;
-   if (!data) { errorEl.textContent = '内测码不正确，请检查后重试'; return; }
-   try { localStorage.setItem(betaStorageKey, code); } catch (_) { errorEl.textContent = '本机无法保存内测码，请检查浏览器存储设置'; return; }
-   removeCodeFromAddress();
-   location.reload();
-  } catch (_) { errorEl.textContent = '验证失败，请检查网络后重试'; }
-  finally { if (button.isConnected) { button.disabled = false; button.textContent = '进入家宴'; } }
- };
- const cancel = app.querySelector('.beta-cancel');
- if (cancel) cancel.onclick = () => {
-  if (state.page === 'beta-entry') { state.page = 'manage'; render(); }
-  else { removeCodeFromAddress(); location.reload(); }
- };
-}
-async function startApp() {
- const invite = sharedInviteFromUrl(); if (invite) { sharedStart(invite); return; }
- if (!/^[a-f0-9]{32}$/.test(betaCode)) {
-  renderBetaEntry({ message: betaCode ? '内测码格式不正确，请重新输入' : '', canCancel: Boolean(urlBetaCode !== null && savedBetaCode) });
-  return;
- }
- try {
-  if (!sb) throw new Error('网络不可用');
-  let timer;
-  const { data, error } = await Promise.race([sb.rpc('validate_beta_code'), new Promise((_, reject) => { timer = setTimeout(() => reject(new Error('验证超时')), 8000); })]).finally(() => clearTimeout(timer));
-  if (error) throw error;
-  if (!data) { renderBetaEntry({ message: '内测码不正确，请检查后重试', canCancel: Boolean(urlBetaCode !== null && savedBetaCode) }); return; }
-  try { localStorage.setItem(betaStorageKey, betaCode); } catch (_) { renderBetaEntry({ message: '本机无法保存内测码，请检查浏览器存储设置' }); return; }
-  removeCodeFromAddress();
-  restoreMenuDraft();
-  render();
-  await initDishes();
- } catch (_) {
-  if (betaCode === savedBetaCode.trim().toLowerCase()) {
-   try {
-    const cached = await idbGet(cacheKey('dishes'));
-    if (Array.isArray(cached) && cached.every(isValidDish)) {
-     offlineMode = true;
-     dishes = cached.map(normalizeDish);
-     removeCodeFromAddress();
-     restoreMenuDraft();
-     render();
-     return;
-    }
-   } catch (_) { /* No usable local cache. */ }
-  }
-  renderBetaEntry({ message: '验证失败，请检查网络后重试', canCancel: Boolean(urlBetaCode !== null && savedBetaCode) });
- }
-}
 // An offline launch must revalidate before it starts writing or downloading again.
 let reconnecting=false;
 async function recoverOnlineSession() {
@@ -181,8 +108,10 @@ async function recoverOnlineSession() {
  reconnecting=true;
  try {
   let timer;
-  const {data,error}=await Promise.race([sb.rpc('validate_beta_code'),new Promise((_,reject)=>{timer=setTimeout(()=>reject(new Error('验证超时')),8000)})]).finally(()=>clearTimeout(timer));
-  if(error || !data)return;
+  const {data,error}=await Promise.race([sb.auth.getUser(),new Promise((_,reject)=>{timer=setTimeout(()=>reject(new Error('验证超时')),8000)})]).finally(()=>clearTimeout(timer));
+  if(error || data?.user?.id!==authUser?.id)return;
+  const {data:key,error:keyError}=await sb.rpc('current_owner_key');
+  if(keyError || key!==ownerKey)return;
   offlineMode=false;
   document.querySelectorAll('.offline-notice').forEach(el=>el.remove());
   attachDishFocusSync();

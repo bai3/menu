@@ -18,7 +18,7 @@ test('without meal records returns the ten most recently edited available dishes
 test('reads every page and keeps cached data when the network fails',async()=>{
  const slice=view.slice(view.indexOf('let recommendationMeals ='),view.indexOf('\nfunction updateCatalogNavigation'));
  const ranges=[];let fail=false;
- const ctx=vm.createContext({state:{page:'menu'},app:{},offlineMode:false,cacheKey:k=>k,idbGet:async()=>[{id:'cached',dishes:[]}],idbSet:async()=>{},sb:{from:()=>({select:()=>({order(){return this},range(from,to){ranges.push([from,to]);return fail?Promise.resolve({error:Error('offline')}):Promise.resolve({data:from===0?Array.from({length:1000},(_,i)=>({id:String(i),dishes:[]})):[{id:'1000',dishes:[]}]})}})})}});
+ const ctx=vm.createContext({ownerKey:'owner',state:{page:'menu'},app:{},offlineMode:false,cacheKey:k=>k,idbGet:async()=>[{id:'cached',dishes:[]}],idbSet:async()=>{},sb:{from:()=>({select:()=>({eq(){return this},order(){return this},range(from,to){ranges.push([from,to]);return fail?Promise.resolve({error:Error('offline')}):Promise.resolve({data:from===0?Array.from({length:1000},(_,i)=>({id:String(i),dishes:[]})):[{id:'1000',dishes:[]}]})}})})}});
  vm.runInContext(slice,ctx);await ctx.loadRecommendations();assert.deepEqual(ranges,[[0,999],[1000,1999]]);assert.equal(vm.runInContext('recommendationMeals.length',ctx),1001);
  fail=true;await ctx.loadRecommendations();assert.equal(vm.runInContext('recommendationMeals.length',ctx),1001);assert.equal(vm.runInContext('recommendationError',ctx),true);
 });

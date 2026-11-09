@@ -6,12 +6,9 @@ const defaultDishes = [
   { id: 'soup', name: '冬瓜排骨汤', category: '暖心汤羹', note: '清润鲜美，暖暖一碗', image: 'soup.jpg' },
   { id: 'shrimp', name: '蒜蓉虾', category: '家常菜', note: '鲜香入味，餐桌上的小惊喜', image: 'shrimp.jpg' }
 ];
-const betaStorageKey = 'jiayan.beta-code.v1';
-const urlBetaCode = new URLSearchParams(location.search).get('code');
-let savedBetaCode = '';
-try { savedBetaCode = localStorage.getItem(betaStorageKey) || ''; } catch (_) {}
-const betaCode = (urlBetaCode !== null ? urlBetaCode : savedBetaCode).trim().toLowerCase();
-const cacheKey = key => `${key}:${betaCode}`;
+let authUser = null;
+let ownerKey = '';
+const cacheKey = key => `${key}:auth:${authUser?.id || 'signed-out'}`;
 const isValidDish = (d) => d && typeof d.id === 'string' && typeof d.name === 'string' && typeof d.category === 'string' && typeof d.note === 'string' && typeof d.image === 'string';
 const normalizeDish = d => ({...d, cuisine: typeof d.cuisine === 'string' && d.cuisine ? d.cuisine : '未分类', spice_level: Number.isInteger(d.spice_level) && d.spice_level >= 0 && d.spice_level <= 3 ? d.spice_level : 0, is_available: d.is_available !== false});
 let dishes = [];
@@ -70,14 +67,14 @@ function saveLocalDishes(next) {
  idbSet(cacheKey('dishes'), dishes).catch(() => notify('保存失败，浏览器存储不可用'));
 }
 // 菜谱以云端为准；缓存仅供启动和离线查看。
-const sb = (window.JIAYAN_SUPABASE && window.supabase) ? window.supabase.createClient(window.JIAYAN_SUPABASE.url, window.JIAYAN_SUPABASE.publishableKey, { global: { headers: { 'x-beta-code': betaCode } } }) : null;
+const sb = (window.JIAYAN_SUPABASE && window.supabase) ? window.supabase.createClient(window.JIAYAN_SUPABASE.url, window.JIAYAN_SUPABASE.publishableKey, { auth: { storageKey: 'jiayan.auth.v1' } }) : null;
 const cloudFail = () => notify('云端保存失败，请联网后重试');
 let dishChangeVersion = 0;
 async function cloudUpsertDish(d) {
  dishChangeVersion++;
  if (offlineMode || !sb) { cloudFail(); return false; }
  try {
-  const record = { user_code: betaCode, id: d.id, name: d.name, category: d.category, cuisine: d.cuisine, note: d.note, image: d.image, spice_level: d.spice_level, is_available: d.is_available };
+  const record = { owner_key: ownerKey, id: d.id, name: d.name, category: d.category, cuisine: d.cuisine, note: d.note, image: d.image, spice_level: d.spice_level, is_available: d.is_available };
   let { data, error } = await sb.from('dishes').upsert(record).select().single();
   if (error && (error.code === 'PGRST204' || error.code === '42703') && /cuisine/i.test(error.message || '')) {
    if (d.cuisine !== '未分类') { notify('请先更新云端数据库，才能保存菜系'); return false; }
@@ -93,17 +90,17 @@ async function cloudDeleteDish(id) {
  dishChangeVersion++;
  if (offlineMode || !sb) { cloudFail(); return false; }
  try {
-  const { error } = await sb.from('dishes').delete().eq('id', id);
+  const { error } = await sb.from('dishes').delete().eq('id', id).eq('owner_key', ownerKey);
   if (error) throw error;
   return true;
  } catch (_) { cloudFail(); return false; }
 }
 // 启动时只从云端更新缓存；旧缓存不能作为需要上传的菜品。
 async function syncFromCloud() {
- if (!sb) return;
+ if (!sb || !authUser || !ownerKey) return;
  const version = dishChangeVersion;
  try {
-  const { data, error } = await sb.from('dishes').select('*').order('created_at', { ascending: true }).order('id', { ascending: true });
+  const { data, error } = await sb.from('dishes').select('*').eq('owner_key', ownerKey).order('created_at', { ascending: true }).order('id', { ascending: true });
   if (error) throw error;
   const cloudDishes = data.map(normalizeDish);
   if (!cloudDishes.every(isValidDish)) throw new Error('云端菜谱格式无效');
@@ -122,7 +119,7 @@ async function syncFromCloud() {
 }
 // 实时订阅：家人增删改菜，本机即时生效。自己写入的回声与本地一致时跳过，避免无谓重渲染。
 function subscribeRealtime() {
- if (!sb) return;
+ if (!sb || !authUser || !ownerKey) return;
  sb.channel('jiayan-dishes')
   .on('postgres_changes', { event: '*', schema: 'public', table: 'dishes' }, (payload) => {
    dishChangeVersion++;

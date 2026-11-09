@@ -6,7 +6,7 @@ const photoPending = new Map();
 const isStoredPhoto = value => typeof value === 'string' && value.startsWith(photoPrefix);
 const photoPath = value => value.slice(photoPrefix.length);
 async function photoOwnerFolder() {
- const hash = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(betaCode));
+ const hash = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(ownerKey));
  return Array.from(new Uint8Array(hash), n => n.toString(16).padStart(2, '0')).join('');
 }
 // Abort stalled signing and download requests so a weak connection cannot occupy
@@ -27,9 +27,10 @@ let photoClientKey='', photoStorageClient=null;
 function photoClient() {
  if(typeof window==='undefined' || !window.supabase || !window.JIAYAN_SUPABASE)return sb;
  const shared=typeof sharedMeal!=='undefined' && sharedMeal.invite && sharedMeal.person && sharedMeal.data?.joined;
- const key=shared ? `shared:${sharedMeal.invite}:${sharedMeal.person}` : `owner:${betaCode}`;
+ if(!shared)return sb;
+ const key=`shared:${sharedMeal.invite}:${sharedMeal.person}`;
  if(key!==photoClientKey) {
-  const headers=shared ? {'x-meal-invite':sharedMeal.invite,'x-meal-person':sharedMeal.person} : {'x-beta-code':betaCode};
+  const headers={'x-meal-invite':sharedMeal.invite,'x-meal-person':sharedMeal.person};
   photoStorageClient=window.supabase.createClient(window.JIAYAN_SUPABASE.url,window.JIAYAN_SUPABASE.publishableKey,{
    global:{headers,fetch:photoTimedFetch},auth:{persistSession:false,autoRefreshToken:false}
   });
@@ -188,7 +189,7 @@ async function migrateLegacyPhotos() {
  for (const [table, field, kind] of [['dishes','image','dishes'],['meal_history','photo','diary']]) {
   const rows=[];
   for (let offset=0;;offset+=500) {
-   const {data,error}=await sb.from(table).select(`id,${field}`).order('id').range(offset,offset+499);
+   const {data,error}=await sb.from(table).select(`id,${field}`).eq('owner_key',ownerKey).order('id').range(offset,offset+499);
    if (error) throw error;
    rows.push(...data); if (data.length<500) break;
   }

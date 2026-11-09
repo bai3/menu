@@ -1,4 +1,4 @@
-const cors = {'Access-Control-Allow-Origin':'*','Access-Control-Allow-Headers':'apikey, authorization, content-type, x-beta-code, x-client-info','Access-Control-Allow-Methods':'POST, OPTIONS','Cache-Control':'no-store'};
+const cors = {'Access-Control-Allow-Origin':'*','Access-Control-Allow-Headers':'apikey, authorization, content-type, x-client-info','Access-Control-Allow-Methods':'POST, OPTIONS','Cache-Control':'no-store'};
 const reply = (status, value) => new Response(JSON.stringify(value), {status,headers:{...cors,'Content-Type':'application/json; charset=utf-8'}});
 export function parseIngredients(content) {
  if(typeof content!=='string' || content.length>30000)throw Error('invalid response');
@@ -16,8 +16,8 @@ export function parseIngredients(content) {
 export async function handleShoppingRequest(request, config, fetcher=fetch) {
  if(request.method==='OPTIONS')return new Response(null,{status:204,headers:cors});
  if(request.method!=='POST')return reply(405,{error:'method'});
- const beta=(request.headers.get('x-beta-code')||'').trim().toLowerCase();
- if(!/^[a-f0-9]{32}$/.test(beta))return reply(401,{error:'unauthorized'});
+ const authorization=request.headers.get('authorization') || '';
+ if(!/^Bearer [A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$/.test(authorization))return reply(401,{error:'unauthorized'});
  const {supabaseUrl,publicKey,aiKey}=config;
  if(!supabaseUrl || !publicKey || !aiKey)return reply(503,{error:'unavailable'});
  let ids;
@@ -26,9 +26,15 @@ export async function handleShoppingRequest(request, config, fetcher=fetch) {
   const body=JSON.parse(raw);ids=body.dishIds;
   if(!Array.isArray(ids) || ids.length<1 || ids.length>40 || ids.some(id=>typeof id!=='string'|| !/^[\w-]{1,120}$/.test(id)) || new Set(ids).size!==ids.length)throw Error();
  } catch (_) {return reply(400,{error:'invalid_menu'})}
- const headers={'apikey':publicKey,'x-beta-code':beta};
+ const headers={'apikey':publicKey,'Authorization':authorization};
  try {
-  const url=new URL('/rest/v1/dishes',supabaseUrl);url.searchParams.set('select','id,name,is_available');url.searchParams.set('id','in.('+ids.map(id=>'"'+id+'"').join(',')+')');
+  const identity=await fetcher(new URL('/auth/v1/user',supabaseUrl),{headers,signal:AbortSignal.timeout(10000)});
+  if(!identity.ok)return reply(identity.status>=500?503:401,{error:identity.status>=500?'unavailable':'unauthorized'});
+  const user=await identity.json();if(!user?.id)return reply(401,{error:'unauthorized'});
+  const ownerResponse=await fetcher(new URL('/rest/v1/rpc/current_owner_key',supabaseUrl),{method:'POST',headers:{...headers,'Content-Type':'application/json'},body:'{}',signal:AbortSignal.timeout(10000)});
+  if(!ownerResponse.ok)throw Error('database');
+  const owner=await ownerResponse.json();if(!owner)return reply(401,{error:'unauthorized'});
+  const url=new URL('/rest/v1/dishes',supabaseUrl);url.searchParams.set('select','id,name,is_available');url.searchParams.set('owner_key','eq.'+owner);url.searchParams.set('id','in.('+ids.map(id=>'"'+id+'"').join(',')+')');
   const dishRes=await fetcher(url,{headers,signal:AbortSignal.timeout(10000)});
   if(!dishRes.ok)throw Error('database');
   const records=await dishRes.json();

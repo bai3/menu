@@ -36,8 +36,10 @@ async function generateShopping() {
  const key=shoppingMenuKey(), request=++shopping.request;shopping.loading=true;shopping.error='';if(state.page==='shopping')renderShopping();
  const controller=new AbortController(), timer=setTimeout(()=>controller.abort(),40000);
  try {
-  const response=await fetch(`${window.JIAYAN_SUPABASE.url}/functions/v1/shopping-list`,{method:'POST',headers:{'Content-Type':'application/json','apikey':window.JIAYAN_SUPABASE.publishableKey,'x-beta-code':betaCode},body:JSON.stringify({dishIds:selected.map(d=>d.id)}),signal:controller.signal});
-  const data=await response.json().catch(()=>({}));if(!response.ok){const messages={unauthorized:'内测身份已失效，请重新进入家宴',limit:'今天的生成次数已用完，明天再试试',invalid_menu:'菜单有变化，请检查后重试'};throw new Error(messages[data.error]||'生成失败，请稍后重试')}
+  const {data:sessionData,error:sessionError}=await sb.auth.getSession();
+  if(sessionError || !sessionData.session)throw new Error('登录已失效，请重新登录');
+  const response=await fetch(`${window.JIAYAN_SUPABASE.url}/functions/v1/shopping-list`,{method:'POST',headers:{'Content-Type':'application/json','apikey':window.JIAYAN_SUPABASE.publishableKey,'Authorization':`Bearer ${sessionData.session.access_token}`},body:JSON.stringify({dishIds:selected.map(d=>d.id)}),signal:controller.signal});
+  const data=await response.json().catch(()=>({}));if(!response.ok){const messages={unauthorized:'登录已失效，请重新登录',limit:'今天的生成次数已用完，明天再试试',invalid_menu:'菜单有变化，请检查后重试'};throw new Error(messages[data.error]||'生成失败，请稍后重试')}
   if(!Array.isArray(data.ingredients)||!data.ingredients.length||data.ingredients.length>100||data.ingredients.some(item=>!item||typeof item.name!=='string'||!item.name.trim()||item.name.length>30||!['主食材','调味料'].includes(item.category)))throw new Error('清单未能生成，请重试');
   if(request!==shopping.request)return;
   if(key!==shoppingMenuKey())throw new Error('菜单已变化，请重新生成');

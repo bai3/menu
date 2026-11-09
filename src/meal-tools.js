@@ -1,5 +1,5 @@
-// Personal menu drafts are scoped to the current beta user and never uploaded as dishes.
-const draftStorageKey = () => `jiayan.menu-draft.v1:${betaCode}`;
+// Personal menu drafts are scoped to the signed-in user and never uploaded as dishes.
+const draftStorageKey = () => `jiayan.menu-draft.v1:auth:${authUser?.id}`;
 let draftSaveWarningShown = false;
 function restoreMenuDraft() {
  try {
@@ -15,7 +15,7 @@ function restoreMenuDraft() {
  } catch (_) { /* Invalid or unavailable storage must not block the app. */ }
 }
 function saveMenuDraft() {
- if (!betaCode) return true;
+ if (!authUser) return true;
  try {
   if (state.selected.length) localStorage.setItem(draftStorageKey(), JSON.stringify({selected:state.selected,title:state.title,diaryNote:state.diaryNote,diaryPhoto:state.diaryPhoto || '',shopping:typeof serializeShoppingDraft==='function'?serializeShoppingDraft():null}));
   else localStorage.removeItem(draftStorageKey());
