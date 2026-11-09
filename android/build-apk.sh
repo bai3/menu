@@ -40,6 +40,6 @@ if [[ ! -f "$KEYSTORE" ]]; then
         -keyalg RSA -keysize 2048 -validity 10000
 fi
 "$TOOLS/apksigner" sign --ks "$KEYSTORE" --ks-pass pass:android --key-pass pass:android \
-    --out "$OUT/jiayan-debug.apk" "$OUT/aligned.apk"
-"$TOOLS/apksigner" verify "$OUT/jiayan-debug.apk"
-echo "APK: $OUT/jiayan-debug.apk"
+    --out "$OUT/jiayan.apk" "$OUT/aligned.apk"
+"$TOOLS/apksigner" verify "$OUT/jiayan.apk"
+echo "APK: $OUT/jiayan.apk"

@@ -14,7 +14,7 @@ bash android/build-apk.sh
 
 若安装的是 `android-36.1`，执行 `SDK_PLATFORM=android-36.1 bash android/build-apk.sh`。
 
-产物：`android/app/build/sdk-debug/jiayan-debug.apk`。脚本自动校验签名，使用 `android/debug.keystore` 本地测试证书；证书不入库，需保留才能覆盖更新已安装的测试包。版本号、URL 需在脚本和 Gradle 配置中同时修改。
+产物：`android/app/build/sdk-debug/jiayan.apk`。脚本自动校验签名，使用 `android/debug.keystore` 本地测试证书；证书不入库，需保留才能覆盖更新已安装的测试包。版本号、URL 需在脚本和 Gradle 配置中同时修改。
 
 也可用 Android Studio 打开本目录，通过 Gradle 构建。Android Studio 使用自己的测试证书，与脚本不同，不同证书的包不能覆盖安装。正式分发前应设置独立、妥善备份的 release 签名，并递增 versionCode。
 
