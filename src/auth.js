@@ -25,7 +25,7 @@ function renderAuth({mode='login',message='',email=''}={}) {
    if(!sb)throw new Error('配置不可用');
    const {data,error}=await authDeadline(signup?sb.auth.signUp({email,password,options:{emailRedirectTo:authReturnUrl()}}):sb.auth.signInWithPassword({email,password}));
    if(error)throw error;
-   if(data.session){location.reload();return;}
+   if(data.session){await startApp();return;}
    renderAuth({email,message:'请查收邮箱中的验证链接，验证后即可登录。若已注册，请直接登录。'});
   } catch(error){status.textContent=authMessage(error);}
   finally{lock(false);}

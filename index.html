@@ -15,15 +15,25 @@
   <meta name="apple-mobile-web-app-title" content="家宴" />
   <style>
     html,body{margin:0;background:#f8f0e4}
-    .startup-status{padding:48px 20px;text-align:center;color:#9d604a;font:14px/1.6 sans-serif}
-    .startup-status button{border:1px solid #dfc3b0;border-radius:20px;padding:9px 18px;background:#fff9f1;color:inherit;font:inherit}
+    .launch{display:none}
+    .is-pwa .launch{position:fixed;inset:0;z-index:9999;display:grid;place-items:center;background:#f8f0e4}
+    .launch img{width:96px;height:96px}
+    .launch[hidden]{display:none}
+    .startup-retry{display:none;position:fixed;bottom:48px;left:50%;transform:translateX(-50%);z-index:10000;border:1px solid #dfc3b0;border-radius:20px;padding:10px 18px;background:#fff9f1;color:#9d604a}
+    .startup-failed .startup-retry{display:block}
   </style>
-  <script>if (matchMedia('(display-mode: standalone)').matches || navigator.standalone === true) document.documentElement.classList.add('is-standalone');</script>
+  <script>
+    var nativeApp=/JiayanAndroid\//.test(navigator.userAgent)||!!window.JiayanImageExport;
+    if(nativeApp)document.documentElement.classList.add('is-native','is-standalone');
+    else if(matchMedia('(display-mode: standalone)').matches||navigator.standalone===true)document.documentElement.classList.add('is-pwa','is-standalone');
+  </script>
   <script src="./theme.js"></script>
   <link rel="stylesheet" href="./style.css" />
   <link rel="stylesheet" href="./theme.css" />
 </head>
 <body>
+  <div class="launch" id="launch" aria-label="家宴启动页"><img src="./public/assets/icon-192.png" alt="家宴" /></div>
+  <button class="startup-retry" type="button" onclick="location.reload()">暂时无法打开，点击重试</button>
   <main class="presentation">
     <aside class="intro" aria-label="设计说明">
       <div class="brand"><span class="brand-mark" aria-label="家宴标志"><svg viewBox="0 0 40 40" aria-hidden="true"><path class="brand-bowl" d="M9.8 18.7h20.4q.9 0 .7.9c-1 5.2-4.9 8-10.9 8s-9.9-2.8-10.9-8q-.2-.9.7-.9Z"/><path class="brand-foot" d="M16.8 29h6.4"/><path class="brand-smile" d="M15.8 24.6q4.2 2 8.4 0"/><path class="brand-chopsticks" d="m14.9 17 9.4-8m-6.6 8 9.4-8"/></svg></span><span>家宴 <small>家的味道</small></span></div>
@@ -32,10 +42,11 @@
       <div class="intro-stamp" aria-hidden="true">好好<br>吃饭 <span>✳</span></div>
     </aside>
     <section class="phone-wrap" aria-label="家宴手机界面预览">
-      <div class="phone"><div class="phone-screen" id="app"><div class="startup-status" role="status"><p>正在加载…</p><button type="button" onclick="location.reload()">重新加载</button></div></div></div>
+      <div class="phone"><div class="phone-screen" id="app"></div></div>
       <p class="phone-caption">家宴 <span>·</span> 你的家庭点菜小助手</p>
     </section>
   </main>
+  <script src="./src/startup.js"></script>
   <script defer src="./config.js"></script>
   <script defer src="./public/vendor/supabase.js"></script>
   <script defer src="./shared-meal.js"></script>

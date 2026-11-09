@@ -34,6 +34,8 @@ public class MainActivity extends Activity {
     private ValueCallback<Uri[]> fileCallback;
     private byte[] pendingImage;
     private boolean pageFailed;
+    private boolean pageReady;
+    private android.window.SplashScreenView startupView;
     private long lastBack;
 
     private boolean trusted(Uri uri) {
@@ -45,9 +47,15 @@ public class MainActivity extends Activity {
 
     @Override public void onCreate(Bundle state) {
         super.onCreate(state);
+        if (android.os.Build.VERSION.SDK_INT >= 31) {
+            getSplashScreen().setOnExitAnimationListener(view -> {
+                startupView = view;
+                if (pageReady || pageFailed) releaseStartup();
+            });
+        }
         LinearLayout root = new LinearLayout(this);
         root.setOrientation(LinearLayout.VERTICAL);
-        root.setBackgroundColor(Color.rgb(248, 240, 228));
+        root.setBackgroundResource(com.bai.jiayan.R.drawable.startup_background);
         // Apply the system bars as padding, including on edge-to-edge Android versions.
         root.setOnApplyWindowInsetsListener((v, insets) -> {
             if (android.os.Build.VERSION.SDK_INT >= 30) {
@@ -75,6 +83,7 @@ public class MainActivity extends Activity {
         errorPanel.setVisibility(View.GONE);
         root.addView(errorPanel);
         web = new WebView(this);
+        web.setVisibility(View.INVISIBLE);
         root.addView(web, new LinearLayout.LayoutParams(-1, 0, 1));
         setContentView(root);
         root.requestApplyInsets();
@@ -101,7 +110,7 @@ public class MainActivity extends Activity {
             @Override public void onPageStarted(WebView view, String url, Bitmap icon) {
                 pageFailed = false;
                 errorPanel.setVisibility(View.GONE);
-                progress.setVisibility(View.VISIBLE);
+                progress.setVisibility(pageReady ? View.VISIBLE : View.GONE);
             }
             @Override public void onReceivedError(WebView view, WebResourceRequest request, WebResourceError error) {
                 if (request.isForMainFrame()) showError();
@@ -142,16 +151,33 @@ public class MainActivity extends Activity {
         });
         web.setDownloadListener((url, agent, disposition, mime, size) -> toast("请使用图片预览中的下载按钮保存"));
         if (state == null || web.restoreState(state) == null) web.loadUrl(BuildConfig.WEB_URL);
+        // Broken or outdated H5 must never leave the system splash blocking retry controls.
+        root.postDelayed(() -> { if (!pageReady && !pageFailed) showError(); }, 20000);
     }
 
+    private void releaseStartup() {
+        if (android.os.Build.VERSION.SDK_INT >= 31 && startupView != null) {
+            startupView.remove();
+            startupView = null;
+        }
+    }
     private void showError() {
         pageFailed = true;
+        releaseStartup();
         progress.setVisibility(View.GONE);
         errorPanel.setVisibility(View.VISIBLE);
     }
     private void toast(String text) { Toast.makeText(this, text, Toast.LENGTH_SHORT).show(); }
 
     private class ImageExport {
+        @JavascriptInterface public void ready() {
+            runOnUiThread(() -> {
+                if (isFinishing() || pageFailed || !trusted(Uri.parse(web.getUrl() == null ? "" : web.getUrl()))) return;
+                pageReady = true;
+                web.setVisibility(View.VISIBLE);
+                releaseStartup();
+            });
+        }
         @JavascriptInterface public void save(String dataUrl) {
             if (dataUrl == null || dataUrl.length() > 28 * 1024 * 1024) return;
             int comma = dataUrl.indexOf(',');

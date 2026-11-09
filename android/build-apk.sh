@@ -16,7 +16,7 @@ mkdir -p "$OUT/gen/com/bai/jiayan" "$OUT/classes" "$OUT/dex"
 sed 's/<manifest /<manifest package="com.bai.jiayan" /' app/src/main/AndroidManifest.xml > "$OUT/AndroidManifest.xml"
 "$TOOLS/aapt2" link -o "$OUT/base.apk" --manifest "$OUT/AndroidManifest.xml" \
     -I "$ANDROID_JAR" --java "$OUT/gen" --min-sdk-version 26 --target-sdk-version 35 \
-    --version-code 1 --version-name 1.0.0 --rename-manifest-package com.bai.jiayan "$OUT/resources.zip"
+    --version-code 2 --version-name 1.0.1 --rename-manifest-package com.bai.jiayan "$OUT/resources.zip"
 cat > "$OUT/gen/com/bai/jiayan/BuildConfig.java" <<'JAVA'
 package com.bai.jiayan;
 public final class BuildConfig {
