@@ -33,7 +33,7 @@
 :root[data-appearance="dark"] :is(.home-scroll button.filter,.shared-catalog button.filter,.nav button,.detail-nav,.detail-bottom span){color:var(--theme-muted)}
 :root[data-appearance="dark"] :is(.home-scroll button.filter.active,.shared-catalog button.filter.active,.filter.active,.filter-switch button[aria-pressed=true]){background:var(--theme-soft);color:var(--theme-ink)}
 :root[data-appearance="dark"] :is(.add:not(.selected),.page-heading button,.filter-switch,.detail-status){background:var(--theme-soft);color:var(--theme-ink)}
-:root[data-appearance="dark"] :is(.launch,.intro){background:var(--theme-page);color:var(--theme-ink)}
+:root[data-appearance="dark"] .intro{background:var(--theme-page);color:var(--theme-ink)}
 :root[data-appearance="dark"] :is(.intro h1,.intro h1 em){color:var(--theme-ink)}
 :root[data-appearance="dark"] .phone-wrap{background:#181614}
 /* Higher-contrast accents and navigation on dark surfaces. */

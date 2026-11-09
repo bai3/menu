@@ -20,18 +20,14 @@ language sql stable security definer set search_path = '' as $$
    and exists (select 1 from jsonb_array_elements(m.catalog) d where d->>'image' = 'storage://' || object_name)
  )
 $$;
-create or replace function public.photo_is_admin() returns boolean
-language sql stable security definer set search_path = '' as $$
- select exists (select 1 from public.dashboard_admins where user_id = (select auth.uid()))
-$$;
-revoke all on function public.photo_owner_folder(), public.photo_can_read_shared(text), public.photo_is_admin() from public;
-grant execute on function public.photo_owner_folder(), public.photo_can_read_shared(text), public.photo_is_admin() to anon, authenticated;
+revoke all on function public.photo_owner_folder(), public.photo_can_read_shared(text) from public;
+grant execute on function public.photo_owner_folder(), public.photo_can_read_shared(text) to anon, authenticated;
 
 drop policy if exists meal_photos_read on storage.objects;
 create policy meal_photos_read on storage.objects for select to anon, authenticated using (
  bucket_id = 'meal-photos' and (
   (storage.foldername(name))[1] = public.photo_owner_folder()
-  or public.photo_can_read_shared(name) or public.photo_is_admin()
+  or public.photo_can_read_shared(name)
  )
 );
 drop policy if exists meal_photos_insert on storage.objects;

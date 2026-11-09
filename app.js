@@ -129,9 +129,6 @@ window.addEventListener('focus',restorePhotoConnection);
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)restorePhotoConnection()});
 // Server reachability can return without an 'online' event (for example after a timeout).
 setInterval(()=>{if(offlineMode && !document.hidden)recoverOnlineSession()},15000);
-if (document.documentElement.classList.contains('is-standalone')) {
- setTimeout(() => document.getElementById('launch')?.classList.add('is-finished'), 900);
-}
 startApp();
 if ('serviceWorker' in navigator) addEventListener('load', async () => {
  const localDev = ['localhost', '127.0.0.1', '[::1]'].includes(location.hostname);
