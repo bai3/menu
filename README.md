@@ -8,6 +8,8 @@ python3 -m http.server 8000
 
 然后访问 `http://localhost:8000/`。管理后台入口为 `/admin/`。
 
+安卓 WebView 外壳位于 `android/`，在线加载已部署的 H5，网页发布后通过原有 PWA 更新流程生效。构建说明见 [android/README.md](android/README.md)。
+
 ## 代码结构
 
 - `index.html`：页面外壳和脚本加载顺序。
