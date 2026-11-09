@@ -57,3 +57,31 @@ test('rejects truncated AI output',async()=>{
  const h=backend({'/v1/chat/completions':()=>Response.json({choices:[{finish_reason:'length',message:{content:'{"ingredients":[]}'}}]})});
  assert.equal((await handleShoppingRequest(post({dishIds:['a']}),config,h.fetcher)).status,502);
 });
+
+test('accepts seeded default dishes together with user-created dishes',async()=>{
+ const defaultId='default-v1:fa23317d-13fb-4e4d-a94b-121f54d551e2:pepper-pork';
+ const h=backend({'/rest/v1/dishes':()=>Response.json([{...dish,id:defaultId,name:'青椒肉丝'},dish])});
+ const response=await handleShoppingRequest(post({dishIds:[defaultId,dish.id]}),config,h.fetcher);
+ assert.equal(response.status,200);
+ assert.equal((await response.json()).ingredients.length,2);
+ const query=new URL(h.calls[2][0]).searchParams;
+ assert.equal(query.get('id'),'in.("'+defaultId+'","a")');
+ assert.equal(query.get('owner_key'),'eq.owner-1');
+ assert.match(JSON.parse(h.calls[4][1].body).messages[1].content,/青椒肉丝/);
+});
+test('rejects malformed IDs before downstream requests',async()=>{
+ for(const id of ['', 'a'.repeat(121), 'a,b', 'a"', 'a)', 'a b', null]){
+  const h=backend();
+  const response=await handleShoppingRequest(post({dishIds:[id]}),config,h.fetcher);
+  assert.equal(response.status,400);
+  assert.deepEqual(await response.json(),{error:'invalid_menu'});
+  assert.equal(h.calls.length,0);
+ }
+});
+test('rejects seeded dishes outside the account without spending quota',async()=>{
+ const h=backend({'/rest/v1/dishes':()=>Response.json([])});
+ const response=await handleShoppingRequest(post({dishIds:['default-v1:other-owner:shrimp']}),config,h.fetcher);
+ assert.equal(response.status,400);
+ assert.equal(h.calls.length,3);
+ assert.equal(new URL(h.calls[2][0]).searchParams.get('owner_key'),'eq.owner-1');
+});

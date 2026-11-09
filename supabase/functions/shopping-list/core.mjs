@@ -24,7 +24,8 @@ export async function handleShoppingRequest(request, config, fetcher=fetch) {
  try {
   const raw=await request.text();if(raw.length>6000)throw Error();
   const body=JSON.parse(raw);ids=body.dishIds;
-  if(!Array.isArray(ids) || ids.length<1 || ids.length>40 || ids.some(id=>typeof id!=='string'|| !/^[\w-]{1,120}$/.test(id)) || new Set(ids).size!==ids.length)throw Error();
+  // Seeded default dish IDs contain colons; keep filter metacharacters disallowed.
+  if(!Array.isArray(ids) || ids.length<1 || ids.length>40 || ids.some(id=>typeof id!=='string'|| !/^[\w:-]{1,120}$/.test(id)) || new Set(ids).size!==ids.length)throw Error();
  } catch (_) {return reply(400,{error:'invalid_menu'})}
  const headers={'apikey':publicKey,'Authorization':authorization};
  try {
