@@ -91,7 +91,7 @@ async function sharedAction(action) {
  if(action==='paper') return openPaperMenu();
  if(action==='order'||action==='menu'||action==='share'){sharedMeal.page=action;return renderSharedMeal();}
  if(action==='copy'){try{const url=sharedUrl(sharedMeal.invite);if(navigator.clipboard && navigator.clipboard.writeText){await navigator.clipboard.writeText(url);notify('邀请链接已复制');}else{app.querySelector('#shared-link')?.select();notify('请长按链接复制');}}catch(e){if(e.name!=='AbortError')notify('分享失败，请检查浏览器权限');}return;}
- if(action==='complete'){if(!confirm('确定完成点菜？完成后大家将不能继续添加菜品。'))return;sharedMeal.busy=true;sharedMeal.requestVersion++;try{await sharedRpc('shared_meal_complete',{p_invite:sharedMeal.invite});await sharedLoad();}catch(_){notify('完成失败，请联网后重试');}finally{sharedMeal.busy=false;}return;}
+ if(action==='complete'){if(!await confirmAction({title:'完成点菜？',message:'完成后，大家将不能继续添加菜品。',confirmLabel:'完成点菜'}))return;sharedMeal.busy=true;sharedMeal.requestVersion++;try{await sharedRpc('shared_meal_complete',{p_invite:sharedMeal.invite});await sharedLoad();}catch(_){notify('完成失败，请联网后重试');}finally{sharedMeal.busy=false;}return;}
  if(action==='save'){const chosen=sharedMeal.data.catalog.filter(x=>sharedMeal.data.choices.some(c=>c.dish_id===x.id));return saveMenuImage(chosen,sharedMeal.data.title);}
 }
 function renderSharedCreate() {

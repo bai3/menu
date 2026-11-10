@@ -27,7 +27,7 @@ function bindShopping() {
  const form=app.querySelector('#shopping-add');if(form)form.onsubmit=e=>{e.preventDefault();const name=form.elements.name.value.trim();if(!name)return;if(shopping.items.length>=100){notify('清单最多添加 100 项');return}shopping.items.push({name,category:form.elements.category.value,checked:false});saveMenuDraft();renderShopping()};
  const copy=app.querySelector('[data-action=shopping-copy]');if(copy)copy.onclick=copyShoppingText;
  const image=app.querySelector('[data-action=shopping-image]');if(image)image.onclick=saveShoppingImage;
- app.querySelectorAll('[data-action=shopping-generate]').forEach(button=>button.onclick=()=>{if(shopping.items.length&&!window.confirm('重新生成会替换当前清单，确定继续吗？'))return;generateShopping()});
+ app.querySelectorAll('[data-action=shopping-generate]').forEach(button=>button.onclick=async()=>{if(shopping.items.length&&!await confirmAction({title:'重新生成买菜清单？',message:'生成的新清单会替换当前清单和已做的修改。',confirmLabel:'重新生成'}))return;generateShopping()});
 }
 async function generateShopping() {
  const selected=selectedDishes();if(!selected.length){shopping.error='请先选择菜品';renderShopping();return}

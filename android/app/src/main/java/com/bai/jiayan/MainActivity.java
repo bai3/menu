@@ -126,7 +126,7 @@ public class MainActivity extends Activity {
                     + "if(!a||!a.href)return;e.preventDefault();"
                     + "fetch(a.href).then(r=>r.blob()).then(b=>{if(b.size>20*1024*1024)throw Error();"
                     + "var reader=new FileReader();reader.onload=()=>JiayanImageExport.save(reader.result);reader.readAsDataURL(b);"
-                    + "}).catch(()=>alert('图片保存失败，请重试'));},true);})()", null);
+                    + "}).catch(()=>{if(typeof notify==='function')notify('图片保存失败，请重试');});},true);})()", null);
             }
         });
         web.setWebChromeClient(new WebChromeClient() {
