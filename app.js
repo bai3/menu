@@ -55,6 +55,7 @@ function bindDishButtons(){
 
 function bind(){
  bindNutrition();
+ app.querySelector('[data-action=retry-taxonomy]')?.addEventListener('click', loadDishTaxonomy);
  app.querySelectorAll('[data-page]').forEach(b=>b.onclick=()=>{state.page=b.dataset.page;render();if(state.page==='history')loadHistory()});
  app.querySelectorAll('[data-manage-mode]').forEach(b=>b.onclick=()=>{state.manageFilterMode=b.dataset.manageMode;state.manageFilter='全部';render()});
  app.querySelectorAll('[data-manage-filter]').forEach(b=>b.onclick=()=>{state.manageFilter=b.dataset.manageFilter;render();app.querySelector('[data-manage-filter][aria-pressed=true]')?.focus({preventScroll:true})});
@@ -130,6 +131,7 @@ window.addEventListener('focus',restorePhotoConnection);
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)restorePhotoConnection()});
 // Server reachability can return without an 'online' event (for example after a timeout).
 setInterval(()=>{if(offlineMode && !document.hidden)recoverOnlineSession()},15000);
+loadDishTaxonomy();
 startApp();
 if ('serviceWorker' in navigator) addEventListener('load', async () => {
  const localDev = ['localhost', '127.0.0.1', '[::1]'].includes(location.hostname);

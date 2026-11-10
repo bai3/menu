@@ -140,3 +140,27 @@ function subscribeRealtime() {
   })
   .subscribe();
 }
+
+// Public reference data is shared by all accounts, including invited guests.
+let taxonomyReady = false;
+async function loadDishTaxonomy() {
+ const wasReady = taxonomyReady;
+ const apply = rows => {
+  if (!Array.isArray(rows)) return false;
+  const category = rows.filter(row => row.kind === 'category' && typeof row.name === 'string' && row.name.trim()).map(row => row.name);
+  const cuisine = rows.filter(row => row.kind === 'cuisine' && typeof row.name === 'string' && row.name.trim()).map(row => row.name);
+  if (!category.length || !cuisine.length) return false;
+  categories.splice(0, categories.length, '全部', ...new Set(category));
+  cuisines.splice(0, cuisines.length, ...new Set(cuisine));
+  taxonomyReady = true; return true;
+ };
+ try { apply(await idbGet('dish-taxonomy:v1')); } catch (_) {}
+ try {
+  if (!sb) throw Error('offline');
+  const {data, error} = await sb.from('dish_taxonomy').select('kind,name,sort_order').order('sort_order').order('name');
+  if (error || !apply(data)) throw error || Error('empty vocabulary');
+  idbSet('dish-taxonomy:v1', data).catch(() => {});
+ } catch (_) {}
+ if (typeof state !== 'undefined' && authUser && !sharedMeal.invite && (state.page === 'dishes' || state.page === 'manage' || (state.page === 'dish-form' && !wasReady))) render();
+ return taxonomyReady;
+}
