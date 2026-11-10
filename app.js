@@ -87,7 +87,7 @@ function bind(){
  const removeDiaryPhoto=app.querySelector('[data-action=remove-diary-photo]');if(removeDiaryPhoto)removeDiaryPhoto.onclick=()=>{state.diaryPhotoVersion++;state.diaryPhotoProcessing=false;state.diaryPhoto='';saveMenuDraft();refreshDiaryPhoto()};
  const shoppingOpen=app.querySelector('[data-action=shopping-open]');if(shoppingOpen)shoppingOpen.onclick=openShopping;
  const saveDiary=app.querySelector('[data-action=save-diary]');if(saveDiary)saveDiary.onclick=saveHistory;
- const title=app.querySelector('.menu-title-input');if(title)title.oninput=e=>{state.title=e.target.value;saveMenuDraft()};
+ const title=app.querySelector('.menu-title-input');if(title)title.oninput=e=>{state.title=e.target.value;state.titleIsDefault=false;saveMenuDraft()};
  const surprise=app.querySelector('[data-action=surprise]');if(surprise)surprise.onclick=drawSurprise;
  const addSurprise=app.querySelector('[data-action=add-surprise]');if(addSurprise)addSurprise.onclick=()=>{const dish=dishes.find(d=>d.id===state.surpriseId && d.is_available);if(!dish || state.selected.includes(dish.id))return;state.selected.push(dish.id);state.draftRestored=false;saveMenuDraft();render();notify('已加入菜单')};
  const motion=app.querySelector('[data-action=enable-motion]');if(motion)motion.onclick=enableMotion;
@@ -132,6 +132,16 @@ document.addEventListener('visibilitychange',()=>{if(!document.hidden)restorePho
 // Server reachability can return without an 'online' event (for example after a timeout).
 setInterval(()=>{if(offlineMode && !document.hidden)recoverOnlineSession()},15000);
 loadDishTaxonomy();
+window.addEventListener('jiayan-language-change', () => {
+ if (state.titleIsDefault) {
+  state.title = defaultMenuTitle();
+  const title = app.querySelector('.menu-title-input');
+  if (title) title.value = state.title;
+  if (state.selected.length) saveMenuDraft();
+ }
+ const date = app.querySelector('[data-menu-date]');
+ if (date) date.textContent = new Date().toLocaleDateString(window.JiayanI18n.language,{year:'numeric',month:'long',day:'numeric'});
+});
 startApp();
 if ('serviceWorker' in navigator) addEventListener('load', async () => {
  const localDev = ['localhost', '127.0.0.1', '[::1]'].includes(location.hostname);

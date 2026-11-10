@@ -15,6 +15,14 @@ test('drafts restore selected dishes, title and note only for the same user',()=
  const again=setup(Object.fromEntries(a.store)); again.run('restoreMenuDraft()'); assert.deepEqual(Array.from(again.context.state.selected),['a','b']); assert.equal(again.context.state.title,'周末聚餐');assert.equal(again.context.state.diaryNote,'好吃');
  again.run('clearMenuDraft()');assert.equal(again.store.size,0);
 });
+test('default draft titles follow the selected language without changing custom or older titles',()=>{
+ const a=setup();a.context.defaultMenuTitle=()=>"Today’s menu";
+ a.run("state.selected=['a'];state.title='今天的菜单';state.titleIsDefault=true;saveMenuDraft()");
+ const b=setup(Object.fromEntries(a.store));b.context.defaultMenuTitle=()=>"Today’s menu";b.run('restoreMenuDraft()');
+ assert.equal(b.context.state.title,'Today’s menu');assert.equal(b.context.state.titleIsDefault,true);
+ const c=setup({'jiayan.menu-draft.v1:auth:user-a':JSON.stringify({selected:['a'],title:'家宴',diaryNote:''})});c.context.defaultMenuTitle=()=>"Today’s menu";c.run('restoreMenuDraft()');
+ assert.equal(c.context.state.title,'家宴');assert.equal(c.context.state.titleIsDefault,false);
+});
 test('invalid drafts and unavailable storage do not prevent startup',()=>{
  const a=setup({'jiayan.menu-draft.v1:auth:user-a':'not-json'}); assert.doesNotThrow(()=>a.run('restoreMenuDraft()'));
  const b=setup(); b.context.localStorage.getItem=()=>{throw Error('denied')}; b.context.localStorage.setItem=()=>{throw Error('denied')}; assert.doesNotThrow(()=>b.run("restoreMenuDraft();state.selected=['a'];saveMenuDraft()"));

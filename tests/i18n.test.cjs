@@ -32,3 +32,9 @@ test('saved language and dynamically inserted text are translated',()=>{
 test('unsupported languages cannot replace the saved preference',()=>{
  const h=setup({'jiayan.language.v1':'en'});assert.equal(h.window.JiayanI18n.setLanguage('fr'),false);assert.equal(h.store['jiayan.language.v1'],'en');
 });
+test('dynamic accessible labels keep the dish name while changing language',()=>{
+ const h=setup();const button=h.element('BUTTON',{'aria-label':'查看Roast chicken详情'});
+ h.mutate([{type:'childList',addedNodes:[button]}]);h.window.JiayanI18n.setLanguage('en');
+ h.mutate([{type:'attributes',target:button}]);assert.equal(button.attrs['aria-label'],'View details for Roast chicken');
+ h.window.JiayanI18n.setLanguage('ja');h.mutate([{type:'attributes',target:button}]);assert.equal(button.attrs['aria-label'],'Roast chickenの詳細を見る');
+});

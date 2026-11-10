@@ -7,7 +7,8 @@ function restoreMenuDraft() {
   if (!draft || !Array.isArray(draft.selected)) return;
   state.selected = [...new Set(draft.selected.filter(id => typeof id === 'string' && id.length <= 200))].slice(0, 500);
   if (!state.selected.length) return;
-  state.title = typeof draft.title === 'string' ? draft.title.slice(0, 16) : '今天的菜单';
+  state.titleIsDefault = draft.titleIsDefault === true;
+  state.title = state.titleIsDefault && typeof defaultMenuTitle === 'function' ? defaultMenuTitle() : (typeof draft.title === 'string' ? draft.title.slice(0, 16) : '今天的菜单');
   state.diaryNote = typeof draft.diaryNote === 'string' ? draft.diaryNote.slice(0, 200) : '';
   state.diaryPhoto = typeof draft.diaryPhoto === 'string' && draft.diaryPhoto.startsWith('data:image/jpeg;base64,') ? draft.diaryPhoto : '';
   if(typeof restoreShoppingDraft==='function')restoreShoppingDraft(draft.shopping);
@@ -17,7 +18,7 @@ function restoreMenuDraft() {
 function saveMenuDraft() {
  if (!authUser) return true;
  try {
-  if (state.selected.length) localStorage.setItem(draftStorageKey(), JSON.stringify({selected:state.selected,title:state.title,diaryNote:state.diaryNote,diaryPhoto:state.diaryPhoto || '',shopping:typeof serializeShoppingDraft==='function'?serializeShoppingDraft():null}));
+  if (state.selected.length) localStorage.setItem(draftStorageKey(), JSON.stringify({selected:state.selected,title:state.title,titleIsDefault:state.titleIsDefault === true,diaryNote:state.diaryNote,diaryPhoto:state.diaryPhoto || '',shopping:typeof serializeShoppingDraft==='function'?serializeShoppingDraft():null}));
   else localStorage.removeItem(draftStorageKey());
   draftSaveWarningShown = false;
   return true;
@@ -29,7 +30,7 @@ function saveMenuDraft() {
 function clearMenuDraft() {
  if(typeof resetShopping==='function')resetShopping();
  if(typeof resetNutrition==='function')resetNutrition();
- state.selected=[]; state.title='今天的菜单'; state.diaryNote=''; state.diaryPhoto=''; state.diaryPhotoVersion=(state.diaryPhotoVersion||0)+1; state.diaryPhotoProcessing=false; state.draftRestored=false; state.draftUnavailable=0; state.planResult=null; state.surpriseId=null;
+ state.selected=[]; state.title=typeof defaultMenuTitle === 'function' ? defaultMenuTitle() : '今天的菜单'; state.titleIsDefault=true; state.diaryNote=''; state.diaryPhoto=''; state.diaryPhotoVersion=(state.diaryPhotoVersion||0)+1; state.diaryPhotoProcessing=false; state.draftRestored=false; state.draftUnavailable=0; state.planResult=null; state.surpriseId=null;
  return saveMenuDraft();
 }
 // Plan within each selected category; never duplicate a dish or substitute another category silently.

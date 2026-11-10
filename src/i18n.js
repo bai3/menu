@@ -5,6 +5,7 @@
  let language = 'zh-CN';
  try { const saved = localStorage.getItem(key); if (languages.includes(saved)) language = saved; } catch (_) {}
  const entries = [
+ ['家的味道，日日有新意','A fresh take on home cooking','毎日の食卓に、小さな楽しみを'],['家宴启动页','Jiayan is starting','ジアエンを起動中'],['暂时无法打开，点击重试','Could not open. Tap to retry.','開けませんでした。タップして再試行'],['设计说明','About Jiayan','ジアエンについて'],['今天想吃什么？','What would you like to eat today?','今日は何を食べよう？'],['一起点菜，把平凡的一餐变成值得期待的小事。','Choose together and make every meal something to look forward to.','一緒に選んで、いつもの食事を楽しみに。'],['挑选喜欢的菜','Choose your favorites','好きな料理を選ぶ'],['生成专属菜单','Make your menu','メニューを作る'],['为每一顿家常饭，留一点仪式感。','A little more joy at every meal.','いつもの食卓に、ちょっとした楽しみを。'],['家宴 · 好好吃饭','Jiayan · Eat well','ジアエン · おいしい食卓'],['你的家庭点菜小助手','Your family meal planner','家族の献立づくりをお手伝い'],
  ['家宴','Dinner party','家飲み'],['家的味道','A taste of home','おうちの味'],['把喜欢的菜端上桌','Bring your favorites to the table','好きな料理を食卓へ'],['为每一顿家常饭','For every meal at home','毎日の食卓に'],['把喜欢的菜，','Bring your favorites','好きな料理を、'],['端上家的餐桌。','to the family table.','家族の食卓へ。'],['今天，一起好好吃饭。','Let’s enjoy a meal together today.','今日も一緒に、おいしい食事を。'],
  ['设置','Settings','設定'],['外观设置','Appearance','外観設定'],['关闭外观设置','Close settings','設定を閉じる'],['让餐桌，变成你喜欢的样子。','Make your table feel like home.','食卓を、お好みの雰囲気に。'],['主题配色','Color theme','テーマカラー'],['选一种喜欢的颜色','Choose a color you love','お好きな色を選択'],['暖陶红','Terracotta','テラコッタ'],['温暖家常','Warm and welcoming','あたたかい食卓'],['餐桌绿','Table green','テーブルグリーン'],['自然清新','Fresh and natural','自然でさわやか'],['烟熏梅','Smoky plum','スモーキープラム'],['沉静柔和','Calm and soft','穏やかでやさしい'],['显示模式','Display mode','表示モード'],['随时切换','Change anytime','いつでも変更できます'],['跟随系统','System','システムに合わせる'],['明亮','Light','ライト'],['深色','Dark','ダーク'],['语言','Language','言語'],['选择界面语言','Choose your language','表示言語を選択'],['设置会自动保存在本机','Settings are saved on this device','設定はこの端末に保存されます'],['已保存在本机','Saved on this device','この端末に保存しました'],['本机无法保存设置，重新打开后可能需要重新选择','Could not save settings on this device. You may need to choose again.','設定を保存できませんでした。再度選択が必要になる場合があります。'],
  ['欢迎回家','Welcome home','おかえりなさい'],['创建账号','Create account','アカウントを作成'],['收藏喜欢的菜，记录每一餐。','Save your favorite dishes and remember every meal.','好きな料理を保存して、毎日の食事を記録。'],['一餐一饭，都在这里。','Every meal, all in one place.','毎日の食事を、ここに。'],['登录或注册','Sign in or sign up','ログインまたは新規登録'],['登录','Sign in','ログイン'],['注册','Sign up','新規登録'],['邮箱','Email','メールアドレス'],['请输入邮箱','Enter your email','メールアドレスを入力'],['密码','Password','パスワード'],['请输入密码','Enter your password','パスワードを入力'],['至少 8 位密码','At least 8 characters','8文字以上'],['确认密码','Confirm password','パスワードの確認'],['请再次输入密码','Enter your password again','パスワードをもう一度入力'],['注册后需通过邮件验证邮箱','Verify your email after signing up','登録後、メールアドレスの確認が必要です'],['注册家宴','Create account','新規登録'],['登录家宴','Sign in','ログイン'],['重新发送验证邮件','Resend verification email','確認メールを再送信'],['两次输入的密码不一致','Passwords do not match','パスワードが一致しません'],['正在注册…','Creating account…','登録中…'],['正在登录…','Signing in…','ログイン中…'],['正在发送…','Sending…','送信中…'],['邮箱或密码不正确','Incorrect email or password','メールアドレスまたはパスワードが正しくありません'],['请先打开邮箱中的验证链接，再登录','Open the verification link in your email before signing in','メールの確認リンクを開いてからログインしてください'],['该邮箱已注册，请直接登录','This email is already registered. Please sign in.','このメールアドレスは登録済みです。ログインしてください'],['操作失败，请检查网络后重试','Something went wrong. Check your connection and try again.','操作に失敗しました。接続を確認して再試行してください'],['连接失败，请检查网络后重试','Connection failed. Check your network and try again.','接続に失敗しました。ネットワークを確認して再試行してください'],
@@ -24,17 +25,40 @@
  ['菜单已调整，清单仍是上次生成的内容。','Your menu changed; this list is from the previous menu.','メニューが変更されました。リストは前回作成した内容です。'],['正在整理买菜清单','Preparing your shopping list','買い物リストを作成中'],['正在根据菜单整理食材和调味料','Preparing ingredients and seasonings from your menu','メニューをもとに食材と調味料を整理中'],['新清单生成后将替换下方内容','The new list will replace the list below','新しいリストで下の内容を置き換えます'],['清单里还没有食材。','Your list has no ingredients yet.','リストに食材がありません。'],['根据新菜单重新生成','Regenerate for the new menu','新しいメニューで再作成'],['食材名称不能为空','Enter an ingredient name','食材名を入力してください'],['清单已复制','List copied','リストをコピーしました'],['保存到相册','Save to photos','写真に保存'],['返回列表','Back to list','一覧に戻る'],['返回菜品列表','Back to dish list','料理一覧に戻る'],['正在翻开菜单…','Opening the menu…','メニューを開いています…'],['已取消','Removed','選択を解除しました'],
  ['买菜清单','Shopping list','買い物リスト'],['根据菜单整理，买之前可以调整。','Based on your menu. Edit before you shop.','メニューをもとに作成。買い物前に調整できます。'],['补充需要买的食材','Add an ingredient','食材を追加'],['食材分类','Ingredient category','食材の分類'],['主食材','Ingredients','食材'],['调味料','Seasonings','調味料'],['添加','Add','追加'],['复制文字','Copy text','テキストをコピー'],['保存图片','Save image','画像を保存'],['重新生成','Regenerate','再作成'],['AI 根据菜名推测，请按家里的做法检查。','AI estimates ingredients from dish names. Check against your recipes.','AIが料理名から推測しています。ご家庭の作り方に合わせて確認してください。'],['看看这一餐的搭配，吃得更有数。','Explore the balance of this meal.','この食事の栄養バランスを確認しましょう。'],['生成中…','Generating…','作成中…'],['关闭预览','Close preview','プレビューを閉じる'],['下载图片','Download image','画像をダウンロード'],['也可以长按图片保存','You can also press and hold the image to save it','画像を長押しして保存することもできます'],['发现新版本，刷新后即可使用','A new version is available','新しいバージョンがあります'],['立即刷新','Refresh now','今すぐ更新'],['当前查看本机缓存，联网后将自动恢复','Viewing saved data. The app will reconnect when online.','保存済みのデータを表示中です。接続後に自動復帰します。']
  ];
+ // Jiayan is a product name, not a reference to a dinner party or drinking at home.
+ for (const entry of entries) {
+  entry[1] = entry[1].replaceAll('Dinner party', 'Jiayan');
+  entry[2] = entry[2].replaceAll('家飲み', 'ジアエン');
+ }
+ const wording = {
+  '邀请一起点':['Plan together','みんなで選ぶ'],
+  '点菜':['Choose','料理を選ぶ'],
+  '下单':['View menu','メニューへ'],
+  '一起点菜，把平凡的一餐变成值得期待的小事。':['Choose together and make every meal something to look forward to.','一緒に選んで、いつもの食事を楽しみに。']
+ };
+ for (const entry of entries) if (wording[entry[0]]) [entry[1], entry[2]] = wording[entry[0]];
  const dict = Object.fromEntries(entries.map(([source, en, ja]) => [source, {en, ja}]));
  const originals = new WeakMap();
  // These regions contain names, notes, and other content supplied by users or AI.
  const userContent = '.dish-name,.dish-note,.detail-title h1,.detail-note,.menu-row .name,.manage-dish-copy strong,.plan-list article strong,.surprise-result h3,.surprise-result p,.diary-card-title h3,.diary-dishes,.diary-note,.shared-dish-names,.shared-row strong,.shared-heading h2,.shared-menu-head h3,.shared-invite-card strong,.nutrition-summary,.nutrition-advice li,.nutrition-assumption p,.nutrition-menu-context p,.shopping-item-name,[data-i18n-user]';
  const attributes = ['placeholder','aria-label','title','alt'];
- function translate(value) {
+ function translate(value, dynamicLabel = false) {
   if (language === 'zh-CN') return value;
   const trimmed = value.trim(), translated = dict[trimmed]?.[language];
   if (translated) return value.replace(trimmed, translated);
   const count = trimmed.match(/^(\d+) 道菜$/);
   if (count) return value.replace(trimmed, language === 'en' ? `${count[1]} ${count[1] === '1' ? 'dish' : 'dishes'}` : `${count[1]}品`);
+  if (!dynamicLabel) return value;
+  const selected = trimmed.match(/^已选(\d+)道菜，下单$/);
+  if (selected) return value.replace(trimmed, language === 'en' ? `View menu, ${selected[1]} ${selected[1] === '1' ? 'dish' : 'dishes'} selected` : `${selected[1]}品を選択済み、メニューを見る`);
+  const detail = trimmed.match(/^查看(.+)详情$/);
+  if (detail) return value.replace(trimmed, language === 'en' ? `View details for ${detail[1]}` : `${detail[1]}の詳細を見る`);
+  const action = trimmed.match(/^(选择|移除|取消选择|我也想吃|编辑|删除|从菜单移除|已备好)(.+)$/);
+  if (action) {
+   const en = {'选择':'Select','移除':'Remove','取消选择':'Remove','我也想吃':'Select','编辑':'Edit','删除':'Delete','从菜单移除':'Remove from menu:','已备好':'Already have:'};
+   const ja = {'选择':'を選ぶ','移除':'を削除','取消选择':'の選択を解除','我也想吃':'を選ぶ','编辑':'を編集','删除':'を削除','从菜单移除':'をメニューから削除','已备好':'は準備済み'};
+   return value.replace(trimmed, language === 'en' ? `${en[action[1]]} ${action[2]}` : `${action[2]}${ja[action[1]]}`);
+  }
   return value;
  }
  function update(node) {
@@ -53,7 +77,7 @@
    for (const attr of attributes) if (node.hasAttribute(attr)) {
     const current = node.getAttribute(attr); let source = saved[attr];
     if (!source || current !== source.last) source = {original:current,last:current};
-    const next = translate(source.original); source.last = next; saved[attr] = source;
+    const next = translate(source.original, attr === 'aria-label'); source.last = next; saved[attr] = source;
     if (current !== next) node.setAttribute(attr,next);
    }
    originals.set(node,saved);

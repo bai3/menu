@@ -1,0 +1,70 @@
+/* Language-specific typography and responsive space for translated controls. */
+.icon-en,.icon-ja{display:none}
+:root:lang(en) .icon-zh,:root:lang(ja) .icon-zh{display:none}
+:root:lang(en) .icon-en,:root:lang(ja) .icon-ja{display:inline}
+:root:lang(en){--serif:Georgia,"Times New Roman",serif;--sans:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+:root:lang(ja){--serif:"Hiragino Mincho ProN","Yu Mincho","Noto Serif CJK JP",serif;--sans:"Hiragino Kaku Gothic ProN","Yu Gothic","Noto Sans CJK JP",sans-serif}
+/* English: an editorial masthead and generous, clearly grouped actions. */
+:root:lang(en) .home-welcome{padding-top:30px;padding-bottom:30px}
+:root:lang(en) .home-welcome-kicker{text-transform:uppercase;letter-spacing:.1em;font-size:9px}
+:root:lang(en) .home-welcome h1{font-weight:500}
+:root:lang(en) .home-welcome-note{font-size:12px;line-height:1.55}
+:root:lang(en) .home-scroll .section-title{margin-top:22px}
+:root:lang(en) .home-scroll .catalog .dish{border-radius:16px}
+/* Japanese: quieter separators, compact headings and a more even reading rhythm. */
+:root:lang(ja) .home-welcome{padding-top:22px;padding-bottom:23px}
+:root:lang(ja) .home-welcome-kicker{font-weight:500;letter-spacing:.08em}
+:root:lang(ja) .home-welcome h1{font-weight:600}
+:root:lang(ja) .home-welcome-note{font-size:12px;line-height:1.7}
+:root:lang(ja) .home-scroll .catalog .dish{border-radius:10px;box-shadow:none}
+:root:lang(ja) .order-dock{border-radius:16px}
+:root:lang(ja) .order-dock .nav button,:root:lang(ja) .dock-action{border-radius:10px}
+:root:is(:lang(en),:lang(ja)) :is(.brand,.top-brand strong,.home-welcome h1,.section-title h2,.menu-heading h2,.menu-title-input,.manage-heading h2,.detail-title h1,.surprise-heading h2,.shared-create-heading h1){letter-spacing:normal}
+:root:is(:lang(en),:lang(ja)) :is(.top-brand small,.home-welcome-kicker,.home-welcome-note,.menu-row .name,.form-save,.manage-add,.intro h1,.intro-copy){letter-spacing:normal}
+:root:lang(en) .home-welcome h1{font-size:clamp(23px,6vw,27px);line-height:1.28}
+:root:lang(ja) .home-welcome h1{line-height:1.55;word-break:normal;overflow-wrap:anywhere}
+:root:is(:lang(en),:lang(ja)) .top-brand{min-width:0}
+:root:is(:lang(en),:lang(ja)) .top-brand>div{min-width:0}
+:root:is(:lang(en),:lang(ja)) .top-brand small{line-height:1.35}
+:root:is(:lang(en),:lang(ja)) .home-top-actions{flex:none}
+:root:is(:lang(en),:lang(ja)) .home-scroll .shared-entry{max-width:135px;line-height:1.3;text-align:left}
+:root:is(:lang(en),:lang(ja)) .home-scroll .section-title{align-items:flex-start;flex-direction:column;gap:2px}
+:root:is(:lang(en),:lang(ja)) .home-scroll .home-actions{align-self:flex-end}
+:root:is(:lang(en),:lang(ja)) .home-discovery{align-items:stretch;flex-direction:column}
+:root:is(:lang(en),:lang(ja)) .home-discovery .search{flex:auto}
+:root:is(:lang(en),:lang(ja)) .home-discovery .filter-switch{width:100%}
+:root:is(:lang(en),:lang(ja)) .home-discovery .filter-switch button{flex:1;min-width:0;line-height:1.25}
+:root:is(:lang(en),:lang(ja)) :is(.home-scroll,.shared-scroll) .catalog:not(.catalog-recommend){grid-template-columns:minmax(84px,100px) minmax(0,1fr);gap:9px}
+:root:is(:lang(en),:lang(ja)) :is(.home-scroll,.shared-catalog) button.filter .filter-name{white-space:normal;overflow-wrap:anywhere}
+:root:is(:lang(en),:lang(ja)) .catalog-heading h3{min-width:0;overflow-wrap:anywhere}
+:root:is(:lang(en),:lang(ja)) .catalog-heading span{white-space:normal;text-align:right;line-height:1.3}
+:root:is(:lang(en),:lang(ja)) .order-dock{gap:5px}
+:root:is(:lang(en),:lang(ja)) .order-dock .nav{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:1px}
+:root:is(:lang(en),:lang(ja)) .order-dock .nav button{min-width:0;min-height:52px;flex-direction:column;gap:3px;padding:4px 2px;white-space:normal;text-align:center;font-size:10px;line-height:1.15}
+:root:is(:lang(en),:lang(ja)) .order-dock .nav button span{overflow-wrap:anywhere}
+:root:is(:lang(en),:lang(ja)) .dock-action{min-width:0;flex:0 0 27%;padding:6px;text-align:center;line-height:1.2}
+:root:is(:lang(en),:lang(ja)) .dock-action strong{font-size:12px;letter-spacing:0}
+:root:is(:lang(en),:lang(ja)) :is(.menu-heading,.manage-heading,.shared-bar,.shared-form-heading){gap:10px;flex-wrap:wrap}
+:root:is(:lang(en),:lang(ja)) .menu-heading>div:first-child{min-width:0;flex:1 1 160px}
+:root:is(:lang(en),:lang(ja)) .new-meal-entry{white-space:normal;text-align:left}
+:root:is(:lang(en),:lang(ja)) .menu-meta{display:flex;justify-content:center;flex-wrap:wrap;line-height:1.5}
+:root:is(:lang(en),:lang(ja)) .menu-row .name{min-width:0;overflow-wrap:anywhere}
+:root:is(:lang(en),:lang(ja)) .shopping-entry{white-space:normal;text-align:center;line-height:1.3}
+:root:is(:lang(en),:lang(ja)) .shopping-entry svg{flex:none}
+:root:is(:lang(en),:lang(ja)) .shopping-add{display:grid;grid-template-columns:minmax(0,1fr) auto}
+:root:is(:lang(en),:lang(ja)) .shopping-add input{grid-column:1/-1}
+:root:is(:lang(en),:lang(ja)) .shopping-add select{width:100%;min-height:44px}
+:root:is(:lang(en),:lang(ja)) .shopping-add button{min-height:44px}
+:root:is(:lang(en),:lang(ja)) .plan-count-item>strong{white-space:normal;overflow:visible;line-height:1.35;overflow-wrap:anywhere}
+:root:is(:lang(en),:lang(ja)) .cover-actions{flex-wrap:wrap}
+:root:is(:lang(en),:lang(ja)) .detail-bottom span{min-width:0;line-height:1.4}
+:root:is(:lang(en),:lang(ja)) .detail-bottom button{min-width:0;flex:0 0 43%;padding:8px;line-height:1.3}
+:root:is(:lang(en),:lang(ja)) .appearance-label{align-items:flex-start;flex-wrap:wrap;line-height:1.4}
+:root:is(:lang(en),:lang(ja)) .appearance-modes button{min-height:44px;padding:5px;line-height:1.25}
+:root:is(:lang(en),:lang(ja)) :is(.toast,.update-notice){white-space:normal;overflow-wrap:anywhere}
+@media(max-width:350px){
+ :root:is(:lang(en),:lang(ja)) .home-scroll .shared-entry{max-width:100px;font-size:11px}
+ :root:is(:lang(en),:lang(ja)) :is(.home-scroll,.shared-scroll) .catalog:not(.catalog-recommend){grid-template-columns:minmax(76px,86px) minmax(0,1fr);gap:6px}
+ :root:is(:lang(en),:lang(ja)) .catalog .dish-img{width:60px;flex-basis:60px}
+ :root:is(:lang(en),:lang(ja)) .shared-catalog .shared-dish-photo{width:60px;flex-basis:60px}
+}
