@@ -30,7 +30,7 @@ async function sharedLoad(quiet=false) {
  }
 }
 function sharedNames(id) { const s=sharedMeal.data; return s.choices.filter(c=>c.dish_id===id).map(c=>s.people.find(p=>p.id===c.person_id)?.name).filter(Boolean).join('、'); }
-function sharedRenderShell(content,foot='') { app.className='phone-screen'; app.innerHTML=`<div class="screen-scroll shared-scroll ${foot ? 'has-shared-bottom' : ''}"><header class="topbar"><div class="top-brand">${logo}<div><strong>家宴</strong><small>把喜欢的菜端上桌</small></div></div></header>${content}</div>${foot}`; }
+function sharedRenderShell(content,foot='') { app.className='phone-screen'; app.innerHTML=`<div class="screen-scroll shared-scroll ${foot ? 'has-shared-bottom' : ''}"><header class="topbar"><div class="top-brand">${logo}<div><strong>家宴</strong><small>把喜欢的菜端上桌</small></div></div><button class="appearance-entry" type="button" data-action="appearance" aria-label="外观设置">${icon('appearance')}</button></header>${content}</div>${foot}`; }
 function renderSharedMeal(error='') {
  const d=sharedMeal.data;
  if(!d) { sharedRenderShell(`<div class="shared-intro"><span>一起吃饭 · 一起点菜</span><h2>${error?'暂时无法加入':'正在打开邀请'}</h2><p>${escapeText(error||'请稍等片刻…')}</p><button class="shared-text" data-shared="exit">返回家宴</button></div>`); }

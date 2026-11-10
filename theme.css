@@ -79,3 +79,5 @@
 :root[data-appearance="dark"] .shopping-export button:last-child{background:var(--theme-action);border-color:var(--theme-action);color:#fffaf3}
 :root[data-appearance="dark"] .shopping-image-dialog .image-dialog-head strong{color:var(--theme-ink)}
 :root[data-appearance="dark"] .shopping-image-dialog .image-dialog-head span{color:var(--theme-muted)}
+.appearance-languages button{font-size:12px;letter-spacing:0}
+.appearance-palettes strong,.appearance-palettes small{white-space:normal;overflow-wrap:anywhere}

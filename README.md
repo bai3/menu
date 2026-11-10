@@ -18,6 +18,7 @@ python3 -m http.server 8000
 - `shared-meal.js`：邀请家人共同点菜的流程。
 - `src/data.js`：菜品数据、浏览器缓存和云端同步。
 - `src/views.js`：页面状态、页面渲染和用餐记录。
+- `src/i18n.js`：界面语言与本机偏好设置；用户输入和 AI 生成内容保留原文。
 - `src/menu-image.js`：菜单图片模板与导出。
 - `src/paper-menu.js`：翻页菜单和相关交互。
 - `app.js`：事件绑定、内测码验证及应用启动。

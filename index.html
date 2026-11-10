@@ -33,6 +33,7 @@
     if(nativeApp)document.documentElement.classList.add('is-native','is-standalone');
     else if(matchMedia('(display-mode: standalone)').matches||navigator.standalone===true)document.documentElement.classList.add('is-pwa','is-standalone');
   </script>
+  <script src="./src/i18n.js"></script>
   <script src="./theme.js"></script>
   <link rel="stylesheet" href="./style.css" />
   <link rel="stylesheet" href="./theme.css" />

@@ -22,6 +22,7 @@
  function updateControls(dialog) {
   dialog.querySelectorAll('[data-palette]').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.palette === settings.palette)));
   dialog.querySelectorAll('[data-mode]').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.mode === settings.mode)));
+  dialog.querySelectorAll('[data-language]').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.language === window.JiayanI18n.language)));
  }
  function save(dialog) {
   apply();
@@ -46,7 +47,7 @@
   opener = trigger;
   const overlay = document.createElement('div');
   overlay.className = 'appearance-overlay';
-  overlay.innerHTML = `<section class="appearance-dialog" role="dialog" aria-modal="true" aria-labelledby="appearance-title"><div class="appearance-head"><div><span>MAKE IT YOURS</span><h2 id="appearance-title">外观设置</h2><p>让餐桌，变成你喜欢的样子。</p></div><button type="button" class="appearance-close" aria-label="关闭外观设置"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true" focusable="false"><path d="m6.5 6.5 11 11m0-11-11 11"/></svg></button></div><div class="appearance-section"><div class="appearance-label"><strong>主题配色</strong><span>选一种喜欢的颜色</span></div><div class="appearance-palettes" role="group" aria-label="主题配色"><button type="button" data-palette="terracotta"><i></i><strong>暖陶红</strong><small>温暖家常</small></button><button type="button" data-palette="green"><i></i><strong>餐桌绿</strong><small>自然清新</small></button><button type="button" data-palette="plum"><i></i><strong>烟熏梅</strong><small>沉静柔和</small></button></div></div><div class="appearance-section"><div class="appearance-label"><strong>显示模式</strong><span>随时切换</span></div><div class="appearance-modes" role="group" aria-label="显示模式"><button type="button" data-mode="system">跟随系统</button><button type="button" data-mode="light">明亮</button><button type="button" data-mode="dark">深色</button></div></div><p class="appearance-status" role="status" aria-live="polite">设置会自动保存在本机</p></section>`;
+  overlay.innerHTML = `<section class="appearance-dialog" role="dialog" aria-modal="true" aria-labelledby="appearance-title"><div class="appearance-head"><div><span>MAKE IT YOURS</span><h2 id="appearance-title">设置</h2><p>让餐桌，变成你喜欢的样子。</p></div><button type="button" class="appearance-close" aria-label="关闭外观设置"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true" focusable="false"><path d="m6.5 6.5 11 11m0-11-11 11"/></svg></button></div><div class="appearance-section"><div class="appearance-label"><strong>主题配色</strong><span>选一种喜欢的颜色</span></div><div class="appearance-palettes" role="group" aria-label="主题配色"><button type="button" data-palette="terracotta"><i></i><strong>暖陶红</strong><small>温暖家常</small></button><button type="button" data-palette="green"><i></i><strong>餐桌绿</strong><small>自然清新</small></button><button type="button" data-palette="plum"><i></i><strong>烟熏梅</strong><small>沉静柔和</small></button></div></div><div class="appearance-section"><div class="appearance-label"><strong>显示模式</strong><span>随时切换</span></div><div class="appearance-modes" role="group" aria-label="显示模式"><button type="button" data-mode="system">跟随系统</button><button type="button" data-mode="light">明亮</button><button type="button" data-mode="dark">深色</button></div></div><div class="appearance-section"><div class="appearance-label"><strong>语言</strong><span>选择界面语言</span></div><div class="appearance-modes appearance-languages" role="group" aria-label="语言"><button type="button" data-language="zh-CN" lang="zh-CN">中文</button><button type="button" data-language="en" lang="en">English</button><button type="button" data-language="ja" lang="ja">日本語</button></div></div><p class="appearance-status" role="status" aria-live="polite">设置会自动保存在本机</p></section>`;
   document.body.appendChild(overlay);
   updateControls(overlay);
   overlay.querySelector('.appearance-close').onclick = () => close(overlay);
@@ -54,8 +55,10 @@
    if (event.target === overlay) { close(overlay); return; }
    const palette = event.target.closest('[data-palette]');
    const mode = event.target.closest('[data-mode]');
+   const language = event.target.closest('[data-language]');
    if (palette && Object.prototype.hasOwnProperty.call(palettes, palette.dataset.palette)) { settings.palette = palette.dataset.palette; save(overlay); }
    if (mode && Object.prototype.hasOwnProperty.call(modes, mode.dataset.mode)) { settings.mode = mode.dataset.mode; save(overlay); }
+   if (language) { const saved = window.JiayanI18n.setLanguage(language.dataset.language); overlay.querySelector('.appearance-status').textContent = saved ? '已保存在本机' : '本机无法保存设置，重新打开后可能需要重新选择'; updateControls(overlay); }
   });
   document.addEventListener('keydown', onKey);
   overlay.querySelector('.appearance-close').focus();
@@ -70,6 +73,7 @@
   apply();
   const dialog = document.querySelector('.appearance-overlay'); if (dialog) updateControls(dialog);
  });
+ window.addEventListener('jiayan-language-change', () => { const dialog = document.querySelector('.appearance-overlay'); if (dialog) updateControls(dialog); });
  document.addEventListener('click', event => {
   const trigger = event.target.closest('[data-action="appearance"]');
   if (trigger) open(trigger);
