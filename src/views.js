@@ -33,7 +33,9 @@ const icon = (name) => {
  const localized = {
   order:{en:'<circle cx="12" cy="12" r="5.5"/><path d="M3 5v5m2-5v5M3 8h2m-1 2v9M20 5c-2 2-2 5-2 7h2v7"/>',ja:'<path d="M4 12h16c-.5 4-3.5 7-8 7s-7.5-3-8-7ZM9 21h6M7 9l6-6M10 9l6-6"/>'},
   surprise:{en:'<path d="m12 2 1.7 5.4L19 9l-5.3 1.7L12 16l-1.7-5.3L5 9l5.3-1.6L12 2ZM19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8L19 15Z"/>',ja:'<path d="M5 13h14c-.5 3.5-3 6-7 6s-6.5-2.5-7-6ZM9 21h6M12 3v6M9 6h6M9.9 3.9l4.2 4.2M14.1 3.9 9.9 8.1"/>'},
-  menu:{en:'<path d="M12 6c-2-2-5-2.5-8-2v14c3-.5 6 0 8 2m0-14c2-2 5-2.5 8-2v14c-3-.5-6 0-8 2m0-14v14"/>',ja:'<rect x="5" y="3" width="14" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/>'}
+  menu:{en:'<path d="M12 6c-2-2-5-2.5-8-2v14c3-.5 6 0 8 2m0-14c2-2 5-2.5 8-2v14c-3-.5-6 0-8 2m0-14v14"/>',ja:'<path d="M6 3.5h12v17H6zM9 7.5h6M9 11.5h6M9 15.5h4"/><path d="M4.5 6v12"/>'},
+  people:{en:'<circle cx="8" cy="8" r="2.7"/><circle cx="16" cy="8" r="2.7"/><path d="M3.5 19v-1a4.5 4.5 0 0 1 9 0v1m-.5-3a4.5 4.5 0 0 1 8.5 2v1"/>',ja:'<circle cx="8.5" cy="8.5" r="2.7"/><circle cx="16" cy="8.5" r="2.4"/><path d="M3.5 19c.3-3.2 2.1-5 5-5s4.7 1.8 5 5M14 14.2c3-.8 5.6 1.1 6 4.8"/>'},
+  basket:{en:'<path d="M3.5 10h17l-1.7 9H5.2l-1.7-9ZM8 10l4-6 4 6M8.5 13.5v2.5m3.5-2.5v2.5m3.5-2.5v2.5"/>',ja:'<path d="M5 9h14l-1.3 10H6.3L5 9ZM8.5 9V7a3.5 3.5 0 0 1 7 0v2M8 13h8M8 16h8"/>'}
  }[name];
  const content = localized ? `<g class="icon-zh">${paths[name]}</g><g class="icon-en">${localized.en}</g><g class="icon-ja">${localized.ja}</g>` : (paths[name] || '');
  return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">${content}</svg>`;
@@ -124,7 +126,9 @@ function updateCatalogNavigation(shared = false, preferredCategory = null) {
  nav.querySelectorAll(selector).forEach(button => {
   const selected = categoryOf(button) === active;
   button.classList.toggle('active', selected); button.setAttribute('aria-pressed', String(selected));
-  if (selected && (button.offsetTop < nav.scrollTop || button.offsetTop + button.offsetHeight > nav.scrollTop + nav.clientHeight)) nav.scrollTop = button.offsetTop - nav.clientHeight / 2 + button.offsetHeight / 2;
+  if (selected && getComputedStyle(nav).flexDirection === 'row') {
+   if (button.offsetLeft < nav.scrollLeft || button.offsetLeft + button.offsetWidth > nav.scrollLeft + nav.clientWidth) nav.scrollLeft = button.offsetLeft - nav.clientWidth / 2 + button.offsetWidth / 2;
+  } else if (selected && (button.offsetTop < nav.scrollTop || button.offsetTop + button.offsetHeight > nav.scrollTop + nav.clientHeight)) nav.scrollTop = button.offsetTop - nav.clientHeight / 2 + button.offsetHeight / 2;
  });
 }
 function bindCatalog(shared = false) {

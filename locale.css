@@ -68,3 +68,58 @@
  :root:is(:lang(en),:lang(ja)) .catalog .dish-img{width:60px;flex-basis:60px}
  :root:is(:lang(en),:lang(ja)) .shared-catalog .shared-dish-photo{width:60px;flex-basis:60px}
 }
+
+/* Localized catalog: a horizontal shelf gives dish photography and titles room. */
+:root:is(:lang(en),:lang(ja)) :is(.home-scroll,.shared-scroll) .catalog:not(.catalog-recommend){display:block}
+:root:is(:lang(en),:lang(ja)) :is(.home-scroll,.shared-catalog) .filters{position:sticky;top:0;z-index:2;display:flex;flex-direction:row;gap:7px;max-height:none;overflow-x:auto;overflow-y:hidden;margin:0 -20px 20px;padding:6px 20px 10px;background:var(--theme-page);scrollbar-width:none}
+:root:is(:lang(en),:lang(ja)) :is(.home-scroll,.shared-catalog) button.filter{width:auto;min-height:40px;flex:0 0 auto;padding:8px 15px;border:1px solid var(--theme-border);border-radius:22px;background:var(--theme-surface);font-size:11px}
+:root:is(:lang(en),:lang(ja)) :is(.home-scroll,.shared-catalog) button.filter.active{border-color:var(--theme-accent);background:var(--theme-accent);color:var(--theme-on-accent)}
+:root:is(:lang(en),:lang(ja)) :is(.home-scroll,.shared-catalog) button.filter .filter-name{white-space:nowrap}
+:root:is(:lang(en),:lang(ja)) .catalog .dish{min-height:118px;padding:10px;gap:12px}
+:root:is(:lang(en),:lang(ja)) .catalog .dish-img{width:104px;height:96px;flex-basis:104px}
+:root:is(:lang(en),:lang(ja)) .catalog .dish-info{padding:4px 38px 5px 0}
+:root:is(:lang(en),:lang(ja)) .catalog .dish-name{font-size:15px;line-height:1.3}
+:root:is(:lang(en),:lang(ja)) .catalog .dish-note{font-size:11px;line-height:1.5}
+:root:is(:lang(en),:lang(ja)) .catalog .add{right:9px;bottom:9px}
+:root:is(:lang(en),:lang(ja)) .shared-catalog .shared-dish-photo{width:104px;height:96px;flex-basis:104px}
+:root:is(:lang(en),:lang(ja)) .catalog-heading{margin:0 2px 12px}
+:root:is(:lang(en),:lang(ja)) .home-scroll .catalog-group+.catalog-group{margin-top:30px}
+
+/* An English cookbook-inspired masthead, with a clear action row. */
+:root:lang(en) .home-screen{background-image:none;background-color:var(--theme-page)}
+:root:lang(en) .home-welcome{margin:4px 0 0;padding:27px 20px 29px;border:1px solid var(--theme-border);border-radius:18px;background:var(--theme-soft)}
+:root:lang(en) .home-welcome-kicker:before{display:none}
+:root:lang(en) .home-welcome h1{font-size:30px;line-height:1.15}
+:root:lang(en) .home-welcome-note{margin-top:13px}
+:root:lang(en) .home-scroll .section-title{margin:25px 0 10px}
+:root:lang(en) .home-scroll .home-actions{align-self:flex-start}
+:root:lang(en) .home-scroll .section-title .paper-entry{padding-left:0}
+:root:lang(en) .home-scroll .catalog .dish{border:1px solid var(--theme-border);background:var(--theme-surface);box-shadow:none}
+
+/* Japanese: an understated meal journal, with compact ruled sections. */
+:root:lang(ja) .home-screen{background-image:none;background-color:var(--theme-page)}
+:root:lang(ja) .home-welcome{padding:25px 2px 26px;border-top:1px solid var(--theme-border);border-bottom:1px solid var(--theme-border)}
+:root:lang(ja) .home-welcome-kicker:before{width:26px}
+:root:lang(ja) .home-scroll .section-title{margin:24px 0 10px}
+:root:lang(ja) .home-scroll .catalog .dish{padding:10px 0;border:0;border-bottom:1px solid var(--theme-border);border-radius:0;background:transparent}
+:root:lang(ja) .catalog .dish-img{border-radius:8px}
+:root:lang(ja) .catalog-heading h3{font-family:var(--sans);font-size:14px;letter-spacing:.04em}
+@media(max-width:350px){
+ :root:is(:lang(en),:lang(ja)) .catalog .dish-img{width:86px;height:86px;flex-basis:86px}
+ :root:is(:lang(en),:lang(ja)) .shared-catalog .shared-dish-photo{width:86px;height:86px;flex-basis:86px}
+ :root:lang(en) .home-welcome h1{font-size:27px}
+}
+
+/* Photographic covers echo a cookbook and a Japanese table journal. */
+:root:lang(en) .home-welcome{background-image:linear-gradient(90deg,var(--theme-soft) 0%,var(--theme-soft) 45%,transparent 210%),url('./public/assets/hero.jpg');background-position:center,right center;background-size:cover;background-repeat:no-repeat}
+:root:lang(ja) .home-welcome{padding:26px 18px;border:1px solid var(--theme-border);border-radius:4px;background-image:linear-gradient(90deg,var(--theme-page) 0%,var(--theme-page) 45%,transparent 210%),url('./public/assets/soup.jpg');background-position:center,right center;background-size:cover;background-repeat:no-repeat}
+:root:is(:lang(en),:lang(ja)) .home-welcome :is(h1,p){position:relative;z-index:1}
+:root[data-appearance="dark"]:lang(en) .home-welcome{background-image:linear-gradient(90deg,var(--theme-soft) 0%,var(--theme-soft) 32%,transparent 160%),url('./public/assets/hero.jpg')}
+:root[data-appearance="dark"]:lang(ja) .home-welcome{background-image:linear-gradient(90deg,var(--theme-page) 0%,var(--theme-page) 42%,transparent 170%),url('./public/assets/soup.jpg')}
+:root:lang(en) .order-dock .nav svg{stroke-width:1.8}
+:root:lang(ja) .order-dock .nav svg{stroke-width:1.45}
+:root:lang(en) .home-scroll .shared-entry svg,:root:lang(ja) .home-scroll .shared-entry svg{box-sizing:content-box;width:17px;height:17px;padding:6px;background:var(--theme-soft);color:var(--theme-accent)}
+:root:lang(en) .home-scroll .shared-entry svg{border-radius:50%}
+:root:lang(ja) .home-scroll .shared-entry svg{border:1px solid var(--theme-border);border-radius:8px}
+:root:lang(en) .catalog .add{border-radius:50%}
+:root:lang(ja) .catalog .add{border-radius:8px}
