@@ -68,6 +68,7 @@ function bind(){
  app.querySelectorAll('[data-edit]').forEach(b=>b.onclick=()=>{state.editingId=b.dataset.edit;state.draftImage=null;state.page='dish-form';render()});
  app.querySelectorAll('[data-delete]').forEach(b=>b.onclick=async()=>{const dish=dishes.find(d=>d.id===b.dataset.delete);if(!dish || !await confirmAction({title:'删除这道菜？',message:`删除后，“${dish.name}”将从菜谱中移除。`,confirmLabel:'删除菜品'}))return;b.disabled=true;if(!await cloudDeleteDish(dish.id)){b.disabled=false;return}saveLocalDishes(dishes.filter(d=>d.id!==dish.id));state.selected=state.selected.filter(id=>id!==dish.id);render();notify('菜品已删除');});
  const sharedCreate=app.querySelector('[data-action=shared-create]');if(sharedCreate)sharedCreate.onclick=()=>{state.page='shared-create';render()};
+ const openPersonal=app.querySelector('[data-action=open-personal-share]');if(openPersonal)openPersonal.onclick=openPersonalShare;
  const signOut=app.querySelector('[data-action=sign-out]');if(signOut)signOut.onclick=signOutAccount;
  const paperEntry=app.querySelector('[data-action=paper-mode]');if(paperEntry)paperEntry.onclick=openPaperMenu;
  const addDish=app.querySelector('[data-action=new-dish]');if(addDish)addDish.onclick=()=>{state.editingId=null;state.draftImage=null;state.page='dish-form';render()};

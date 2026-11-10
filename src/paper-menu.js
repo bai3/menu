@@ -54,7 +54,7 @@ function paperPages() {
 }
 function paperLeaf(items, pageNumber) {
  const field = paperFilterMode() === 'cuisine' ? 'cuisine' : 'category';
- return `<section class="paper-leaf ${pageNumber % 2 ? 'paper-leaf-right' : 'paper-leaf-left'} ${items.length === 2 ? 'paper-leaf-pair' : 'paper-leaf-single'}"><div class="paper-leaf-inner"><header class="paper-leaf-head"><span>家宴</span><span>THE FAMILY MENU</span></header><div class="paper-leaf-title"><span>THE TASTE OF HOME</span><h2>${items.length ? escapeText(items[0][field]) : '家的味道'}</h2><i></i></div><div class="paper-dishes">${items.length ? items.map((d, index) => `<article class="paper-dish paper-dish-${index + 1}" role="button" tabindex="0" data-paper-dish="${escapeText(d.id)}" aria-label="${escapeText(d.name)}，单击加入菜单，双击取消"><div class="paper-dish-photo"><img ${dishPhotoAttributes(d)} alt="" onerror="this.style.visibility='hidden'"></div><div class="paper-dish-copy"><span>${escapeText(d[field])}</span><h3>${escapeText(d.name)} ${spiceBadge(d)}</h3><p>${escapeText(d.note || '用心烹调，与你分享')}</p></div></article>`).join('') : '<div class="paper-blank">好好吃饭<br><span>慢慢生活</span></div>'}</div><footer class="paper-leaf-foot"><span>一餐一饭，皆是欢喜</span></footer></div></section>`;
+ return `<section class="paper-leaf ${pageNumber % 2 ? 'paper-leaf-right' : 'paper-leaf-left'} ${items.length === 2 ? 'paper-leaf-pair' : 'paper-leaf-single'}"><div class="paper-leaf-inner"><header class="paper-leaf-head"><span>家宴</span><span>THE FAMILY MENU</span></header><div class="paper-leaf-title"><span>THE TASTE OF HOME</span><h2>${items.length ? escapeText(items[0][field]) : '家的味道'}</h2><i></i></div><div class="paper-dishes">${items.length ? items.map((d, index) => `<article class="paper-dish paper-dish-${index + 1}" ${guestMode ? '' : `role="button" tabindex="0"`} data-paper-dish="${escapeText(d.id)}" aria-label="${escapeText(d.name)}${guestMode ? '' : '，单击加入菜单，双击取消'}"><div class="paper-dish-photo"><img ${dishPhotoAttributes(d)} alt="" onerror="this.style.visibility='hidden'"></div><div class="paper-dish-copy"><span>${escapeText(d[field])}</span><h3>${escapeText(d.name)} ${spiceBadge(d)}</h3><p>${escapeText(d.note || '用心烹调，与你分享')}</p></div></article>`).join('') : '<div class="paper-blank">好好吃饭<br><span>慢慢生活</span></div>'}</div><footer class="paper-leaf-foot"><span>一餐一饭，皆是欢喜</span></footer></div></section>`;
 }
 async function openPaperMenu() {
  paperPage = 0;
@@ -66,6 +66,7 @@ async function openPaperMenu() {
  overlay.setAttribute('aria-modal', 'true');
  overlay.setAttribute('aria-label', '纸质菜单，滑动或点击页面边缘翻页');
  overlay.onkeydown = e => { if (e.key === 'ArrowLeft') turnPaperPage(-1); else if (e.key === 'ArrowRight') turnPaperPage(1); else if (e.key === 'Escape') closePaperMenu(); };
+ bindPaperDesktopGestures(overlay);
  document.body.appendChild(overlay);
  overlay.innerHTML = '<div class="paper-stage"><header class="paper-toolbar"><button type="button" data-paper-close aria-label="返回菜品列表">返回列表</button></header><div class="paper-preparing" role="status">正在翻开菜单…</div></div>';
  overlay.querySelector('[data-paper-close]').onclick = closePaperMenu;
@@ -75,6 +76,56 @@ async function openPaperMenu() {
  if (!overlay.isConnected) return;
  paperLayoutRatios = new Map(paperPhotoRatios);
  renderPaperMenu();
+}
+function bindPaperDesktopGestures(overlay) {
+ let drag = null, suppressClick = false, wheelDistance = 0, wheelLocked = false, wheelTimer;
+ const onBook = target => target.closest('.paper-book');
+ overlay.addEventListener('click', e => {
+  if (!suppressClick) return;
+  suppressClick = false;
+  e.preventDefault();
+  e.stopPropagation();
+ }, true);
+ overlay.addEventListener('dragstart', e => { if (onBook(e.target)) e.preventDefault(); });
+ overlay.addEventListener('pointerdown', e => {
+  if (e.pointerType !== 'mouse' || e.button !== 0 || !onBook(e.target)) return;
+  drag = { id: e.pointerId, x: e.clientX, y: e.clientY };
+  window.addEventListener('pointerup', finishDrag);
+  window.addEventListener('pointercancel', cancelDrag);
+ });
+ function cancelDrag() {
+  drag = null;
+  window.removeEventListener('pointerup', finishDrag);
+  window.removeEventListener('pointercancel', cancelDrag);
+ }
+ function finishDrag(e) {
+  if (!drag || e.pointerId !== drag.id) return;
+  const dx = e.clientX - drag.x, dy = e.clientY - drag.y;
+  const rotated = matchMedia('(orientation: portrait)').matches;
+  const delta = rotated ? dy : dx, cross = rotated ? dx : dy;
+  cancelDrag();
+  if (Math.hypot(dx, dy) > 10) {
+   suppressClick = true;
+   setTimeout(() => { suppressClick = false; }, 0);
+  }
+  if (overlay.isConnected && Math.abs(delta) > 45 && Math.abs(delta) > Math.abs(cross)) turnPaperPage(delta < 0 ? 1 : -1);
+ }
+ overlay.addEventListener('wheel', e => {
+  if (e.ctrlKey || !onBook(e.target)) return;
+  const delta = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY;
+  if (!delta) return;
+  e.preventDefault();
+  clearTimeout(wheelTimer);
+  wheelTimer = setTimeout(() => { wheelDistance = 0; wheelLocked = false; }, 200);
+  if (wheelLocked) return;
+  const distance = delta * (e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? 100 : 1);
+  if (Math.sign(distance) !== Math.sign(wheelDistance)) wheelDistance = 0;
+  wheelDistance += distance;
+  if (Math.abs(wheelDistance) >= 45) {
+   wheelLocked = true;
+   turnPaperPage(wheelDistance > 0 ? 1 : -1);
+  }
+ }, { passive: false });
 }
 function renderPaperMenu() {
  const overlay = document.querySelector('.paper-overlay');
@@ -89,6 +140,7 @@ function renderPaperMenu() {
  let touchStart = null;
  const book = overlay.querySelector('.paper-book');
  const activatePaperDish = dish => {
+  if (guestMode) return;
   const id = dish.dataset.paperDish;
   if (!paperDishes().some(d => d.id === id && d.is_available)) return;
   if (pendingPaperTap && pendingPaperTap.id === id) {

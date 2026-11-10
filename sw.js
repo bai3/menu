@@ -1,29 +1,29 @@
 // 家宴 Service Worker：预缓存全部静态资源，离线也能打开。
 // 更新页面内容后，把下面 VERSION 加一（如 'v2'）即可让所有客户端换用新缓存。
-const VERSION = 'v169';
+const VERSION = 'v173';
 const CACHE = `jiayan-${VERSION}`;
 // 本机开发不使用离线缓存，已有旧 Worker 更新后也会切换到网络。
 const LOCAL_DEV = ['localhost', '127.0.0.1', '[::1]'].includes(self.location.hostname);
 const ASSETS = [
   './',
   './index.html',
-  './style.css?v=166',
+  './style.css?v=172',
   './theme.css?v=166',
   './locale.css?v=166',
   './theme.js?v=166',
-  './src/i18n.js?v=166',
+  './src/i18n.js?v=172',
   './src/confirm-dialog.js?v=166',
-  './src/data.js?v=166',
-  './src/auth.js?v=166',
+  './src/data.js?v=171',
+  './src/auth.js?v=172',
   './src/startup.js?v=166',
-  './src/photo-storage.js?v=166',
-  './src/views.js?v=166',
-  './src/meal-tools.js?v=166',
+  './src/photo-storage.js?v=171',
+  './src/views.js?v=172',
+  './src/meal-tools.js?v=171',
   './src/shopping-list.js?v=166',
   './src/nutrition.js?v=166',
   './src/menu-image.js?v=166',
-  './src/paper-menu.js?v=166',
-  './app.js?v=166',
+  './src/paper-menu.js?v=171',
+  './app.js?v=172',
   './shared-meal.js?v=166',
   './manifest.json',
   './config.js?v=166',

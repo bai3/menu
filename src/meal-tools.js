@@ -70,6 +70,13 @@ function rankMealDishes(catalog, meals) {
   const ids=new Set(meal.dishes.map(d=>d?.id).filter(id=>typeof id==='string' && id));
   for(const id of ids)counts.set(id,(counts.get(id)||0)+1);
  }
+ return rankDishesByCounts(catalog,counts);
+}
+function rankGuestDishes(catalog) {
+ const counts=new Map(catalog.map(d=>[d.id, Number.isSafeInteger(d.recommend_count) && d.recommend_count >= 0 ? d.recommend_count : 0]));
+ return rankDishesByCounts(catalog,counts);
+}
+function rankDishesByCounts(catalog,counts) {
  const edited=d=>{const time=Date.parse(d.edited_at || d.created_at || '');return Number.isFinite(time) ? time : 0};
  return catalog.filter(d=>d.is_available)
   .map(d=>({dish:d,count:counts.get(d.id)||0}))

@@ -38,3 +38,9 @@ test('dynamic accessible labels keep the dish name while changing language',()=>
  h.mutate([{type:'attributes',target:button}]);assert.equal(button.attrs['aria-label'],'View details for Roast chicken');
  h.window.JiayanI18n.setLanguage('ja');h.mutate([{type:'attributes',target:button}]);assert.equal(button.attrs['aria-label'],'Roast chickenの詳細を見る');
 });
+test('recommendation counts follow the selected language',()=>{
+ const h=setup();const count=h.element('SPAN');count.childNodes.push(h.text('做过 2 次',count));
+ h.mutate([{type:'childList',addedNodes:[count]}]);h.window.JiayanI18n.setLanguage('en');h.mutate([{type:'childList',addedNodes:[count]}]);
+ assert.equal(count.childNodes[0].nodeValue,'Made 2 times');
+ h.window.JiayanI18n.setLanguage('ja');h.mutate([{type:'childList',addedNodes:[count]}]);assert.equal(count.childNodes[0].nodeValue,'2回作りました');
+});

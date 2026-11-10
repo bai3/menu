@@ -22,3 +22,8 @@ test('reads every page and keeps cached data when the network fails',async()=>{
  vm.runInContext(slice,ctx);await ctx.loadRecommendations();assert.deepEqual(ranges,[[0,999],[1000,1999]]);assert.equal(vm.runInContext('recommendationMeals.length',ctx),1001);
  fail=true;await ctx.loadRecommendations();assert.equal(vm.runInContext('recommendationMeals.length',ctx),1001);assert.equal(vm.runInContext('recommendationError',ctx),true);
 });
+test('guest recommendations use only per-dish counts and preserve ranking rules',()=>{
+ const catalog=[{id:'a',name:'A',is_available:true,created_at:'2026-01-01',recommend_count:2},{id:'b',name:'B',is_available:true,created_at:'2026-02-01',recommend_count:2},{id:'c',name:'C',is_available:true,created_at:'2026-03-01',recommend_count:0},{id:'d',name:'D',is_available:false,recommend_count:20}];
+ const c=vm.createContext({catalog});vm.runInContext(rankSource,c);
+ assert.deepEqual(Array.from(c.rankGuestDishes(catalog),x=>({id:x.dish.id,count:x.count})),[{id:'b',count:2},{id:'a',count:2},{id:'c',count:0}]);
+});

@@ -6,6 +6,9 @@ const defaultDishes = [
   { id: 'soup', name: '冬瓜排骨汤', category: '暖心汤羹', note: '清润鲜美，暖暖一碗', image: 'soup.jpg' },
   { id: 'shrimp', name: '蒜蓉虾', category: '家常菜', note: '鲜香入味，餐桌上的小惊喜', image: 'shrimp.jpg' }
 ];
+const guestParams = new URLSearchParams(location.search);
+const guestMode = guestParams.has('user');
+const guestUserId = (guestParams.get('user') || '').toLowerCase();
 let authUser = null;
 let ownerKey = '';
 const cacheKey = key => `${key}:auth:${authUser?.id || 'signed-out'}`;

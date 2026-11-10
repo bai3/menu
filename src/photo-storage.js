@@ -26,6 +26,14 @@ function photoTimedFetch(input, init={}) {
 let photoClientKey='', photoStorageClient=null;
 function photoClient() {
  if(typeof window==='undefined' || !window.supabase || !window.JIAYAN_SUPABASE)return sb;
+ if (guestMode) {
+  const key=`guest:${guestUserId}`;
+  if(key!==photoClientKey) {
+   photoStorageClient=window.supabase.createClient(window.JIAYAN_SUPABASE.url,window.JIAYAN_SUPABASE.publishableKey,{global:{headers:{'x-guest-user':guestUserId},fetch:photoTimedFetch},auth:{persistSession:false,autoRefreshToken:false}});
+   photoClientKey=key;
+  }
+  return photoStorageClient;
+ }
  const shared=typeof sharedMeal!=='undefined' && sharedMeal.invite && sharedMeal.person && sharedMeal.data?.joined;
  if(!shared)return sb;
  const key=`shared:${sharedMeal.invite}:${sharedMeal.person}`;

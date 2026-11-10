@@ -36,6 +36,33 @@ function renderAuth({mode='login',message='',email=''}={}) {
   try{if(!sb)throw Error();const {error}=await authDeadline(sb.auth.resend({type:'signup',email:form.elements.email.value.trim(),options:{emailRedirectTo:authReturnUrl()}}));if(error)throw error;status.textContent='如该邮箱需要验证，验证邮件已发送，请查收。';}catch(error){status.textContent=authMessage(error);}finally{lock(false);}
  };
 }
+function personalMenuUrl() { const url=new URL(location.origin+location.pathname);url.searchParams.set('user',authUser.id);return url.href; }
+async function copyPersonalMenu() {
+ const input=document.querySelector('#personal-menu-link');
+ const status=document.querySelector('.personal-share-status');
+ const show=message=>{if(status)status.textContent=message;else notify(message);};
+ try { if(!navigator.clipboard?.writeText)throw Error();await navigator.clipboard.writeText(personalMenuUrl());show('菜单链接已复制'); }
+ catch (_) { input?.focus();input?.select();show('请复制选中的链接'); }
+}
+async function sharePersonalMenu() {
+ if(!navigator.share){await copyPersonalMenu();return;}
+ try { await navigator.share({title:'家宴 · 个人菜单',text:'来看看我的家宴菜单',url:personalMenuUrl()}); } catch(error) { if(error.name!=='AbortError')await copyPersonalMenu(); }
+}
+function openPersonalShare() {
+ if(document.querySelector('.personal-share-dialog'))return;
+ const previousFocus=document.activeElement;
+ const dialog=document.createElement('dialog');
+ dialog.className='confirm-dialog personal-share-dialog';
+ dialog.setAttribute('aria-labelledby','personal-share-title');
+ dialog.innerHTML=`<div class="personal-share-content"><div class="personal-share-heading"><div><span>家宴 · 分享</span><h2 id="personal-share-title">分享个人菜单</h2></div><button class="personal-share-close" type="button" aria-label="关闭分享">${icon('close')}</button></div><p class="personal-share-description">知道用户 ID 的人无需登录，即可查看你的上架菜品、推荐次数和纸质菜单；链接长期有效。</p><label for="personal-menu-link">个人菜单链接</label><input id="personal-menu-link" readonly value="${escapeText(personalMenuUrl())}"><p class="personal-share-status" role="status" aria-live="polite"></p><div class="personal-share-actions"><button type="button" data-action="copy-personal-menu">复制链接</button><button type="button" data-action="share-personal-menu">分享</button></div></div>`;
+ dialog.querySelector('.personal-share-close').onclick=()=>dialog.close();
+ dialog.querySelector('[data-action=copy-personal-menu]').onclick=copyPersonalMenu;
+ dialog.querySelector('[data-action=share-personal-menu]').onclick=sharePersonalMenu;
+ dialog.addEventListener('close',()=>{dialog.remove();if(previousFocus?.isConnected)previousFocus.focus({preventScroll:true});},{once:true});
+ document.body.appendChild(dialog);
+ dialog.showModal();
+ dialog.querySelector('.personal-share-close').focus();
+}
 function renderAccount() {
  app.className='phone-screen account-screen';
  const email=authUser?.email || '未提供邮箱';
@@ -68,7 +95,24 @@ async function migrateAccountDraft() {
  const oldKey=`jiayan.menu-draft.v1:${ownerKey}`;
  try{const old=localStorage.getItem(oldKey);if(old && !localStorage.getItem(draftStorageKey()))localStorage.setItem(draftStorageKey(),old);localStorage.removeItem(oldKey);localStorage.removeItem('jiayan.beta-code.v1');}catch(_){}
 }
+async function startGuestMenu() {
+ document.body.classList.add('guest-mode');
+ const intro=document.querySelector('.intro-copy');if(intro)intro.textContent='翻开菜单，看看家里的好味道。';
+ app.className='phone-screen';
+ app.innerHTML='<div class="screen-scroll guest-status" role="status">正在打开菜单…</div>';
+ try {
+  if(!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(guestUserId) || !sb)throw Error();
+  const {data,error}=await authDeadline(photoClient().rpc('guest_menu_read',{p_user:guestUserId}));
+  if(error || !Array.isArray(data) || !data.every(isValidDish))throw error || Error();
+  dishes=data.map(normalizeDish);state.page='dishes';state.filterMode='category';state.selected=[];
+  render();prefetchPhotos(dishes.map(d=>d.image));
+ } catch (_) {
+  app.innerHTML='<div class="screen-scroll guest-status" role="status"><strong>暂时无法打开菜单</strong><p>链接可能无效，或网络暂不可用。</p><button type="button" data-guest-retry>重试</button></div>';
+  app.querySelector('[data-guest-retry]').onclick=startGuestMenu;
+ }
+}
 async function startApp() {
+ if(guestMode){await startGuestMenu();return;}
  const url=new URL(location.href);if(url.searchParams.has('code')){url.searchParams.delete('code');history.replaceState(history.state,'',url.pathname+url.search+url.hash);}
  const invite=sharedInviteFromUrl();if(invite){sharedStart(invite);return;}
  try{
@@ -88,6 +132,7 @@ async function startApp() {
 }
 // Do not await Supabase calls inside this callback: it runs under the session lock.
 if(sb)sb.auth.onAuthStateChange((event,session)=>{
+ if(guestMode)return;
  if(event==='SIGNED_OUT' || (authUser && session?.user && authUser.id!==session.user.id)){
   clearAccountView();if(!sharedInviteFromUrl())renderAuth({message:event==='SIGNED_OUT'?'已退出登录':''});
  }
